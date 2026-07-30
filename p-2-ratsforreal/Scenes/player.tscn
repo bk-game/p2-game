@@ -1,36 +1,50 @@
 [gd_scene format=3 uid="uid://b5mhy5ylqp2yv"]
 
+[ext_resource type="Script" uid="uid://dx7reb4t6ae1v" path="res://Scripts/player_movement.gd" id="1_cvnsp"]
+[ext_resource type="Texture2D" uid="uid://dlfxhl2lokquf" path="res://Art assets/dinoCharactersVersion1.1/sheets/DinoSprites - mort.png" id="1_v0iea"]
+
 [sub_resource type="AtlasTexture" id="AtlasTexture_cvnsp"]
+atlas = ExtResource("1_v0iea")
 region = Rect2(0, 0, 24, 24)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_6t5aa"]
+atlas = ExtResource("1_v0iea")
 region = Rect2(24, 0, 24, 24)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_vgqql"]
+atlas = ExtResource("1_v0iea")
 region = Rect2(48, 0, 24, 24)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_fkybt"]
+atlas = ExtResource("1_v0iea")
 region = Rect2(72, 0, 24, 24)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_x3wgy"]
+atlas = ExtResource("1_v0iea")
 region = Rect2(96, 0, 24, 24)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_3smsa"]
+atlas = ExtResource("1_v0iea")
 region = Rect2(120, 0, 24, 24)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_8erm5"]
+atlas = ExtResource("1_v0iea")
 region = Rect2(144, 0, 24, 24)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_f1ek2"]
+atlas = ExtResource("1_v0iea")
 region = Rect2(168, 0, 24, 24)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_tx1dd"]
+atlas = ExtResource("1_v0iea")
 region = Rect2(192, 0, 24, 24)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_gymyn"]
+atlas = ExtResource("1_v0iea")
 region = Rect2(216, 0, 24, 24)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_pu2lt"]
+atlas = ExtResource("1_v0iea")
 region = Rect2(240, 0, 24, 24)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_werjc"]
@@ -76,7 +90,7 @@ animations = [{
 }],
 "loop": 1,
 "name": &"Walk",
-"speed": 5.0
+"speed": 1.0
 }]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_koawd"]
@@ -85,15 +99,16 @@ height = 18.0
 
 [node name="Player" type="CharacterBody2D" unique_id=533728863]
 motion_mode = 1
+script = ExtResource("1_cvnsp")
 
 [node name="Sprite" type="AnimatedSprite2D" parent="." unique_id=1127398083]
 unique_name_in_owner = true
-position = Vector2(213, 107)
+position = Vector2(-1, 1)
 sprite_frames = SubResource("SpriteFrames_werjc")
-animation = &"Walk"
+animation = &"Idle"
 autoplay = "Idle"
-frame_progress = 0.007675467
+frame_progress = 0.4985545
 
 [node name="Collision" type="CollisionShape2D" parent="." unique_id=598729631]
-position = Vector2(213, 107)
+position = Vector2(0, 1)
 shape = SubResource("CapsuleShape2D_koawd")

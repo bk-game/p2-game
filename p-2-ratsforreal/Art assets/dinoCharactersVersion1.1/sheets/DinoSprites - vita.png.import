@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://0ngi278gj5bw"
-path="res://.godot/imported/DinoSprites - doux.png-822a62222f67c2d886687fbf5ba0c08f.ctex"
+uid="uid://c0ixqxskjxv4q"
+path="res://.godot/imported/DinoSprites - vita.png-1d1edf509c648a2af7f58d37685de0d4.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://dinoCharactersVersion1.1/sheets/DinoSprites - doux.png"
-dest_files=["res://.godot/imported/DinoSprites - doux.png-822a62222f67c2d886687fbf5ba0c08f.ctex"]
+source_file="res://Art assets/dinoCharactersVersion1.1/sheets/DinoSprites - vita.png"
+dest_files=["res://.godot/imported/DinoSprites - vita.png-1d1edf509c648a2af7f58d37685de0d4.ctex"]
 
 [params]
 

@@ -4,8 +4,8 @@ extends CharacterBody2D
 var character_direction : Vector2
 
 func _physics_process(_delta):
-	character_direction.x = Input.get_axis("move_left", "move_right")
-	character_direction.y = Input.get_axis("move_up", "move_down")
+	character_direction.x = Input.get_axis("move left", "move right")
+	character_direction.y = Input.get_axis("move up", "move down")
 	
 	#character direction
 	if character_direction.x > 0 : %Sprite.flip_h = false
