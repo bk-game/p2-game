@@ -86,9 +86,9 @@ const ITEMS := {
 			+ "your husband, Christopher, and your daughter, Eleanor, arrived here after a "
 			+ "terrible car accident. Someone ran a red light and T-boned the car. We did "
 			+ "our best, but we couldn't save them. I am so sorry for your loss.\n\n"
-			+ "A payment of $10,000 has been charged to your card because of the medical "
+			+ "A payment of $60,000 has been charged to your card because of the medical "
 			+ "resources we used in our attempt to save them. I hope you do well.\n\n— Dr. Neal",
-		"note": "The hospital billed him $10,000 for failing to save his family.",
+		"note": "The hospital billed him $60,000 for failing to save his family.",
 	},
 	"death_certs": {
 		"name": "Death certificates", "kind": "doc", "glyph": "paper",
