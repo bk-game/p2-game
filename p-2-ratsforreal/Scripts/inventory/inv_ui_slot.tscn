@@ -1,6 +1,0 @@
-[gd_scene format=3 uid="uid://caan8773yml6o"]
-
-[node name="Inv_UI_slot" type="Panel" unique_id=170290729]
-custom_minimum_size = Vector2(16, 16)
-offset_right = 16.0
-offset_bottom = 16.0

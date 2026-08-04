@@ -1,0 +1,4 @@
+[gd_scene format=3 uid="uid://bintr00000t1"]
+[ext_resource type="Script" path="res://tests/interact.gd" id="1_t"]
+[node name="InteractTest" type="Node2D"]
+script = ExtResource("1_t")

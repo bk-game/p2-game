@@ -1,0 +1,4 @@
+[gd_scene format=3 uid="uid://bprmpt0000t1"]
+[ext_resource type="Script" path="res://tests/prompt.gd" id="1_p"]
+[node name="PromptTest" type="Node2D"]
+script = ExtResource("1_p")

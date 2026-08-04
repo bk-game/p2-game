@@ -1,0 +1,54 @@
+[gd_scene load_steps=8 format=3 uid="uid://d2m10jhgyw33"]
+
+[ext_resource type="Script" path="res://scripts/floorplan.gd" id="1_plan"]
+[ext_resource type="Script" path="res://scripts/player.gd" id="2_player"]
+[ext_resource type="Script" path="res://scripts/tree_symbol.gd" id="3_tree"]
+[ext_resource type="Script" path="res://scripts/entities.gd" id="4_ent"]
+[ext_resource type="Script" path="res://scripts/hud.gd" id="5_hud"]
+[ext_resource type="Script" path="res://scripts/light.gd" id="6_light"]
+
+[sub_resource type="CircleShape2D" id="PlayerShape"]
+radius = 14.0
+
+[node name="Main" type="Node2D"]
+
+[node name="FloorPlan" type="Node2D" parent="."]
+script = ExtResource("1_plan")
+
+[node name="Entities" type="Node2D" parent="."]
+script = ExtResource("4_ent")
+
+[node name="Player" type="CharacterBody2D" parent="."]
+position = Vector2(1462, 935)
+z_index = 50
+script = ExtResource("2_player")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]
+shape = SubResource("PlayerShape")
+
+[node name="Camera2D" type="Camera2D" parent="Player"]
+zoom = Vector2(2.8, 2.8)
+limit_left = 30
+limit_top = 30
+limit_right = 1690
+limit_bottom = 1050
+position_smoothing_enabled = true
+position_smoothing_speed = 8.0
+
+[node name="TreeSymbol" type="Node2D" parent="."]
+position = Vector2(555, 812)
+z_index = 45
+script = ExtResource("3_tree")
+
+[node name="Light" type="Node2D" parent="." groups=["light"]]
+z_index = 200
+script = ExtResource("6_light")
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="Hud" type="Control" parent="UI" groups=["hud"]]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+script = ExtResource("5_hud")
