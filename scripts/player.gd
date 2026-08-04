@@ -25,7 +25,7 @@ func _physics_process(delta: float) -> void:
 	if _hud != null and _hud.blocking():
 		velocity = Vector2.ZERO
 		return
-	var dir := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+	var dir := Input.get_vector("left", "right", "up", "down")
 	velocity = dir * speed
 	move_and_slide()
 	if dir != Vector2.ZERO:
