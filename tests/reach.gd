@@ -5,7 +5,7 @@ extends Node2D
 
 const PR := 14.0   # player radius
 const CELL := 6.0
-const REACH := 48.0   # must match player.gd
+const REACH := 34.0   # must match player.gd
 
 var FP
 var _walls: Array[Rect2] = []

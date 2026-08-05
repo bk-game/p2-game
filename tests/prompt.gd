@@ -75,6 +75,12 @@ func _check(n: Node2D, fill: Dictionary, kind: String) -> void:
 		return a.distance_to(n.global_position) < b.distance_to(n.global_position))
 	for i in mini(spots.size(), 80):
 		_pl.global_position = spots[i]
+		# You have to be turned towards a thing to target it, and walking up
+		# to it is what turns you: face the point you would be touching.
+		var at: Vector2 = n.reach_point(spots[i]) if n.has_method("reach_point") \
+			else n.global_position
+		if spots[i].distance_to(at) > 0.01:
+			_pl.facing = (at - spots[i]).angle()
 		_pl._scan()
 		if _pl._target == n:
 			for o in hidden:

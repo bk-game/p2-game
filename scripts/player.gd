@@ -9,7 +9,9 @@ const C_SKIN   := Color("e8b98f")
 const C_HAIR   := Color("4a3626")
 const C_EDGE   := Color("2b2b30")
 
-const REACH := 48.0
+const REACH := 34.0
+const ARC   := PI * 0.4   # half-angle of the cone you have to be turned into
+const TOUCH := 16.0       # closer than this, whatever you are stood on counts
 
 var facing := -PI / 2.0
 var _target: Node2D = null
@@ -37,7 +39,7 @@ func _physics_process(delta: float) -> void:
 
 
 # Cutting a limb is a hold, not a tap: five seconds of sawing with the cracks
-# opening up as you go. Let go, or walk off, and it closes back up.
+# opening up as you go. Let go, or turn away, and it closes back up.
 func _saw(delta: float) -> void:
 	var progress := 0.0
 	var holding := Input.is_key_pressed(KEY_E)
@@ -52,7 +54,8 @@ func _saw(delta: float) -> void:
 		_hud.set_progress(progress)
 
 
-# Nearest interactable within reach drives the on-screen prompt.
+# Nearest interactable within reach, and in front of you, drives the
+# on-screen prompt.
 func _scan() -> void:
 	# Nearest wins, but small things you came for get a head start over
 	# scenery, so an item lying against a limb is picked up rather than
@@ -66,6 +69,11 @@ func _scan() -> void:
 			else (n as Node2D).global_position
 		var d := global_position.distance_to(at)
 		if d >= REACH:
+			continue
+		# You have to be turned towards a thing to work on it. Anything you
+		# are all but standing on is exempt: which way you last walked says
+		# nothing about an item under your feet.
+		if d > TOUCH and absf(angle_difference(facing, (at - global_position).angle())) > ARC:
 			continue
 		var score: float = d - (n.bias() if n.has_method("bias") else 0.0)
 		if score < best_score:
