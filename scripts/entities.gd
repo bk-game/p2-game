@@ -120,7 +120,7 @@ class Pickup extends Node2D:
 
 # ══ Branch ═══════════════════════════════════════════════════════════════
 class Branch extends StaticBody2D:
-	const CUT_TIME := 5.0
+	const CUT_TIME := 2.0
 	const CHOP_GAP := 0.55
 
 	var strong := true

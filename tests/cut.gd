@@ -13,7 +13,7 @@ func _ready() -> void:
 			limbs.append(n)
 	fails += _expect("limbs exist", limbs.size() == Content.BRANCHES.size())
 
-	# a pale limb: five seconds of sawing, not one tap
+	# a pale limb: a couple of seconds of sawing, not one tap
 	var weak = null
 	var strong = null
 	for n in limbs:
@@ -24,13 +24,13 @@ func _ready() -> void:
 
 	weak.act()
 	fails += _expect("tapping E does not fell a limb", is_instance_valid(weak))
-	for i in 49:
+	for i in 19:
 		weak.saw(0.1)
-	fails += _expect("still standing at 4.9s", is_instance_valid(weak))
-	fails += _expect("cracks are showing", weak.cut > 4.8)
+	fails += _expect("still standing at 1.9s", is_instance_valid(weak))
+	fails += _expect("cracks are showing", weak.cut > 1.8)
 	weak.saw(0.2)
 	await get_tree().process_frame
-	fails += _expect("felled at 5s", not is_instance_valid(weak))
+	fails += _expect("felled at 2s", not is_instance_valid(weak))
 
 	# letting go closes the cut back up
 	var other = null
@@ -38,7 +38,7 @@ func _ready() -> void:
 		if is_instance_valid(n) and not n.strong:
 			other = n
 			break
-	for i in 20:
+	for i in 10:   # half way, so it is still standing to relax
 		other.saw(0.1)
 	var peak: float = other.cut
 	for i in 40:

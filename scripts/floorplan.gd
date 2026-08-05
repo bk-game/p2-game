@@ -63,6 +63,15 @@ const FLOORS := [
 	{"r": Rect2(102, 94, 173, 321), "p": "stone"},
 ]
 
+# ── Yard: a hedge boxing in the front path ───────────────────────────────
+# Nothing is modelled past the path, so the walk out of the front door stops
+# at the hedge rather than carrying on into empty grass.
+const HEDGE: Array[Rect2] = [
+	Rect2(1360, 1015, 26, 174),   # west of the path
+	Rect2(1538, 1015, 26, 174),   # east of the path
+	Rect2(1360, 1189, 204, 26),   # foot of the path
+]
+
 const SOLIDS: Array[Rect2] = [
 	Rect2(312, 94, 428, 66),    # kitchen counter run
 	Rect2(312, 200, 48, 380),   # pantry
@@ -92,6 +101,8 @@ func _ready() -> void:
 	for r in _pieces:
 		_add_body(r)
 	for r in SOLIDS:
+		_add_body(r)
+	for r in HEDGE:
 		_add_body(r)
 
 
@@ -141,6 +152,7 @@ func _add_body(r: Rect2) -> void:
 func _draw() -> void:
 	draw_rect(Rect2(-300, -300, 2400, 1700), C_EXTERIOR)
 	_ground()
+	_hedge()
 	for f in FLOORS:
 		match f["p"]:
 			"wood": _wood_floor(f["r"])
@@ -174,6 +186,27 @@ func _ground() -> void:
 	for i in 7:
 		draw_line(Vector2(1408, 1040.0 + i * 24.0), Vector2(1516, 1040.0 + i * 24.0),
 			Color("aca392"), 1.5)
+
+
+# Overgrown planting along the path, drawn as clumps so it reads as a hedge
+# you cannot push through rather than a kerb.
+func _hedge() -> void:
+	for r in HEDGE:
+		_fill(Rect2(r.position + Vector2(3, 4), r.size), Mat.SHADOW, 10.0)
+		_fill(r, Mat.shade(Mat.LEAF, 0.78), 10.0)
+		var horiz := r.size.x >= r.size.y
+		var run: float = r.size.x if horiz else r.size.y
+		var n := int(run / 21.0)
+		for i in n:
+			var t: float = (i + 0.5) / n
+			var c := r.get_center()
+			if horiz:
+				c.x = lerpf(r.position.x, r.end.x, t)
+			else:
+				c.y = lerpf(r.position.y, r.end.y, t)
+			var s: float = 0.88 + 0.3 * Mat.noise(i, r.position.x)
+			draw_circle(c, 14.0, Mat.shade(Mat.LEAF, s))
+			draw_circle(c + Vector2(-3, -3), 7.0, Mat.shade(Mat.LEAF, s * 1.18))
 
 
 func _wood_floor(r: Rect2) -> void:
