@@ -31,7 +31,7 @@ zoom = Vector2(2.8, 2.8)
 limit_left = 30
 limit_top = 30
 limit_right = 1690
-limit_bottom = 1050
+limit_bottom = 1250
 position_smoothing_enabled = true
 position_smoothing_speed = 8.0
 
