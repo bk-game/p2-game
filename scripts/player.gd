@@ -38,8 +38,8 @@ func _physics_process(delta: float) -> void:
 	_saw(delta)
 
 
-# Cutting a limb is a hold, not a tap: five seconds of sawing with the cracks
-# opening up as you go. Let go, or turn away, and it closes back up.
+# Cutting a limb is a hold, not a tap: a couple of seconds of sawing with the
+# cracks opening up as you go. Let go, or turn away, and it closes back up.
 func _saw(delta: float) -> void:
 	var progress := 0.0
 	var holding := Input.is_key_pressed(KEY_E)
