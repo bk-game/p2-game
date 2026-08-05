@@ -9,7 +9,7 @@ const C_SKIN   := Color("e8b98f")
 const C_HAIR   := Color("4a3626")
 const C_EDGE   := Color("2b2b30")
 
-const REACH := 78.0
+const REACH := 48.0
 
 var facing := -PI / 2.0
 var _target: Node2D = null
