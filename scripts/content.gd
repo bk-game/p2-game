@@ -11,29 +11,29 @@ const ITEMS := {
 	"log_1_2": {
 		"name": "Logbook (pages 1-2)", "kind": "doc", "glyph": "clipboard",
 		"tint": "c8b78d", "pos": Vector2(1500, 950), "story": true,
-		"body": "9/10 — A sapling started growing in my house. It must have clung "
+		"body": "10/9 — A sapling started growing in my house. It must have clung "
 			+ "to my clothes after cutting down some trees. I tried to remove it, but "
 			+ "it seems quite stuck. It is pretty small though, so I don't notice it much.\n\n"
-			+ "9/13 — The tree has already grown to the roof. What did they do to these "
+			+ "13/9 — The tree has already grown to the roof. What did they do to these "
 			+ "trees? I am going to try to cut it down again using my axe. Hopefully this works.",
-		"note": "Joe Wood lived here. Something started growing indoors on 9/10.",
+		"note": "Joe Wood lived here. Something started growing indoors on 10/9.",
 	},
 	"log_3": {
 		"name": "Logbook (page 3)", "kind": "doc", "glyph": "paper",
 		"tint": "c8b78d", "pos": Vector2(566, 690), "story": true,
-		"body": "9/14 — The tree is regrowing, cutting it down isn't working well. And "
+		"body": "14/9 — The tree is regrowing, cutting it down isn't working well. And "
 			+ "its network of roots is too dense for me to cut through. But there are some "
 			+ "weaker parts of the tree. The weaker parts appear to be a LIGHTER SHADE OF "
 			+ "BROWN. These weaker parts can still be cut, just remember they'll regrow in "
-			+ "a day or so.\n\n9/15 — I'm going to try to put water on it. Let's hope this "
-			+ "goes well.",
+			+ "a day or so.\n\n15/9 — I’m going to try to put water on it. Then maybe" 
+			+ " some  other chemicals? I’m running out of ideas.  ",
 		"note": "Pale brown limbs are weak enough to cut through by hand.",
 		"grants": "knows_weak",
 	},
 	"log_formula": {
 		"name": "Logbook (page 4, torn)", "kind": "doc", "glyph": "paper",
 		"tint": "bfae84", "pos": Vector2(824, 214), "story": true,
-		"body": "9/18 — I've been experimenting with different chemicals, I think I've "
+		"body": "18/9 — I've been experimenting with different chemicals, I think I've "
 			+ "found the correct formula to weaken the tree. In case I forget it's: two "
 			+ "cups of NO RUST BUILDUP, one cup of BLEACH, and two and a half cups of the "
 			+ "stuff inside the FIRE EXTINGUISHER.\n\n"
@@ -52,9 +52,9 @@ const ITEMS := {
 	"log_5_6": {
 		"name": "Logbook (final pages)", "kind": "doc", "glyph": "paper",
 		"tint": "c8b78d", "pos": Vector2(1000, 300), "story": true,
-		"body": "9/19 — The formula has been working, but I think something is wrong with "
+		"body": "19/9 — The formula has been working, but I think something is wrong with "
 			+ "me. My skin has a greenish tint to it now and I find myself slacking on the "
-			+ "job.\n\n9/20 — I think the tree's killing me, I'm not sure if this log will "
+			+ "job.\n\n20/9 — I think the tree's killing me, I'm not sure if this log will "
 			+ "help. Maybe it can save people after me though.",
 		"note": "Joe knew it was killing him. He kept writing anyway, for whoever came next.",
 	},
@@ -82,19 +82,45 @@ const ITEMS := {
 	"letter_doctor": {
 		"name": "Letter from the ER", "kind": "doc", "glyph": "letter",
 		"tint": "eae4d6", "pos": Vector2(812, 902), "story": true,
-		"body": "Dear Joe Wood,\n\nI am a doctor at the ER. I am sorry to inform you that "
-			+ "your husband, Christopher, and your daughter, Eleanor, arrived here after a "
-			+ "terrible car accident. Someone ran a red light and T-boned the car. We did "
-			+ "our best, but we couldn't save them. I am so sorry for your loss.\n\n"
-			+ "A payment of $60,000 has been charged to your card because of the medical "
-			+ "resources we used in our attempt to save them. I hope you do well.\n\n— Dr. Neal",
-		"note": "The hospital billed him $60,000 for failing to save his family.",
+		 "body": "I am Dr. Neal, the Emergency Care Physician tasked with treating "
+		+ "\nyour husband, Mr. Christopher Wood, and your daughter, Ms. Eleanor Wood at "
+		+ "\nthe North Cayus Emergency Room. I am sorry to inform you that even though "
+		+ "\nwe used all our resources, they both weren’t able to make it, their injuries "
+		+ "\nwere too severe. I have written to express my sorrow at the suddenness of "
+		+ "\ntheir deaths."
+		+ "\nSincerely,"
+		+ "\nDr. Neal"
 	},
 	"death_certs": {
 		"name": "Death certificates", "kind": "doc", "glyph": "paper",
 		"tint": "e6e2d2", "pos": Vector2(146, 158), "story": true,
 		"body": "Two certificates, kept flat and clean in a folder.\n\n"
-			+ "CHRISTOPHER WOOD.\nELEANOR WOOD.\n\nSame date on both.",
+			+ "Name: Christopher Wood 
+			\nPlace of Death: North Cayus Emergency Room
+			\nUsual Residence: 1053 Meadow Lane. 
+			\nCity: North Cayus
+			\nFull Name of Hospital Institution: North Cayus Emergency Room
+			\nAddress: 0001 Emergency Lane
+			\nDate of Birth: 15/10/2042
+			\nBirthplace: South Cayus
+			\nCause of Death: Collapsed lungs and severed arteries
+			\nName of Cemetery or Crematory: North Cayus Crematorium
+			\nDate: 26/9/2071
+			\nDoctor / Examiner: Dr. Neal
+			\nDate: 25/9/2071" 
+			+ "Name: Eleanor Wood
+			\nPlace of Death: North Cayus Emergency Room
+			\nUsual Residence: 1053 Meadow Lane. 
+			\nCity: North Cayus
+			\nFull Name of Hospital Institution: North Cayus Emergency Room
+			\nAddress: 0001 Emergency Lane
+			\nDate of Birth: 03/05/2061
+			\nBirthplace: North Cayus
+			\nCause of Death: Severed arteries and a severe concussion
+			\nName of Cemetery or Crematory: North Cayus Crematorium
+			\nDate: 26/9/2071
+			\nDoctor / Examiner: Dr. Neal
+			\nDate: 25/9/2071",
 		"note": "He kept their death certificates down here, filed and flattened.",
 	},
 	"marriage_photo": {
