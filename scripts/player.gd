@@ -9,6 +9,7 @@ const C_SKIN   := Color("e8b98f")
 const C_HAIR   := Color("4a3626")
 const C_EDGE   := Color("2b2b30")
 
+const REACH := 78.0    #needs to be tweaked 
 const REACH := 34.0
 const ARC   := PI * 0.4   # half-angle of the cone you have to be turned into
 const TOUCH := 16.0       # closer than this, whatever you are stood on counts
