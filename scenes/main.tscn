@@ -1,32 +1,32 @@
-[gd_scene load_steps=8 format=3 uid="uid://d2m10jhgyw33"]
+[gd_scene format=3 uid="uid://d2m10jhgyw33"]
 
-[ext_resource type="Script" path="res://scripts/floorplan.gd" id="1_plan"]
-[ext_resource type="Script" path="res://scripts/player.gd" id="2_player"]
-[ext_resource type="Script" path="res://scripts/tree_symbol.gd" id="3_tree"]
-[ext_resource type="Script" path="res://scripts/entities.gd" id="4_ent"]
-[ext_resource type="Script" path="res://scripts/hud.gd" id="5_hud"]
-[ext_resource type="Script" path="res://scripts/light.gd" id="6_light"]
+[ext_resource type="Script" uid="uid://bog5vcenljvv1" path="res://scripts/floorplan.gd" id="1_plan"]
+[ext_resource type="Script" uid="uid://x83ct28q3dvo" path="res://scripts/player.gd" id="2_player"]
+[ext_resource type="Script" uid="uid://cl1vt75be8n66" path="res://scripts/tree_symbol.gd" id="3_tree"]
+[ext_resource type="Script" uid="uid://cg7ins8n08q3" path="res://scripts/entities.gd" id="4_ent"]
+[ext_resource type="Script" uid="uid://cppro1v45p4dq" path="res://scripts/hud.gd" id="5_hud"]
+[ext_resource type="Script" uid="uid://ceccahim5pxwt" path="res://scripts/light.gd" id="6_light"]
 
 [sub_resource type="CircleShape2D" id="PlayerShape"]
 radius = 14.0
 
-[node name="Main" type="Node2D"]
+[node name="Main" type="Node2D" unique_id=950287816]
 
-[node name="FloorPlan" type="Node2D" parent="."]
+[node name="FloorPlan" type="Node2D" parent="." unique_id=125105328]
 script = ExtResource("1_plan")
 
-[node name="Entities" type="Node2D" parent="."]
+[node name="Entities" type="Node2D" parent="." unique_id=535591078]
 script = ExtResource("4_ent")
 
-[node name="Player" type="CharacterBody2D" parent="."]
-position = Vector2(1462, 935)
+[node name="Player" type="CharacterBody2D" parent="." unique_id=647522577]
 z_index = 50
+position = Vector2(1462, 935)
 script = ExtResource("2_player")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player" unique_id=1179053806]
 shape = SubResource("PlayerShape")
 
-[node name="Camera2D" type="Camera2D" parent="Player"]
+[node name="Camera2D" type="Camera2D" parent="Player" unique_id=1646002957]
 zoom = Vector2(2.8, 2.8)
 limit_left = 30
 limit_top = 30
@@ -35,18 +35,19 @@ limit_bottom = 1050
 position_smoothing_enabled = true
 position_smoothing_speed = 8.0
 
-[node name="TreeSymbol" type="Node2D" parent="."]
-position = Vector2(555, 812)
+[node name="TreeSymbol" type="Node2D" parent="." unique_id=710634266]
 z_index = 45
+position = Vector2(555, 812)
 script = ExtResource("3_tree")
 
-[node name="Light" type="Node2D" parent="." groups=["light"]]
+[node name="Light" type="Node2D" parent="." unique_id=598402890 groups=["light"]]
 z_index = 200
 script = ExtResource("6_light")
 
-[node name="UI" type="CanvasLayer" parent="."]
+[node name="UI" type="CanvasLayer" parent="." unique_id=1782194600]
 
-[node name="Hud" type="Control" parent="UI" groups=["hud"]]
+[node name="Hud" type="Control" parent="UI" unique_id=1715633226 groups=["hud"]]
+layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
