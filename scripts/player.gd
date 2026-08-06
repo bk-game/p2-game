@@ -10,6 +10,9 @@ const C_HAIR   := Color("4a3626")
 const C_EDGE   := Color("2b2b30")
 
 const REACH := 78.0    #needs to be tweaked 
+const REACH := 34.0
+const ARC   := PI * 0.4   # half-angle of the cone you have to be turned into
+const TOUCH := 16.0       # closer than this, whatever you are stood on counts
 
 var facing := -PI / 2.0
 var _target: Node2D = null
@@ -25,7 +28,7 @@ func _physics_process(delta: float) -> void:
 	if _hud != null and _hud.blocking():
 		velocity = Vector2.ZERO
 		return
-	var dir := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+	var dir := Input.get_vector("left", "right", "up", "down")
 	velocity = dir * speed
 	move_and_slide()
 	if dir != Vector2.ZERO:
@@ -36,8 +39,8 @@ func _physics_process(delta: float) -> void:
 	_saw(delta)
 
 
-# Cutting a limb is a hold, not a tap: five seconds of sawing with the cracks
-# opening up as you go. Let go, or walk off, and it closes back up.
+# Cutting a limb is a hold, not a tap: a couple of seconds of sawing with the
+# cracks opening up as you go. Let go, or turn away, and it closes back up.
 func _saw(delta: float) -> void:
 	var progress := 0.0
 	var holding := Input.is_key_pressed(KEY_E)
@@ -52,7 +55,8 @@ func _saw(delta: float) -> void:
 		_hud.set_progress(progress)
 
 
-# Nearest interactable within reach drives the on-screen prompt.
+# Nearest interactable within reach, and in front of you, drives the
+# on-screen prompt.
 func _scan() -> void:
 	# Nearest wins, but small things you came for get a head start over
 	# scenery, so an item lying against a limb is picked up rather than
@@ -66,6 +70,11 @@ func _scan() -> void:
 			else (n as Node2D).global_position
 		var d := global_position.distance_to(at)
 		if d >= REACH:
+			continue
+		# You have to be turned towards a thing to work on it. Anything you
+		# are all but standing on is exempt: which way you last walked says
+		# nothing about an item under your feet.
+		if d > TOUCH and absf(angle_difference(facing, (at - global_position).angle())) > ARC:
 			continue
 		var score: float = d - (n.bias() if n.has_method("bias") else 0.0)
 		if score < best_score:

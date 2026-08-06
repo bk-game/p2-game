@@ -5,6 +5,7 @@ extends Node2D
 
 const PR := 14.0   # player radius
 const CELL := 6.0
+const REACH := 34.0   # must match player.gd
 
 var FP
 var _walls: Array[Rect2] = []
@@ -55,7 +56,7 @@ func _stage(label: String, strong_ok: bool, cleared: Array, targets: Array) -> i
 # A target counts as reachable if open floor exists within arm's length of it.
 func _near(reach: Dictionary, p: Vector2) -> bool:
 	for c in reach:
-		if (Vector2(c.x, c.y) * CELL).distance_to(p) < 74.0:
+		if (Vector2(c.x, c.y) * CELL).distance_to(p) < REACH:
 			return true
 	return false
 
