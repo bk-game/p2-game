@@ -23,6 +23,7 @@ var _prompt := ""
 var _cups := {"norust": 0.0, "bleach": 0.0, "exfluid": 0.0, "water": 0.0}
 var _sel := 0
 var _mix_msg := ""
+var _at_sink := false
 var _progress := 0.0
 
 
@@ -31,7 +32,7 @@ func _ready() -> void:
 	Game.toast.connect(_on_toast)
 	Game.inventory_changed.connect(func(): queue_redraw())
 	Game.notes_changed.connect(func(): queue_redraw())
-	Game.open_bench.connect(_open_bench)
+	Game.open_sink.connect(_open_sink)
 
 
 func blocking() -> bool:
@@ -63,8 +64,12 @@ func _on_toast(text: String) -> void:
 	queue_redraw()
 
 
-func _open_bench() -> void:
+# Opened at the sink, so the chemicals can actually be mixed. Opening the bag
+# with [I] anywhere else only lets you look through it.
+func _open_sink() -> void:
 	mode = Mode.BAG
+	_at_sink = true
+	_mix_msg = ""
 	queue_redraw()
 
 
@@ -102,6 +107,7 @@ func _unhandled_key_input(e: InputEvent) -> void:
 		Mode.PLAY:
 			if k == KEY_I:
 				mode = Mode.BAG
+				_at_sink = false
 				_sel = 0
 			elif k == KEY_C:
 				var lamp := get_tree().get_first_node_in_group("light")
@@ -152,6 +158,10 @@ func _bag_key(k: int) -> void:
 				_body = it["body"]
 				mode = Mode.READ
 		KEY_M:
+			if not _at_sink:
+				_mix_msg = "Not here. Joe mixed this in the bathroom sink — you " \
+					+ "need a basin and a tap."
+				return
 			_mix_msg = Game.mix(_cups)
 			if Game.flag("made_solution"):
 				for c in _cups:
@@ -250,7 +260,8 @@ func _draw_bag(f: Font, vp: Vector2) -> void:
 	draw_rect(Rect2(Vector2.ZERO, vp), Color(0, 0, 0, 0.55))
 	var r := _centre(vp, 980, 700)
 	_panel(r)
-	_head(f, r, "BAG", "carrying %d" % Game.inventory.size())
+	_head(f, r, "BAG", "carrying %d%s" % [Game.inventory.size(),
+		"    at the bathroom sink" if _at_sink else ""])
 
 	var bag := _bag_order()
 	var mixable := 0
@@ -274,11 +285,11 @@ func _draw_bag(f: Font, vp: Vector2) -> void:
 		if _cups[id] > 0.0:
 			jar.append("%.1f %s" % [_cups[id], Content.ITEMS[id]["name"]])
 	draw_string(f, Vector2(r.position.x + _n(38), r.end.y - _n(90)),
-		"JAR:  " + (", ".join(jar) if jar.size() > 0 else "empty"),
+		"IN THE BASIN:  " + (", ".join(jar) if jar.size() > 0 else "empty"),
 		HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(76), _fs(19),
 		INK if jar.size() > 0 else DIM)
 	draw_string(f, Vector2(r.position.x + _n(38), r.end.y - _n(60)),
-		"up/down select    left/right pour a chemical    [M] mix    [E] read    [I] close",
+		_bag_controls(),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(16), DIM)
 	if _mix_msg != "":
 		draw_multiline_string(f, Vector2(r.position.x + _n(38), r.end.y - _n(32)),
@@ -325,6 +336,13 @@ func _bag_row(f: Font, id: String, idx: int, x: float, y: float, w: float) -> vo
 		if idx == _sel:
 			draw_string(f, Vector2(x + w - _n(120), y), "< pour >",
 				HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(17), DIM)
+
+
+# The controls line says where mixing is possible, since [M] does nothing
+# unless the bag was opened at the sink.
+func _bag_controls() -> String:
+	return "up/down select    left/right pour a chemical    %s    [E] read    [I] close" \
+		% ("[M] mix" if _at_sink else "[M] mix — only at the bathroom sink")
 
 
 # What a thing is actually for. Carrying a fire extinguisher tells you

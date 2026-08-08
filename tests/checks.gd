@@ -41,7 +41,7 @@ func _ready() -> void:
 	fails += _expect("wrong ratio rejected",
 		Game.mix({"norust": 1.0, "bleach": 1.0, "exfluid": 2.5}).contains("curdles"))
 	fails += _expect("still no charges", Game.solution_charges == 0)
-	fails += _expect("empty jar rejected", Game.mix({}).contains("actually put something"))
+	fails += _expect("empty basin rejected", Game.mix({}).contains("actually pour something"))
 	fails += _expect("correct formula works",
 		Game.mix({"norust": 2.0, "bleach": 1.0, "exfluid": 2.5, "water": 0.0}).contains("amber"))
 	fails += _expect("three charges", Game.solution_charges == 3)

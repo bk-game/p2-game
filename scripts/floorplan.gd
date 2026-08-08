@@ -474,13 +474,22 @@ func _kitchen() -> void:
 
 # ── Bathroom ─────────────────────────────────────────────────────────────
 func _bathroom() -> void:
+	# The sink: the one basin in the house, and the only place the chemicals
+	# can be mixed, so it is drawn to be found.
 	_obj(Rect2(958, 88, 64, 60), Mat.OAK, 3.0)          # vanity unit
-	_fill(Rect2(958, 88, 64, 52), Mat.PORCELAIN, 3.0)
-	_oval(Vector2(990, 118), 21, 16, Mat.PORC_SH)
-	_oval(Vector2(990, 118), 14, 10, Mat.shade(Mat.PORC_SH, 0.94))
-	draw_line(Vector2(990, 94), Vector2(990, 104), Mat.STEEL, 5.0)
-	draw_circle(Vector2(980, 95), 3.0, Mat.STEEL)
-	draw_circle(Vector2(1000, 95), 3.0, Mat.STEEL)
+	_fill(Rect2(958, 88, 64, 54), Mat.PORCELAIN, 4.0)   # counter
+	_fill(Rect2(958, 88, 64, 9), Mat.PORC_SH, 3.0)      # splashback
+	_oval(Vector2(990, 119), 25, 19, Mat.shade(Mat.PORC_SH, 0.97))
+	_oval(Vector2(990, 119), 20, 15, Mat.GLASS)         # standing water
+	draw_arc(Vector2(990, 119), 20.0, PI * 0.55, PI * 1.25, 18,
+		Color(1, 1, 1, 0.55), 2.0)                      # shine on the water
+	draw_circle(Vector2(990, 119), 3.5, Mat.STEEL_DK)   # drain
+	draw_line(Vector2(990, 92), Vector2(990, 106), Mat.STEEL, 6.0)   # spout
+	draw_line(Vector2(990, 106), Vector2(990, 110), Mat.STEEL_DK, 4.0)
+	for tap in [Vector2(974, 95), Vector2(1006, 95)]:
+		draw_circle(tap, 5.0, Mat.STEEL)
+		draw_line(tap - Vector2(4, 0), tap + Vector2(4, 0), Mat.STEEL_DK, 2.0)
+	_stroke(Rect2(958, 88, 64, 54), Mat.shade(Mat.PORC_SH, 0.7), 2.0, 4.0)
 
 	_obj(Rect2(1112, 166, 46, 20), Mat.PORCELAIN, 4.0)  # cistern
 	_oval(Vector2(1135, 152), 20, 23, Mat.PORCELAIN)    # pan

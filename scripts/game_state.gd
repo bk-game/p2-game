@@ -7,7 +7,7 @@ signal inventory_changed
 signal notice(title: String, body: String)
 signal toast(text: String)
 signal notes_changed
-signal open_bench
+signal open_sink
 
 var inventory: Array[String] = []
 var notes: Array[String] = []
@@ -63,13 +63,13 @@ func mix(cups: Dictionary) -> String:
 	for id in cups:
 		total += cups[id]
 	if total <= 0.0:
-		return "You need to actually put something in the jar."
+		return "You need to actually pour something into the basin."
 
 	if cups.get("water", 0.0) > 0.0:
 		Sfx.play("mix_bad", -6.0)
 		add_note("Adding water to the mixture makes the tree grow faster, not slower.")
-		return "The mixture goes warm and green, and the shoots on the bench visibly " \
-			+ "lengthen. Water feeds it. Tip it out and start again."
+		return "The mixture goes warm and green, and the shoots around the basin " \
+			+ "visibly lengthen. Water feeds it. Rinse it out and start again."
 
 	for id in Content.FORMULA:
 		if not is_equal_approx(cups.get(id, 0.0), Content.FORMULA[id]):
@@ -82,7 +82,8 @@ func mix(cups: Dictionary) -> String:
 	set_flag("made_solution")
 	add_note("Two no-rust, one bleach, two and a half extinguisher fluid, no water — "
 		+ "this is what weakens the tree.")
-	return "The jar clears to a thin amber liquid that smells like a swimming pool. " \
+	return "The water in the basin clears to a thin amber liquid that smells like " \
+		+ "a swimming pool. " \
 		+ "Three doses. Pour it on a dark limb to make it brittle."
 
 

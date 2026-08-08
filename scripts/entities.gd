@@ -44,9 +44,12 @@ func _ready() -> void:
 		add_child(box)
 	var body := Station.new()
 	body.position = Content.BODY_POS
-	body.kind = "body"
 	body.z_index = 40
 	add_child(body)
+	var sink := Sink.new()
+	sink.position = Content.SINK
+	sink.z_index = 40
+	add_child(sink)
 
 
 # ══ Pickup ═══════════════════════════════════════════════════════════════
@@ -386,9 +389,45 @@ class Fume extends Node2D:
 		draw_arc(Vector2.ZERO, radius * 0.72, 0, TAU, 40, FUME_EDGE, 2.0)
 
 
-# ══ Station: mixing bench and Joe's body ═════════════════════════════════
+# ══ Sink: the one place the chemicals can be mixed ═══════════════════════
+class Sink extends Node2D:
+	# The basin sits back in the vanity and the strip of floor in front of it
+	# is barely a stride wide, so it prompts from cupboard range rather than
+	# arm's length.
+	const SINK_REACH := 62.0
+
+	var _t := 0.0
+
+	func _ready() -> void:
+		add_to_group("act")
+
+	func bias() -> float:
+		return 45.0
+
+	func reach() -> float:
+		return SINK_REACH
+
+	func prompt() -> String:
+		return "Mix the chemicals in the sink"
+
+	func act() -> void:
+		Game.open_sink.emit()
+
+	func _process(delta: float) -> void:
+		_t += delta
+		queue_redraw()
+
+	func _draw() -> void:
+		# a slow shine on the water, so the basin reads as somewhere to use
+		var pulse: float = 0.35 + 0.15 * sin(_t * 2.0)
+		draw_arc(Vector2(0, -32), 22.0, 0, TAU, 30, Color(1, 0.95, 0.7, pulse), 2.0)
+		draw_arc(Vector2(0, -32), 13.0, PI * 0.15, PI * 0.85, 16,
+			Color(1, 1, 1, pulse * 0.7), 2.0)
+
+
+# ══ Station: Joe's body ══════════════════════════════════════════════════
 class Station extends Node2D:
-	var kind := "bench"
+	var kind := "body"
 	var examined := false
 
 	func _ready() -> void:
@@ -398,14 +437,9 @@ class Station extends Node2D:
 		return 45.0
 
 	func prompt() -> String:
-		if kind == "bench":
-			return "Mix chemicals at the bench"
 		return "Examine the body" if not examined else "Take the bunny from his hands"
 
 	func act() -> void:
-		if kind == "bench":
-			Game.open_bench.emit()
-			return
 		if not examined:
 			examined = true
 			Game.add_note("Joe Wood died here. A tree is growing out through his chest.")
@@ -421,10 +455,6 @@ class Station extends Node2D:
 			queue_redraw()
 
 	func _draw() -> void:
-		if kind == "bench":
-			draw_arc(Vector2.ZERO, 20.0, 0, TAU, 26, Color(1, 0.95, 0.7, 0.45), 2.0)
-			draw_circle(Vector2.ZERO, 7.0, Color("c69a63"))
-			return
 		# Joe: flannel torso, boots, and the trunk coming through him
 		draw_circle(Vector2(3, 5), 34.0, Color(0, 0, 0, 0.18))
 		draw_colored_polygon(Mat.rr(Rect2(-26, -22, 52, 46), 12.0), Color("a8352c"))
