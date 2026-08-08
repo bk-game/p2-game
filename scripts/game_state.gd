@@ -7,14 +7,57 @@ signal inventory_changed
 signal notice(title: String, body: String)
 signal toast(text: String)
 signal notes_changed
-signal open_bench
+signal open_sink
 
 var inventory: Array[String] = []
 var notes: Array[String] = []
 var flags := {}
 
 var solution_charges := 0
-var extinguisher_charges := 2
+var extinguisher_charges := 3
+
+# ── Breathing the green ──────────────────────────────────────────────────
+# Standing in a cloud does not throw you out at once: the air turns green
+# around you and you have FOG_LIMIT seconds to get back out of it. Every
+# cloud you are standing in reports itself each frame and the count is kept
+# here, so two overlapping clouds still choke you at one rate.
+const FOG_LIMIT := 2.0
+const FOG_CLEAR := 0.8   # how fast it washes out again, relative to real time
+
+var fog := 0.0
+var _fog_touched := false
+
+
+func fog_touch() -> void:
+	_fog_touched = true
+
+
+func fog_ratio() -> float:
+	return fog / FOG_LIMIT
+
+
+func _process(delta: float) -> void:
+	if _fog_touched:
+		if fog <= 0.0:
+			Sfx.play("choke", -14.0, 1.4)
+			toast.emit("Green air. It burns going in — get out of it.")
+		fog += delta
+		if fog >= FOG_LIMIT:
+			_choke_out()
+	else:
+		fog = maxf(fog - delta * FOG_CLEAR, 0.0)
+	_fog_touched = false
+
+
+# Out of time: you come to on the doorstep.
+func _choke_out() -> void:
+	fog = 0.0
+	var p := get_tree().get_first_node_in_group("player")
+	if p != null:
+		p.global_position = Content.ENTRANCE
+	Sfx.play("choke", -5.0)
+	toast.emit("Your throat closes and everything goes white. You come to on the "
+		+ "doorstep. You need clean air to go in there.")
 
 
 func has_item(id: String) -> bool:
@@ -63,13 +106,13 @@ func mix(cups: Dictionary) -> String:
 	for id in cups:
 		total += cups[id]
 	if total <= 0.0:
-		return "You need to actually put something in the jar."
+		return "You need to actually pour something into the basin."
 
 	if cups.get("water", 0.0) > 0.0:
 		Sfx.play("mix_bad", -6.0)
 		add_note("Adding water to the mixture makes the tree grow faster, not slower.")
-		return "The mixture goes warm and green, and the shoots on the bench visibly " \
-			+ "lengthen. Water feeds it. Tip it out and start again."
+		return "The mixture goes warm and green, and the shoots around the basin " \
+			+ "visibly lengthen. Water feeds it. Rinse it out and start again."
 
 	for id in Content.FORMULA:
 		if not is_equal_approx(cups.get(id, 0.0), Content.FORMULA[id]):
@@ -82,7 +125,8 @@ func mix(cups: Dictionary) -> String:
 	set_flag("made_solution")
 	add_note("Two no-rust, one bleach, two and a half extinguisher fluid, no water — "
 		+ "this is what weakens the tree.")
-	return "The jar clears to a thin amber liquid that smells like a swimming pool. " \
+	return "The water in the basin clears to a thin amber liquid that smells like " \
+		+ "a swimming pool. " \
 		+ "Three doses. Pour it on a dark limb to make it brittle."
 
 
@@ -109,8 +153,14 @@ func report() -> String:
 	var pay := found * 250
 	var s := "FIELD REPORT — SUBJECT: JOE WOOD\n\n"
 	s += "Recovered %d of %d significant items.\n" % [found, total]
-	if has_item("bunny"):
-		s += "Body located and identified.\n"
+	# Finding him is what changes this line. Taking the rabbit out of his
+	# hands is a second thing, reported separately.
+	if flag("found_body"):
+		s += "Body located and identified: Joe Wood.\n"
+		if has_item("bunny"):
+			s += "Personal effect recovered from his hands.\n"
+		else:
+			s += "His hands are still closed around something. Left in place.\n"
 	else:
 		s += "Body NOT recovered.\n"
 	s += "\nAssessed payment: $%d\n\n" % pay

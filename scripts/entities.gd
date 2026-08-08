@@ -9,8 +9,11 @@ const BARK_LT   := Color("6d4d2e")
 const WEAK      := Color("a97c4a")
 const WEAK_LT   := Color("c69a63")
 const BRITTLE   := Color("8d8267")
-const FUME      := Color(0.42, 0.72, 0.36, 0.34)
-const FUME_EDGE := Color(0.35, 0.66, 0.30, 0.5)
+# Sickly yellow-green, nothing like the blue-green of the tree, and hazy at
+# the edge rather than made of solid lobes.
+const FUME      := Color(0.80, 0.87, 0.20, 0.20)
+const FUME_CORE := Color(0.86, 0.90, 0.32, 0.26)
+const FUME_EDGE := Color(0.72, 0.78, 0.12, 0.55)
 
 
 func _ready() -> void:
@@ -44,9 +47,12 @@ func _ready() -> void:
 		add_child(box)
 	var body := Station.new()
 	body.position = Content.BODY_POS
-	body.kind = "body"
 	body.z_index = 40
 	add_child(body)
+	var sink := Sink.new()
+	sink.position = Content.SINK
+	sink.z_index = 40
+	add_child(sink)
 
 
 # ══ Pickup ═══════════════════════════════════════════════════════════════
@@ -98,11 +104,6 @@ class Pickup extends Node2D:
 			"extinguisher":
 				_shape(Rect2(-9, -12, 18, 28), tint, 6.0)
 				_shape(Rect2(-4, -19, 8, 8), Color("2c2c31"), 2.0)
-			"mask":
-				draw_circle(Vector2.ZERO, 14.0, tint)
-				draw_circle(Vector2(-5, -3), 5.0, Color("cfe0e4"))
-				draw_circle(Vector2(5, -3), 5.0, Color("cfe0e4"))
-				draw_circle(Vector2(0, 8), 6.0, Mat.shade(tint, 0.7))
 		draw_arc(Vector2.ZERO, 21.0, 0, TAU, 28, Color(1, 0.95, 0.7, 0.5), 2.0)
 
 	func _shape(r: Rect2, c: Color, rad: float) -> void:
@@ -123,11 +124,14 @@ class Branch extends StaticBody2D:
 	const CUT_TIME := 2.0
 	const CHOP_GAP := 0.55
 
+	const STEPS := 20       # samples along the run, for the outline and grain
+
 	var strong := true
 	var brittle := false
 	var length := 180.0
 	var thick := 30.0
 	var cut := 0.0          # seconds of sawing done so far
+	var seed_v := 0.0       # fixed per root, so its shape never shifts
 	var _chop := 0.0
 
 	func bias() -> float:
@@ -139,6 +143,7 @@ class Branch extends StaticBody2D:
 		length = d["len"]
 		thick = d["thick"]
 		strong = d["strong"]
+		seed_v = Mat.noise(d["pos"].x, d["pos"].y) * TAU
 
 	func _ready() -> void:
 		add_to_group("act")
@@ -209,52 +214,112 @@ class Branch extends StaticBody2D:
 				+ "these with his mixture. Open your bag [I], measure out the chemicals, "
 				+ "then press [M] to mix. Pour a dose on this limb to make it brittle.")
 
+	# ── Shape ────────────────────────────────────────────────────────────
+	# A root is not a dowel: it wanders off the straight line, swells at the
+	# knuckles and thins towards the tip. The collision shape stays the plain
+	# rectangle, so the wander and taper are kept small enough that what you
+	# walk into is what you see.
+	func _mid(t: float) -> Vector2:
+		return Vector2(lerpf(-length * 0.5, length * 0.5, t),
+			sin(t * 2.7 + seed_v) * thick * 0.13)
+
+	func _half(t: float) -> float:
+		var taper: float = 1.0 - 0.24 * t                        # thins to the tip
+		var knuckle: float = 1.0 + 0.12 * sin(t * 8.5 + seed_v * 1.7)
+		var cap: float = sqrt(clampf(1.0 - pow(2.0 * t - 1.0, 12.0), 0.0, 1.0))
+		return thick * 0.5 * taper * knuckle * cap
+
+	func _outline() -> PackedVector2Array:
+		var pts := PackedVector2Array()
+		for i in STEPS + 1:
+			var t := float(i) / STEPS
+			pts.append(_mid(t) + Vector2(0, -_half(t)))
+		for i in STEPS + 1:
+			var t := 1.0 - float(i) / STEPS
+			pts.append(_mid(t) + Vector2(0, _half(t)))
+		return pts
+
+	# A line running the length of the root at a fraction of its half-width,
+	# for bark ridges and the highlight along the top.
+	func _ridge(off: float) -> PackedVector2Array:
+		var pts := PackedVector2Array()
+		for i in range(2, STEPS - 1):
+			var t := float(i) / STEPS
+			pts.append(_mid(t) + Vector2(0, _half(t) * off))
+		return pts
+
 	func _draw() -> void:
-		var r := Rect2(-length * 0.5, -thick * 0.5, length, thick)
 		var base := EntityColors.pick(strong, brittle)
-		draw_colored_polygon(Mat.rr(r.grow(2.0), thick * 0.5), Color(0, 0, 0, 0.15))
-		draw_colored_polygon(Mat.rr(r, thick * 0.5), base[0])
-		var edge := Mat.rr(r, thick * 0.5)      # outline, or pale limbs vanish
-		edge.append(edge[0])                    # into the wood floor
-		draw_polyline(edge, Mat.shade(base[0], 0.55), 2.5)
-		for i in 3:  # bark grain
-			var y: float = r.position.y + thick * (0.28 + 0.22 * i)
-			draw_line(Vector2(r.position.x + 8, y), Vector2(r.end.x - 8, y),
-				base[1], 2.0)
+		var body := _outline()
+
+		for i in 3:   # fine roots fanning off, under the main run
+			_rootlet(0.24 + 0.26 * i, 1.0 if i % 2 == 0 else -1.0, base[0])
+
+		var shadow := PackedVector2Array()
+		for p in body:
+			shadow.append(p + Vector2(2, 3))
+		draw_colored_polygon(shadow, Color(0, 0, 0, 0.15))
+		draw_colored_polygon(body, base[0])
+
+		draw_polyline(_ridge(-0.62), Mat.shade(base[1], 1.06), 2.0)   # lit edge
+		draw_polyline(_ridge(-0.12), base[1], 2.0)                    # bark ridges
+		draw_polyline(_ridge(0.34), Mat.shade(base[0], 0.82), 2.0)
+		draw_polyline(_ridge(0.74), Mat.shade(base[0], 0.66), 2.0)    # shaded edge
+
+		var edge := body
+		edge.append(edge[0])            # outline, or pale roots vanish into the
+		draw_polyline(edge, Mat.shade(base[0], 0.55), 2.0)   # wood floor
+
 		if brittle:
 			for i in 4:
-				var x: float = r.position.x + length * (0.2 + 0.2 * i)
-				draw_line(Vector2(x, r.position.y + 3), Vector2(x + 7, r.end.y - 3),
+				var t: float = 0.2 + 0.2 * i
+				var c := _mid(t)
+				var h := _half(t)
+				draw_line(c + Vector2(-3, -h + 3), c + Vector2(4, h - 3),
 					Color(0.25, 0.22, 0.18, 0.8), 1.5)
 		if cut > 0.0:
-			_draw_cracks(r, cut / CUT_TIME)
+			_draw_cracks(cut / CUT_TIME)
+
+	# One fine root leaving the side of the run and forking once.
+	func _rootlet(t: float, side: float, base: Color) -> void:
+		var from := _mid(t) + Vector2(0, _half(t) * side * 0.7)
+		var run: float = thick * (0.8 + 0.7 * Mat.noise(t * 31.0, seed_v))
+		var d := Vector2(0.45, side).normalized().rotated(
+			(Mat.noise(t * 17.0, seed_v + 3.0) - 0.5) * 0.9)
+		var mid := from + d * run * 0.6
+		var tip := mid + d.rotated(side * 0.5) * run * 0.5
+		var w: float = maxf(thick * 0.17, 2.5)
+		var col := Mat.shade(base, 0.84)
+		draw_line(from, mid, col, w)
+		draw_line(mid, tip, col, w * 0.55)
+		draw_line(mid, mid + d.rotated(-side * 0.7) * run * 0.35, col, w * 0.45)
 
 	# Splits opening across the grain, more of them and deeper as you saw.
-	func _draw_cracks(r: Rect2, p: float) -> void:
+	func _draw_cracks(p: float) -> void:
 		var pale := Color(0.93, 0.88, 0.76, 0.9)
 		var dark := Color(0.09, 0.07, 0.05, 0.85)
 		var count := int(ceil(p * 5.0))
 		for i in count:
 			var seed_i := float(i) * 7.31
-			var cx: float = r.position.x + length * (0.16 + 0.68 * Mat.noise(seed_i, 3.0))
+			var t: float = 0.16 + 0.68 * Mat.noise(seed_i, 3.0)
 			var grow: float = clampf(p * 1.6 - float(i) * 0.18, 0.0, 1.0)
 			if grow <= 0.0:
 				continue
-			var half: float = thick * 0.5 * grow
+			var c := _mid(t)
+			var half: float = _half(t) * grow
 			var pts := PackedVector2Array()
 			var steps := 5
 			for k in steps + 1:
 				var f: float = float(k) / steps
-				var y: float = lerpf(-half, half, f)
 				var jag: float = (Mat.noise(seed_i + k, 1.7) - 0.5) * thick * 0.34 * grow
-				pts.append(Vector2(cx + jag, y))
+				pts.append(c + Vector2(jag, lerpf(-half, half, f)))
 			draw_polyline(pts, dark, maxf(1.5, 3.5 * grow))
 			draw_polyline(pts, pale, maxf(1.0, 1.4 * grow))
-		# the whole limb sags as it gives way
+		# the whole root sags as it gives way
 		if p > 0.55:
 			var open: float = (p - 0.55) / 0.45
-			draw_line(Vector2(r.position.x + 6, 0), Vector2(r.end.x - 6, 0),
-				Color(0.08, 0.06, 0.04, 0.5 * open), 2.0 + 5.0 * open)
+			draw_polyline(_ridge(0.0), Color(0.08, 0.06, 0.04, 0.5 * open),
+				2.0 + 5.0 * open)
 
 
 class EntityColors:
@@ -305,26 +370,72 @@ class Fume extends Node2D:
 		_t += delta
 		queue_redraw()
 		var p := get_tree().get_first_node_in_group("player")
-		if p == null or Game.has_item("gasmask"):
+		if p == null:
 			return
+		# Standing in it only starts the clock; Game counts it down and puts
+		# you on the doorstep if you are still in here when it runs out.
 		if p.global_position.distance_to(global_position) < radius * 0.72:
-			p.global_position = Content.ENTRANCE
-			Sfx.play("choke", -5.0)
-			Game.toast.emit("Your throat closes and everything goes white. You come to "
-				+ "on the doorstep. You need clean air to go in there.")
+			Game.fog_touch()
 
 	func _draw() -> void:
-		for i in 7:
-			var a := TAU * i / 7.0 + _t * 0.25
-			var d := radius * 0.42
-			draw_circle(Vector2(cos(a), sin(a)) * d, radius * 0.6, FUME)
-		draw_circle(Vector2.ZERO, radius * 0.66, FUME)
-		draw_arc(Vector2.ZERO, radius * 0.72, 0, TAU, 40, FUME_EDGE, 2.0)
+		# drifting puffs, thickest in the middle and thinning outwards, so it
+		# reads as something in the air rather than as planting on the floor
+		for ring in 3:
+			var k: float = 0.86 - 0.2 * ring
+			var count := 9 - ring * 2
+			for i in count:
+				var a := TAU * i / count + _t * (0.25 - 0.06 * ring) + ring * 0.7
+				var wob: float = 1.0 + 0.08 * sin(_t * 1.7 + i * 2.1)
+				draw_circle(Vector2(cos(a), sin(a)) * radius * 0.44 * k,
+					radius * 0.34 * k * wob, FUME)
+		draw_circle(Vector2.ZERO, radius * 0.46, FUME_CORE)
+		# a broken outline, so the edge of the cloud is legible without
+		# looking like the hard rim of a bush
+		for i in 16:
+			var a0 := TAU * i / 16.0 + _t * 0.12
+			draw_arc(Vector2.ZERO, radius * 0.72, a0, a0 + TAU / 26.0, 5,
+				FUME_EDGE, 2.5)
 
 
-# ══ Station: mixing bench and Joe's body ═════════════════════════════════
+# ══ Sink: the one place the chemicals can be mixed ═══════════════════════
+class Sink extends Node2D:
+	# The basin sits back in the vanity and the strip of floor in front of it
+	# is barely a stride wide, so it prompts from cupboard range rather than
+	# arm's length.
+	const SINK_REACH := 62.0
+
+	var _t := 0.0
+
+	func _ready() -> void:
+		add_to_group("act")
+
+	func bias() -> float:
+		return 45.0
+
+	func reach() -> float:
+		return SINK_REACH
+
+	func prompt() -> String:
+		return "Mix the chemicals in the sink"
+
+	func act() -> void:
+		Game.open_sink.emit()
+
+	func _process(delta: float) -> void:
+		_t += delta
+		queue_redraw()
+
+	func _draw() -> void:
+		# a slow shine on the water, so the basin reads as somewhere to use
+		var pulse: float = 0.35 + 0.15 * sin(_t * 2.0)
+		draw_arc(Vector2(0, -32), 22.0, 0, TAU, 30, Color(1, 0.95, 0.7, pulse), 2.0)
+		draw_arc(Vector2(0, -32), 13.0, PI * 0.15, PI * 0.85, 16,
+			Color(1, 1, 1, pulse * 0.7), 2.0)
+
+
+# ══ Station: Joe's body ══════════════════════════════════════════════════
 class Station extends Node2D:
-	var kind := "bench"
+	var kind := "body"
 	var examined := false
 
 	func _ready() -> void:
@@ -334,16 +445,12 @@ class Station extends Node2D:
 		return 45.0
 
 	func prompt() -> String:
-		if kind == "bench":
-			return "Mix chemicals at the bench"
 		return "Examine the body" if not examined else "Take the bunny from his hands"
 
 	func act() -> void:
-		if kind == "bench":
-			Game.open_bench.emit()
-			return
 		if not examined:
 			examined = true
+			Game.set_flag("found_body")
 			Game.add_note("Joe Wood died here. A tree is growing out through his chest.")
 			Game.notice.emit("Joe Wood", "A big man in a red-and-yellow flannel shirt, "
 				+ "blue jeans, brown boots gone green with mould. He is sitting against "
@@ -356,37 +463,91 @@ class Station extends Node2D:
 			Game.add_item("bunny")
 			queue_redraw()
 
+	const FLANNEL    := Color("8f2f27")
+	const FLANNEL_DK := Color("6d221c")
+	const CHECK      := Color("c9973a")
+	const DENIM      := Color("3f4c62")
+	const DENIM_DK   := Color("333e50")
+	const BOOT       := Color("41301f")
+	const SKIN       := Color("93a077")   # gone green
+	const SKIN_SH    := Color("7c8a63")
+	const HAIR       := Color("46372a")
+
+	# A big man slumped against the wall, seen from above: head at the top,
+	# shoulders below it, legs out towards the room, and the trunk standing up
+	# out of his chest. Drawn as overlapping ovals rather than one square, or
+	# he reads as a pizza from the floor above.
 	func _draw() -> void:
-		if kind == "bench":
-			draw_arc(Vector2.ZERO, 20.0, 0, TAU, 26, Color(1, 0.95, 0.7, 0.45), 2.0)
-			draw_circle(Vector2.ZERO, 7.0, Color("c69a63"))
-			return
-		# Joe: flannel torso, boots, and the trunk coming through him
-		draw_circle(Vector2(3, 5), 34.0, Color(0, 0, 0, 0.18))
-		draw_colored_polygon(Mat.rr(Rect2(-26, -22, 52, 46), 12.0), Color("a8352c"))
-		for i in 4:
-			draw_line(Vector2(-26, -14.0 + i * 11.0), Vector2(26, -14.0 + i * 11.0),
-				Color("d8b13a"), 3.0)
-			draw_line(Vector2(-19.0 + i * 13.0, -22), Vector2(-19.0 + i * 13.0, 24),
-				Color("d8b13a"), 3.0)
-		draw_colored_polygon(Mat.rr(Rect2(-20, 20, 16, 22), 5.0), Color("4a3320"))
-		draw_colored_polygon(Mat.rr(Rect2(4, 20, 16, 22), 5.0), Color("4a3320"))
-		draw_circle(Vector2(0, -30), 15.0, Color("9aa87e"))  # greened skin
-		draw_circle(Vector2(0, 0), 15.0, Color("4a3320"))    # trunk through chest
-		draw_circle(Vector2(0, 0), 9.0, Color("6d4d2e"))
+		draw_circle(Vector2(4, 6), 40.0, Color(0, 0, 0, 0.18))
+
+		# legs, out in front of him and slightly apart
+		for s in [-1.0, 1.0]:
+			_oval(Vector2(9.0 * s, 34), 9, 26, DENIM)
+			_oval(Vector2(11.0 * s, 52), 8, 11, BOOT)
+			_oval(Vector2(11.0 * s, 57), 7, 5, Mat.shade(BOOT, 1.25))
+		_oval(Vector2(0, 22), 20, 14, DENIM_DK)          # hips
+
+		# torso: shoulders wide, tapering down to the belt
+		_oval(Vector2(0, 2), 27, 25, FLANNEL)
+		_oval(Vector2(0, -8), 29, 19, FLANNEL)           # shoulders
+		for i in 3:                                       # check pattern
+			var y: float = -20.0 + i * 12.0
+			draw_line(Vector2(-27, y), Vector2(27, y), Color(CHECK, 0.55), 2.5)
+		for i in 3:
+			var x: float = -16.0 + i * 16.0
+			draw_line(Vector2(x, -25), Vector2(x, 22), Color(CHECK, 0.55), 2.5)
+		draw_arc(Vector2(0, 0), 26.0, PI * 0.15, PI * 0.85, 22, FLANNEL_DK, 2.5)
+
+		# arms coming forward, hands meeting over his lap around the rabbit
+		for s in [-1.0, 1.0]:
+			draw_line(Vector2(24.0 * s, -6), Vector2(11.0 * s, 20), FLANNEL, 13.0)
+			draw_circle(Vector2(9.0 * s, 23), 7.0, SKIN)
+		if not examined:
+			_oval(Vector2(0, 24), 9, 7, Color("d9b9c4"))  # the bunny, just showing
+
+		# head, tipped back against the wall
+		_oval(Vector2(0, -34), 15, 16, SKIN)
+		_oval(Vector2(0, -40), 15, 11, HAIR)
+		_oval(Vector2(0, -28), 12, 8, SKIN_SH)           # beard in shadow
+		draw_arc(Vector2(0, -34), 15.0, 0, TAU, 26, Mat.shade(SKIN, 0.7), 1.5)
+
+		# the trunk, standing out of his chest and going up through the ceiling
+		draw_circle(Vector2(0, -2), 17.0, Color(0, 0, 0, 0.25))
+		draw_circle(Vector2(0, -4), 15.0, Color("4a3320"))
+		draw_circle(Vector2(0, -4), 9.0, Color("6d4d2e"))
+		draw_circle(Vector2(0, -4), 4.0, Color("8a6440"))
+		for i in 5:                                       # bark splitting his shirt
+			var a := TAU * i / 5.0 + 0.6
+			draw_line(Vector2(cos(a), sin(a)) * 14.0 + Vector2(0, -4),
+				Vector2(cos(a), sin(a)) * 25.0 + Vector2(0, -4),
+				Color("4a3320"), 4.0)
 		if examined:
 			return
-		draw_arc(Vector2.ZERO, 44.0, 0, TAU, 34, Color(1, 0.95, 0.7, 0.4), 2.0)
+		draw_arc(Vector2.ZERO, 48.0, 0, TAU, 36, Color(1, 0.95, 0.7, 0.4), 2.0)
+
+	func _oval(c: Vector2, rx: float, ry: float, col: Color) -> void:
+		var pts := PackedVector2Array()
+		for i in 26:
+			var a := TAU * i / 26.0
+			pts.append(c + Vector2(cos(a) * rx, sin(a) * ry))
+		draw_colored_polygon(pts, col)
 
 
 # ══ Container: a cabinet or drawer you have to open ══════════════════════
 class Container2D extends Node2D:
+	# Drawers and cupboards are a piece of furniture rather than a point, so
+	# they open from further off than you can cut a limb from.
+	const OPEN_REACH := 62.0
+
 	var label := ""
 	var items: Array = []
 	var opened := false
 
 	func bias() -> float:
 		return 18.0
+
+	func reach() -> float:
+		return OPEN_REACH
 
 	func setup(d: Dictionary) -> void:
 		position = d["pos"]

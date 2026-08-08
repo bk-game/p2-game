@@ -35,9 +35,9 @@ func _ready() -> void:
 	for s in FP.SOLIDS:
 		_walls.append(s)
 
-	var for_strong := _flood(false, [0, 1, 2])   # limbs up, air clear
+	var for_strong := _flood(false, [0, 1])   # limbs up, air clear
 	var for_fumes := _flood(true, [])            # clouds still there
-	var for_rest := _flood(true, [0, 1, 2])      # everything opened up
+	var for_rest := _flood(true, [0, 1])      # everything opened up
 
 	for n in get_tree().get_nodes_in_group("act"):
 		if not is_instance_valid(n):
