@@ -160,13 +160,6 @@ const ITEMS := {
 			+ "range of one and press [E].",
 		"use": "Stand at a green cloud and press [E] to blow it out of the air.",
 	},
-	"gasmask": {
-		"name": "Gas mask", "kind": "tool", "glyph": "mask",
-		"tint": "4c5a4a", "pos": Vector2(150, 340),
-		"body": "An industrial respirator with fresh cartridges, hanging on a nail. "
-			+ "Joe knew exactly what the air in here was doing to him.",
-		"note": "He had a respirator hidden away. He knew the fumes were poison.",
-	},
 
 	# ── Chemicals ───────────────────────────────────────────────────────
 	"norust": {
@@ -265,7 +258,8 @@ const CONTAINERS := [
 	{"pos": Vector2(214, 306), "items": []},
 ]
 
-# Toxic fume clouds. Entering without the mask forces you back to the door.
+# Toxic fume clouds. Walking into one puts you back on the doorstep, so a
+# cloud has to be blown out with the extinguisher before you can pass it.
 const FUMES := [
 	{"pos": Vector2(392, 866), "r": 122.0},
 	{"pos": Vector2(576, 900), "r": 104.0},

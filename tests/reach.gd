@@ -32,8 +32,9 @@ func _ready() -> void:
 	fails += _stage("B extinguisher clears the utility fume", false, [2], [
 		"<sink>", "axe", "family_photos"])
 	fails += _stage("C solution breaks strong limbs", true, [2], [
-		"gasmask", "death_certs", "marriage_photo", "letter_doctor"])
-	fails += _stage("D mask lets you into the fumes", true, [0, 1, 2], ["<body>"])
+		"death_certs", "marriage_photo", "letter_doctor"])
+	fails += _stage("D extinguisher clears the rest of the air", true, [0, 1, 2],
+		["<body>"])
 
 	if OS.get_environment("DUMP") != "":
 		_dump(_flood(false, [2]))

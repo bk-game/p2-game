@@ -179,8 +179,6 @@ func _draw() -> void:
 		st.append("solution x%d" % Game.solution_charges)
 	if Game.has_item("extinguisher"):
 		st.append("extinguisher x%d" % Game.extinguisher_charges)
-	if Game.has_item("gasmask"):
-		st.append("mask on")
 	var line := "   ".join(st)
 	var bw: float = f.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(18)).x + _n(40)
 	var bar := Rect2(_n(20), vp.y - _n(70), bw, _n(46))

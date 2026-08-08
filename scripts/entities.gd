@@ -101,11 +101,6 @@ class Pickup extends Node2D:
 			"extinguisher":
 				_shape(Rect2(-9, -12, 18, 28), tint, 6.0)
 				_shape(Rect2(-4, -19, 8, 8), Color("2c2c31"), 2.0)
-			"mask":
-				draw_circle(Vector2.ZERO, 14.0, tint)
-				draw_circle(Vector2(-5, -3), 5.0, Color("cfe0e4"))
-				draw_circle(Vector2(5, -3), 5.0, Color("cfe0e4"))
-				draw_circle(Vector2(0, 8), 6.0, Mat.shade(tint, 0.7))
 		draw_arc(Vector2.ZERO, 21.0, 0, TAU, 28, Color(1, 0.95, 0.7, 0.5), 2.0)
 
 	func _shape(r: Rect2, c: Color, rad: float) -> void:
@@ -372,7 +367,7 @@ class Fume extends Node2D:
 		_t += delta
 		queue_redraw()
 		var p := get_tree().get_first_node_in_group("player")
-		if p == null or Game.has_item("gasmask"):
+		if p == null:
 			return
 		if p.global_position.distance_to(global_position) < radius * 0.72:
 			p.global_position = Content.ENTRANCE

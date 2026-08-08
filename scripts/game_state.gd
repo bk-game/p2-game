@@ -14,7 +14,7 @@ var notes: Array[String] = []
 var flags := {}
 
 var solution_charges := 0
-var extinguisher_charges := 2
+var extinguisher_charges := 3
 
 
 func has_item(id: String) -> bool:
