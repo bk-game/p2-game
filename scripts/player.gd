@@ -68,7 +68,9 @@ func _scan() -> void:
 		var at: Vector2 = n.reach_point(global_position) if n.has_method("reach_point") \
 			else (n as Node2D).global_position
 		var d := global_position.distance_to(at)
-		if d >= REACH:
+		# Most things are at arm's length, but a thing can ask for more room:
+		# a cupboard is furniture you open, not a spot you have to line up on.
+		if d >= (n.reach() if n.has_method("reach") else REACH):
 			continue
 		# You have to be turned towards a thing to work on it. Anything you
 		# are all but standing on is exempt: which way you last walked says

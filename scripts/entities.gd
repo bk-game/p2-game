@@ -381,12 +381,19 @@ class Station extends Node2D:
 
 # ══ Container: a cabinet or drawer you have to open ══════════════════════
 class Container2D extends Node2D:
+	# Drawers and cupboards are a piece of furniture rather than a point, so
+	# they open from further off than you can cut a limb from.
+	const OPEN_REACH := 62.0
+
 	var label := ""
 	var items: Array = []
 	var opened := false
 
 	func bias() -> float:
 		return 18.0
+
+	func reach() -> float:
+		return OPEN_REACH
 
 	func setup(d: Dictionary) -> void:
 		position = d["pos"]

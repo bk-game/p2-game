@@ -7,6 +7,7 @@ extends Node2D
 const PR := 14.0
 const CELL := 6.0
 const REACH := 34.0   # must match player.gd
+const OPEN := 62.0    # must match Container2D.OPEN_REACH
 
 var FP
 var _walls: Array[Rect2] = []
@@ -44,7 +45,7 @@ func _ready() -> void:
 	var open_reach := _flood(true, [0, 1, 2])
 	for i in Content.CONTAINERS.size():
 		var d := _nearest(open_reach, Content.CONTAINERS[i]["pos"])
-		if d > REACH:
+		if d > OPEN:
 			print("FAIL container %d at %s — closest %.0f px"
 				% [i, Content.CONTAINERS[i]["pos"], d])
 			fails += 1
