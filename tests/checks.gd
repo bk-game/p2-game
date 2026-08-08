@@ -52,7 +52,17 @@ func _ready() -> void:
 		if not Game.inventory.has(id):
 			Game.inventory.append(id)
 	fails += _expect("full score", Game.story_found() == 11)
-	fails += _expect("report mentions body", Game.report().contains("Body located"))
+	# 4. the report's body line has to follow the body
+	fails += _expect("body not recovered until you find him",
+		Game.report().contains("Body NOT recovered"))
+	Game.set_flag("found_body")
+	fails += _expect("finding him changes the line",
+		Game.report().contains("Body located") and not Game.report().contains("NOT recovered"))
+	fails += _expect("rabbit reported separately",
+		Game.report().contains("Personal effect recovered"))
+	Game.inventory.erase("bunny")
+	fails += _expect("rabbit left in place is said so",
+		Game.report().contains("still closed around something"))
 
 	print("RESULT: %s" % ("ALL PASS" if fails == 0 else "%d FAILURES" % fails))
 	get_tree().quit()

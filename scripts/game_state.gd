@@ -110,8 +110,14 @@ func report() -> String:
 	var pay := found * 250
 	var s := "FIELD REPORT — SUBJECT: JOE WOOD\n\n"
 	s += "Recovered %d of %d significant items.\n" % [found, total]
-	if has_item("bunny"):
-		s += "Body located and identified.\n"
+	# Finding him is what changes this line. Taking the rabbit out of his
+	# hands is a second thing, reported separately.
+	if flag("found_body"):
+		s += "Body located and identified: Joe Wood.\n"
+		if has_item("bunny"):
+			s += "Personal effect recovered from his hands.\n"
+		else:
+			s += "His hands are still closed around something. Left in place.\n"
 	else:
 		s += "Body NOT recovered.\n"
 	s += "\nAssessed payment: $%d\n\n" % pay

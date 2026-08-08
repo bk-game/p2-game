@@ -451,6 +451,7 @@ class Station extends Node2D:
 	func act() -> void:
 		if not examined:
 			examined = true
+			Game.set_flag("found_body")
 			Game.add_note("Joe Wood died here. A tree is growing out through his chest.")
 			Game.notice.emit("Joe Wood", "A big man in a red-and-yellow flannel shirt, "
 				+ "blue jeans, brown boots gone green with mould. He is sitting against "
