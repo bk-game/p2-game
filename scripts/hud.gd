@@ -119,8 +119,21 @@ func _unhandled_key_input(e: InputEvent) -> void:
 	queue_redraw()
 
 
+# The bag is shown in two parts: what goes in the mix, then everything else.
+# Selection runs down the panel as drawn, so it has to follow the same order.
+func _bag_order() -> Array:
+	var mixable := []
+	var rest := []
+	for id in Game.inventory:
+		if _cups.has(id):
+			mixable.append(id)
+		else:
+			rest.append(id)
+	return mixable + rest
+
+
 func _bag_key(k: int) -> void:
-	var bag := Game.inventory
+	var bag := _bag_order()
 	match k:
 		KEY_ESCAPE, KEY_Q, KEY_I:
 			mode = Mode.PLAY
@@ -233,51 +246,96 @@ func _draw_notes(f: Font, vp: Vector2) -> void:
 
 func _draw_bag(f: Font, vp: Vector2) -> void:
 	draw_rect(Rect2(Vector2.ZERO, vp), Color(0, 0, 0, 0.55))
-	var r := _centre(vp, 980, 640)
+	var r := _centre(vp, 980, 700)
 	_panel(r)
 	_head(f, r, "BAG", "carrying %d" % Game.inventory.size())
 
-	if Game.inventory.is_empty():
-		draw_string(f, Vector2(r.position.x + _n(38), r.position.y + _n(126)),
-			"Empty.", HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(20), DIM)
-	var y: float = r.position.y + _n(122)
-	for i in Game.inventory.size():
-		var id: String = Game.inventory[i]
-		var it: Dictionary = Content.ITEMS[id]
-		if i == _sel:
-			draw_rect(Rect2(r.position.x + _n(28), y - _n(22), r.size.x - _n(56),
-				_n(34)), Color(1, 1, 1, 0.07))
-			draw_string(f, Vector2(r.position.x + _n(38), y), ">",
-				HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(20), ACCENT)
-		draw_rect(Rect2(r.position.x + _n(60), y - _n(14), _n(13), _n(18)),
-			Color(it["tint"]))
-		draw_string(f, Vector2(r.position.x + _n(84), y), it["name"],
-			HORIZONTAL_ALIGNMENT_LEFT, _n(460), _fs(19), INK)
+	var bag := _bag_order()
+	var mixable := 0
+	for id in bag:
 		if _cups.has(id):
-			draw_string(f, Vector2(r.end.x - _n(280), y), "%.1f cups" % _cups[id],
-				HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(19),
-				ACCENT if _cups[id] > 0.0 else DIM)
-			if i == _sel:
-				draw_string(f, Vector2(r.end.x - _n(150), y), "< pour >",
-					HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(17), DIM)
-		y += _n(34)
+			mixable += 1
 
+	var y: float = r.position.y + _n(118)
+	y = _bag_section(f, r, y, "GOES IN THE MIX", bag.slice(0, mixable), 0, false)
+	y = _bag_section(f, r, y, "EVERYTHING ELSE", bag.slice(mixable), mixable, true)
+
+	# ── what the selected thing is for, and the jar under it ────────────
+	draw_line(Vector2(r.position.x + _n(38), r.end.y - _n(150)),
+		Vector2(r.end.x - _n(38), r.end.y - _n(150)), EDGE, 2.0)
+	var how := _how_to_use(bag[_sel] if _sel < bag.size() else "")
+	if how != "":
+		draw_string(f, Vector2(r.position.x + _n(38), r.end.y - _n(120)),
+			"USE:  " + how, HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(76), _fs(18), INK)
 	var jar := []
 	for id in _cups:
 		if _cups[id] > 0.0:
 			jar.append("%.1f %s" % [_cups[id], Content.ITEMS[id]["name"]])
-	draw_line(Vector2(r.position.x + _n(38), r.end.y - _n(126)),
-		Vector2(r.end.x - _n(38), r.end.y - _n(126)), EDGE, 2.0)
-	draw_string(f, Vector2(r.position.x + _n(38), r.end.y - _n(94)),
+	draw_string(f, Vector2(r.position.x + _n(38), r.end.y - _n(90)),
 		"JAR:  " + (", ".join(jar) if jar.size() > 0 else "empty"),
 		HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(76), _fs(19),
 		INK if jar.size() > 0 else DIM)
-	draw_string(f, Vector2(r.position.x + _n(38), r.end.y - _n(64)),
+	draw_string(f, Vector2(r.position.x + _n(38), r.end.y - _n(60)),
 		"up/down select    left/right pour a chemical    [M] mix    [E] read    [I] close",
 		HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(16), DIM)
 	if _mix_msg != "":
-		draw_multiline_string(f, Vector2(r.position.x + _n(38), r.end.y - _n(36)),
+		draw_multiline_string(f, Vector2(r.position.x + _n(38), r.end.y - _n(32)),
 			_mix_msg, HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(76), _fs(17), 2, ACCENT)
+
+
+# One labelled part of the bag. The mix goes in a single column with its cup
+# controls; everything else is two columns, so a full bag still fits.
+func _bag_section(f: Font, r: Rect2, y: float, label: String, ids: Array,
+		first: int, two_col: bool) -> float:
+	draw_string(f, Vector2(r.position.x + _n(38), y), label,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(15), ACCENT)
+	y += _n(28)
+	if ids.is_empty():
+		draw_string(f, Vector2(r.position.x + _n(58), y), "nothing yet",
+			HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(17), DIM)
+		return y + _n(34)
+	var full: float = r.size.x - _n(76)
+	if not two_col:
+		for i in ids.size():
+			_bag_row(f, ids[i], first + i, r.position.x + _n(38), y + i * _n(32), full)
+		return y + ids.size() * _n(32) + _n(20)
+	var rows := int(ceil(ids.size() / 2.0))
+	for i in ids.size():
+		var col: int = i / rows
+		_bag_row(f, ids[i], first + i, r.position.x + _n(38) + col * full * 0.5,
+			y + (i % rows) * _n(28), full * 0.5)
+	return y + rows * _n(28) + _n(20)
+
+
+func _bag_row(f: Font, id: String, idx: int, x: float, y: float, w: float) -> void:
+	var it: Dictionary = Content.ITEMS[id]
+	if idx == _sel:
+		draw_rect(Rect2(x - _n(10), y - _n(20), w, _n(28)), Color(1, 1, 1, 0.07))
+		draw_string(f, Vector2(x, y), ">", HORIZONTAL_ALIGNMENT_LEFT, -1,
+			_fs(19), ACCENT)
+	draw_rect(Rect2(x + _n(22), y - _n(13), _n(12), _n(17)), Color(it["tint"]))
+	draw_string(f, Vector2(x + _n(44), y), it["name"], HORIZONTAL_ALIGNMENT_LEFT,
+		w - _n(170), _fs(18), INK)
+	if _cups.has(id):
+		draw_string(f, Vector2(x + w - _n(240), y), "%.1f cups" % _cups[id],
+			HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(18),
+			ACCENT if _cups[id] > 0.0 else DIM)
+		if idx == _sel:
+			draw_string(f, Vector2(x + w - _n(120), y), "< pour >",
+				HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(17), DIM)
+
+
+# What a thing is actually for. Carrying a fire extinguisher tells you
+# nothing about walking it up to the haze and pressing E.
+func _how_to_use(id: String) -> String:
+	if id == "":
+		return ""
+	var it: Dictionary = Content.ITEMS[id]
+	if it.get("use", "") != "":
+		return it["use"]
+	if _cups.has(id):
+		return "Left/right to measure out cups, then [M] to mix."
+	return "[E] to read it again."
 
 
 # ── panel furniture ──────────────────────────────────────────────────────

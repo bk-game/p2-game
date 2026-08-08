@@ -146,13 +146,16 @@ const ITEMS := {
 		"body": "A felling axe, the handle worn smooth. The bit is chipped all along "
 			+ "its edge, like it has been swung into something far too hard, many times.",
 		"note": "Joe cut at the tree over and over. The axe edge is destroyed.",
+		"use": "Blunt past saving. Pale limbs still come apart by hand: hold [E].",
 	},
 	"extinguisher": {
 		"name": "Fire extinguisher", "kind": "tool", "glyph": "extinguisher",
 		"tint": "b13a2c", "pos": Vector2(1588, 862),
 		"body": "A dry-powder extinguisher, most of a charge left. Heavy enough to "
 			+ "clear a room of bad air, if you point it right.",
-		"note": "",
+		"note": "The extinguisher blows a green cloud out of the air. Walk into "
+			+ "range of one and press [E].",
+		"use": "Stand at a green cloud and press [E] to blow it out of the air.",
 	},
 	"gasmask": {
 		"name": "Gas mask", "kind": "tool", "glyph": "mask",
