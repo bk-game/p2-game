@@ -454,23 +454,74 @@ class Station extends Node2D:
 			Game.add_item("bunny")
 			queue_redraw()
 
+	const FLANNEL    := Color("8f2f27")
+	const FLANNEL_DK := Color("6d221c")
+	const CHECK      := Color("c9973a")
+	const DENIM      := Color("3f4c62")
+	const DENIM_DK   := Color("333e50")
+	const BOOT       := Color("41301f")
+	const SKIN       := Color("93a077")   # gone green
+	const SKIN_SH    := Color("7c8a63")
+	const HAIR       := Color("46372a")
+
+	# A big man slumped against the wall, seen from above: head at the top,
+	# shoulders below it, legs out towards the room, and the trunk standing up
+	# out of his chest. Drawn as overlapping ovals rather than one square, or
+	# he reads as a pizza from the floor above.
 	func _draw() -> void:
-		# Joe: flannel torso, boots, and the trunk coming through him
-		draw_circle(Vector2(3, 5), 34.0, Color(0, 0, 0, 0.18))
-		draw_colored_polygon(Mat.rr(Rect2(-26, -22, 52, 46), 12.0), Color("a8352c"))
-		for i in 4:
-			draw_line(Vector2(-26, -14.0 + i * 11.0), Vector2(26, -14.0 + i * 11.0),
-				Color("d8b13a"), 3.0)
-			draw_line(Vector2(-19.0 + i * 13.0, -22), Vector2(-19.0 + i * 13.0, 24),
-				Color("d8b13a"), 3.0)
-		draw_colored_polygon(Mat.rr(Rect2(-20, 20, 16, 22), 5.0), Color("4a3320"))
-		draw_colored_polygon(Mat.rr(Rect2(4, 20, 16, 22), 5.0), Color("4a3320"))
-		draw_circle(Vector2(0, -30), 15.0, Color("9aa87e"))  # greened skin
-		draw_circle(Vector2(0, 0), 15.0, Color("4a3320"))    # trunk through chest
-		draw_circle(Vector2(0, 0), 9.0, Color("6d4d2e"))
+		draw_circle(Vector2(4, 6), 40.0, Color(0, 0, 0, 0.18))
+
+		# legs, out in front of him and slightly apart
+		for s in [-1.0, 1.0]:
+			_oval(Vector2(9.0 * s, 34), 9, 26, DENIM)
+			_oval(Vector2(11.0 * s, 52), 8, 11, BOOT)
+			_oval(Vector2(11.0 * s, 57), 7, 5, Mat.shade(BOOT, 1.25))
+		_oval(Vector2(0, 22), 20, 14, DENIM_DK)          # hips
+
+		# torso: shoulders wide, tapering down to the belt
+		_oval(Vector2(0, 2), 27, 25, FLANNEL)
+		_oval(Vector2(0, -8), 29, 19, FLANNEL)           # shoulders
+		for i in 3:                                       # check pattern
+			var y: float = -20.0 + i * 12.0
+			draw_line(Vector2(-27, y), Vector2(27, y), Color(CHECK, 0.55), 2.5)
+		for i in 3:
+			var x: float = -16.0 + i * 16.0
+			draw_line(Vector2(x, -25), Vector2(x, 22), Color(CHECK, 0.55), 2.5)
+		draw_arc(Vector2(0, 0), 26.0, PI * 0.15, PI * 0.85, 22, FLANNEL_DK, 2.5)
+
+		# arms coming forward, hands meeting over his lap around the rabbit
+		for s in [-1.0, 1.0]:
+			draw_line(Vector2(24.0 * s, -6), Vector2(11.0 * s, 20), FLANNEL, 13.0)
+			draw_circle(Vector2(9.0 * s, 23), 7.0, SKIN)
+		if not examined:
+			_oval(Vector2(0, 24), 9, 7, Color("d9b9c4"))  # the bunny, just showing
+
+		# head, tipped back against the wall
+		_oval(Vector2(0, -34), 15, 16, SKIN)
+		_oval(Vector2(0, -40), 15, 11, HAIR)
+		_oval(Vector2(0, -28), 12, 8, SKIN_SH)           # beard in shadow
+		draw_arc(Vector2(0, -34), 15.0, 0, TAU, 26, Mat.shade(SKIN, 0.7), 1.5)
+
+		# the trunk, standing out of his chest and going up through the ceiling
+		draw_circle(Vector2(0, -2), 17.0, Color(0, 0, 0, 0.25))
+		draw_circle(Vector2(0, -4), 15.0, Color("4a3320"))
+		draw_circle(Vector2(0, -4), 9.0, Color("6d4d2e"))
+		draw_circle(Vector2(0, -4), 4.0, Color("8a6440"))
+		for i in 5:                                       # bark splitting his shirt
+			var a := TAU * i / 5.0 + 0.6
+			draw_line(Vector2(cos(a), sin(a)) * 14.0 + Vector2(0, -4),
+				Vector2(cos(a), sin(a)) * 25.0 + Vector2(0, -4),
+				Color("4a3320"), 4.0)
 		if examined:
 			return
-		draw_arc(Vector2.ZERO, 44.0, 0, TAU, 34, Color(1, 0.95, 0.7, 0.4), 2.0)
+		draw_arc(Vector2.ZERO, 48.0, 0, TAU, 36, Color(1, 0.95, 0.7, 0.4), 2.0)
+
+	func _oval(c: Vector2, rx: float, ry: float, col: Color) -> void:
+		var pts := PackedVector2Array()
+		for i in 26:
+			var a := TAU * i / 26.0
+			pts.append(c + Vector2(cos(a) * rx, sin(a) * ry))
+		draw_colored_polygon(pts, col)
 
 
 # ══ Container: a cabinet or drawer you have to open ══════════════════════
