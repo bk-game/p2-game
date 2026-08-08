@@ -16,6 +16,49 @@ var flags := {}
 var solution_charges := 0
 var extinguisher_charges := 3
 
+# ── Breathing the green ──────────────────────────────────────────────────
+# Standing in a cloud does not throw you out at once: the air turns green
+# around you and you have FOG_LIMIT seconds to get back out of it. Every
+# cloud you are standing in reports itself each frame and the count is kept
+# here, so two overlapping clouds still choke you at one rate.
+const FOG_LIMIT := 2.0
+const FOG_CLEAR := 0.8   # how fast it washes out again, relative to real time
+
+var fog := 0.0
+var _fog_touched := false
+
+
+func fog_touch() -> void:
+	_fog_touched = true
+
+
+func fog_ratio() -> float:
+	return fog / FOG_LIMIT
+
+
+func _process(delta: float) -> void:
+	if _fog_touched:
+		if fog <= 0.0:
+			Sfx.play("choke", -14.0, 1.4)
+			toast.emit("Green air. It burns going in — get out of it.")
+		fog += delta
+		if fog >= FOG_LIMIT:
+			_choke_out()
+	else:
+		fog = maxf(fog - delta * FOG_CLEAR, 0.0)
+	_fog_touched = false
+
+
+# Out of time: you come to on the doorstep.
+func _choke_out() -> void:
+	fog = 0.0
+	var p := get_tree().get_first_node_in_group("player")
+	if p != null:
+		p.global_position = Content.ENTRANCE
+	Sfx.play("choke", -5.0)
+	toast.emit("Your throat closes and everything goes white. You come to on the "
+		+ "doorstep. You need clean air to go in there.")
+
 
 func has_item(id: String) -> bool:
 	return inventory.has(id)

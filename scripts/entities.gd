@@ -372,11 +372,10 @@ class Fume extends Node2D:
 		var p := get_tree().get_first_node_in_group("player")
 		if p == null:
 			return
+		# Standing in it only starts the clock; Game counts it down and puts
+		# you on the doorstep if you are still in here when it runs out.
 		if p.global_position.distance_to(global_position) < radius * 0.72:
-			p.global_position = Content.ENTRANCE
-			Sfx.play("choke", -5.0)
-			Game.toast.emit("Your throat closes and everything goes white. You come to "
-				+ "on the doorstep. You need clean air to go in there.")
+			Game.fog_touch()
 
 	func _draw() -> void:
 		# drifting puffs, thickest in the middle and thinning outwards, so it

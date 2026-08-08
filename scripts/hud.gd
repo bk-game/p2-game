@@ -11,6 +11,8 @@ const DIM    := Color("b3a992")
 const PANEL  := Color(0.10, 0.09, 0.08, 0.94)
 const EDGE   := Color("6d5a3e")
 const ACCENT := Color("e0b25c")
+const FOG    := Color(0.62, 0.82, 0.18)   # the green closing over your eyes
+const FOG_DK := Color(0.16, 0.26, 0.06)
 
 enum Mode {PLAY, READ, BAG, NOTES, REPORT}
 
@@ -25,6 +27,7 @@ var _sel := 0
 var _mix_msg := ""
 var _at_sink := false
 var _progress := 0.0
+var _fog := 0.0
 
 
 func _ready() -> void:
@@ -78,6 +81,9 @@ func _process(delta: float) -> void:
 		_toast_t -= delta
 		if _toast_t <= 0.0:
 			_toast = ""
+		queue_redraw()
+	if not is_equal_approx(Game.fog_ratio(), _fog):
+		_fog = Game.fog_ratio()
 		queue_redraw()
 
 
@@ -173,6 +179,9 @@ func _draw() -> void:
 	var f := ThemeDB.fallback_font
 	var vp := size
 
+	if _fog > 0.0:
+		_draw_fog(vp)
+
 	# ── carrying summary; the full list lives in the bag panel ──────────
 	var st := ["%d carried  [I]" % Game.inventory.size()]
 	if Game.solution_charges > 0:
@@ -221,6 +230,24 @@ func _draw() -> void:
 		Mode.READ, Mode.REPORT: _draw_reader(f, vp)
 		Mode.NOTES: _draw_notes(f, vp)
 		Mode.BAG: _draw_bag(f, vp)
+
+
+# What breathing the green looks like from inside it: the whole view goes
+# green and the edges close in, deeper the longer you stand there.
+func _draw_fog(vp: Vector2) -> void:
+	var t: float = clampf(_fog, 0.0, 1.0)
+	draw_rect(Rect2(Vector2.ZERO, vp), Color(FOG, 0.45 * t))
+	var step: float = vp.y * 0.055
+	for i in 9:                       # edges closing in, darkest outermost
+		var f: float = 1.0 - float(i) / 9.0
+		var inset: float = i * step
+		draw_rect(Rect2(inset + step * 0.5, inset + step * 0.5,
+			vp.x - inset * 2.0 - step, vp.y - inset * 2.0 - step),
+			Color(FOG_DK, 0.16 * t * f * f), false, step)
+	# your own pulse, once it is really taking hold
+	if t > 0.5:
+		var beat: float = (t - 0.5) * 2.0
+		draw_rect(Rect2(Vector2.ZERO, vp), Color(FOG_DK, 0.22 * beat * beat))
 
 
 func _draw_reader(f: Font, vp: Vector2) -> void:
