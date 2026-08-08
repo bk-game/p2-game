@@ -29,7 +29,7 @@ func _ready() -> void:
 	var fails := 0
 	# Fumes all cleared, strong limbs still standing: you must be able to
 	# prompt on every strong limb in order to dissolve it.
-	var reach := _flood(false, [0, 1, 2])
+	var reach := _flood(false, [0, 1])
 	for i in Content.BRANCHES.size():
 		var b: Dictionary = Content.BRANCHES[i]
 		if not b["strong"]:
@@ -42,7 +42,7 @@ func _ready() -> void:
 			fails += 1
 
 	# With the limbs gone, every container must be promptable too.
-	var open_reach := _flood(true, [0, 1, 2])
+	var open_reach := _flood(true, [0, 1])
 	for i in Content.CONTAINERS.size():
 		var d := _nearest(open_reach, Content.CONTAINERS[i]["pos"])
 		if d > OPEN:

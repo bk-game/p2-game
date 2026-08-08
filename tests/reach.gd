@@ -29,15 +29,15 @@ func _ready() -> void:
 	fails += _stage("A start (bare hands)", false, [], [
 		"extinguisher", "log_1_2", "log_3", "log_5_6", "log_formula", "log_water",
 		"norust", "bleach", "exfluid", "water", "police_report"])
-	fails += _stage("B extinguisher clears the utility fume", false, [2], [
+	fails += _stage("B extinguisher clears the utility fume", false, [1], [
 		"<sink>", "axe", "family_photos"])
-	fails += _stage("C solution breaks strong limbs", true, [2], [
+	fails += _stage("C solution breaks strong limbs", true, [1], [
 		"death_certs", "marriage_photo", "letter_doctor"])
-	fails += _stage("D extinguisher clears the rest of the air", true, [0, 1, 2],
+	fails += _stage("D extinguisher clears the rest of the air", true, [0, 1],
 		["<body>"])
 
 	if OS.get_environment("DUMP") != "":
-		_dump(_flood(false, [2]))
+		_dump(_flood(false, [1]))
 	print("REACH: %s" % ("ALL PASS" if fails == 0 else "%d UNREACHABLE" % fails))
 	get_tree().quit()
 
