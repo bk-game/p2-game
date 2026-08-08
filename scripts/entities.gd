@@ -9,8 +9,11 @@ const BARK_LT   := Color("6d4d2e")
 const WEAK      := Color("a97c4a")
 const WEAK_LT   := Color("c69a63")
 const BRITTLE   := Color("8d8267")
-const FUME      := Color(0.42, 0.72, 0.36, 0.34)
-const FUME_EDGE := Color(0.35, 0.66, 0.30, 0.5)
+# Sickly yellow-green, nothing like the blue-green of the tree, and hazy at
+# the edge rather than made of solid lobes.
+const FUME      := Color(0.80, 0.87, 0.20, 0.20)
+const FUME_CORE := Color(0.86, 0.90, 0.32, 0.26)
+const FUME_EDGE := Color(0.72, 0.78, 0.12, 0.55)
 
 
 func _ready() -> void:
@@ -376,12 +379,23 @@ class Fume extends Node2D:
 				+ "on the doorstep. You need clean air to go in there.")
 
 	func _draw() -> void:
-		for i in 7:
-			var a := TAU * i / 7.0 + _t * 0.25
-			var d := radius * 0.42
-			draw_circle(Vector2(cos(a), sin(a)) * d, radius * 0.6, FUME)
-		draw_circle(Vector2.ZERO, radius * 0.66, FUME)
-		draw_arc(Vector2.ZERO, radius * 0.72, 0, TAU, 40, FUME_EDGE, 2.0)
+		# drifting puffs, thickest in the middle and thinning outwards, so it
+		# reads as something in the air rather than as planting on the floor
+		for ring in 3:
+			var k: float = 0.86 - 0.2 * ring
+			var count := 9 - ring * 2
+			for i in count:
+				var a := TAU * i / count + _t * (0.25 - 0.06 * ring) + ring * 0.7
+				var wob: float = 1.0 + 0.08 * sin(_t * 1.7 + i * 2.1)
+				draw_circle(Vector2(cos(a), sin(a)) * radius * 0.44 * k,
+					radius * 0.34 * k * wob, FUME)
+		draw_circle(Vector2.ZERO, radius * 0.46, FUME_CORE)
+		# a broken outline, so the edge of the cloud is legible without
+		# looking like the hard rim of a bush
+		for i in 16:
+			var a0 := TAU * i / 16.0 + _t * 0.12
+			draw_arc(Vector2.ZERO, radius * 0.72, a0, a0 + TAU / 26.0, 5,
+				FUME_EDGE, 2.5)
 
 
 # ══ Sink: the one place the chemicals can be mixed ═══════════════════════
