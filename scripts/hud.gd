@@ -180,9 +180,11 @@ func _draw() -> void:
 
 	# ── key hints ───────────────────────────────────────────────────────
 	var hint := "[E] interact   [I] bag   [N] notebook   [C] lantern   [R] report"
-	var hw: float = f.get_string_size(hint, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(15)).x
-	draw_string(f, Vector2(vp.x - hw - _n(24), vp.y - _n(28)), hint,
-		HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(15), DIM)
+	var hw: float = f.get_string_size(hint, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(22)).x
+	var hr := Rect2(vp.x - hw - _n(60), vp.y - _n(70), hw + _n(40), _n(46))
+	_panel(hr)
+	draw_string(f, Vector2(hr.position.x + _n(20), hr.position.y + _n(31)), hint,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(22), INK)
 
 	# ── interaction prompt ──────────────────────────────────────────────
 	if _prompt != "" and mode == Mode.PLAY:
