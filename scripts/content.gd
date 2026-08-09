@@ -378,3 +378,11 @@ const FUMES := [
 # The hidden room at the back, behind the panelling the photos covered.
 const BODY_POS := Vector2(172, 352)
 const ENTRANCE := Vector2(1462, 935)
+
+# ── The office ───────────────────────────────────────────────────────────
+# Where the day starts and where it has to end. DESK is where you come back
+# to; the door out of the office puts you on the cabin's doorstep and the
+# cabin's front door brings you back here.
+const OFFICE_START := Vector2(-360, 400)
+const OFFICE_DOOR := Vector2(-286, 690)     # the way out to the job
+const CABIN_DOOR := Vector2(1462, 952)      # the front door, from inside

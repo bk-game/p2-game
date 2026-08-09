@@ -24,7 +24,10 @@ func _ready() -> void:
 	for i in Content.CONTAINERS.size():
 		spots["<container %d>" % i] = Content.CONTAINERS[i]["pos"]
 	spots["<body>"] = Content.BODY_POS
-	spots["<spawn>"] = Content.ENTRANCE
+	spots["<spawn>"] = Content.OFFICE_START
+	spots["<doorstep>"] = Content.ENTRANCE
+	spots["<office door>"] = Content.OFFICE_DOOR
+	spots["<cabin door>"] = Content.CABIN_DOOR
 	for id in spots:
 		for b in blockers:
 			if b.grow(10.0).has_point(spots[id]):

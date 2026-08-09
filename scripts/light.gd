@@ -47,7 +47,7 @@ const ROOMS := [
 
 var enabled := true
 var _player: Node2D = null
-var _room := 5
+var _room := 9        # the office, where the day starts
 
 
 func _ready() -> void:

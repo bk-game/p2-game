@@ -78,6 +78,16 @@ func toggle_room_light(room: int) -> void:
 	toast.emit("The light comes on." if on else "The light goes out.")
 
 
+# The two places are the same world with a long way between them, so going
+# from one to the other is a step through a door and a hard cut.
+func travel(to: Vector2) -> void:
+	var p := get_tree().get_first_node_in_group("player")
+	if p != null:
+		p.global_position = to
+	fog = 0.0
+	Sfx.play("open", -8.0)
+
+
 func has_item(id: String) -> bool:
 	return inventory.has(id)
 
@@ -93,6 +103,7 @@ func add_item(id: String) -> void:
 		add_note(it["note"])
 	inventory_changed.emit()
 	notice.emit(it["name"], it["body"])
+	_check_done()
 
 
 func drop_item(id: String) -> void:
@@ -114,6 +125,23 @@ const FORMULA_PARTS := ["knows_dose_norust", "knows_dose_bleach", "knows_dose_ex
 func set_flag(f: String, v := true) -> void:
 	flags[f] = v
 	_check_formula()
+	_check_done()
+
+
+# What you were sent for: the body found, and the certificates in hand. Once
+# both are true there is nothing else you need and you can go back.
+func _check_done() -> void:
+	if flag("can_leave"):
+		return
+	if not flag("found_body") or not has_item("death_certs"):
+		return
+	set_flag("can_leave")
+	add_note("Body found and identified, certificates recovered. Nothing else "
+		+ "here is worth the trip back. Out the way you came in.")
+	notice.emit("That is the job", "You have what they sent you for: him, and the "
+		+ "paper that says who he was and who he lost.\n\nThere is nothing else in "
+		+ "this house that the office will pay for.\n\nThe way out is the door you "
+		+ "came in by.")
 
 
 func _check_formula() -> void:

@@ -59,6 +59,19 @@ func _ready() -> void:
 		lock.z_index = 40
 		add_child(lock)
 		lock.bolt = _bolt(Content.LOCK_DOOR)
+	var out := Doorway.new()
+	out.position = Content.OFFICE_DOOR
+	out.to = Content.ENTRANCE
+	out.label = "Out to the job"
+	out.z_index = 40
+	add_child(out)
+	var home := Doorway.new()
+	home.position = Content.CABIN_DOOR
+	home.to = Content.OFFICE_START
+	home.label = "Back to the office"
+	home.needs_done = true
+	home.z_index = 40
+	add_child(home)
 	for sw in Content.SWITCHES:
 		var s2 := Switch.new()
 		s2.room = sw["room"]
@@ -458,6 +471,38 @@ class Fume extends Node2D:
 			var a0 := TAU * i / 16.0 + _t * 0.12
 			draw_arc(Vector2.ZERO, radius * 0.72, a0, a0 + TAU / 26.0, 5,
 				FUME_EDGE, 2.5)
+
+
+# ══ Doorway: the way between the office and the job ══════════════════════
+class Doorway extends Node2D:
+	var to := Vector2.ZERO
+	var label := ""
+	var needs_done := false      # the way home, which only opens once you are
+
+	func _ready() -> void:
+		add_to_group("act")
+
+	func bias() -> float:
+		return 20.0
+
+	func reach() -> float:
+		return 52.0
+
+	func _shut() -> bool:
+		return needs_done and not Game.flag("can_leave")
+
+	func prompt() -> String:
+		return "Not done here yet" if _shut() else label
+
+	func act() -> void:
+		if _shut():
+			Game.toast.emit("Not yet. Him, and the paper that says who he was.")
+			return
+		Game.travel(to)
+
+	func _draw() -> void:
+		var pulse: float = 0.16 if _shut() else 0.34
+		draw_arc(Vector2.ZERO, 26.0, 0, TAU, 28, Color(1, 0.95, 0.7, pulse), 2.0)
 
 
 # ══ Light switch: the two rooms on the house wiring ══════════════════════

@@ -30,6 +30,7 @@ var _progress := 0.0
 var _fog := 0.0
 var _code := ""
 var _lock_msg := ""
+var _queued: Array = []
 
 
 func _ready() -> void:
@@ -58,7 +59,12 @@ func set_progress(v: float) -> void:
 		queue_redraw()
 
 
+# Two of these can land in the same frame — picking a thing up and what
+# picking it up means — so they wait their turn instead of overwriting.
 func _on_notice(title: String, body: String) -> void:
+	if mode == Mode.READ:
+		_queued.append([title, body])
+		return
 	_title = title
 	_body = body
 	mode = Mode.READ
@@ -122,7 +128,12 @@ func _unhandled_key_input(e: InputEvent) -> void:
 	match mode:
 		Mode.READ:
 			if k in [KEY_E, KEY_ESCAPE, KEY_ENTER, KEY_SPACE]:
-				mode = Mode.PLAY
+				if _queued.is_empty():
+					mode = Mode.PLAY
+				else:
+					var nxt: Array = _queued.pop_front()
+					_title = nxt[0]
+					_body = nxt[1]
 		Mode.NOTES, Mode.REPORT:
 			if k in [KEY_N, KEY_R, KEY_ESCAPE, KEY_E, KEY_I]:
 				mode = Mode.PLAY
