@@ -14,7 +14,7 @@ const ACCENT := Color("e0b25c")
 const FOG    := Color(0.62, 0.82, 0.18)   # the green closing over your eyes
 const FOG_DK := Color(0.16, 0.26, 0.06)
 
-enum Mode {PLAY, READ, BAG, NOTES, REPORT}
+enum Mode {PLAY, READ, BAG, NOTES, REPORT, LOCK}
 
 var mode: int = Mode.PLAY
 var _title := ""
@@ -28,6 +28,8 @@ var _mix_msg := ""
 var _at_sink := false
 var _progress := 0.0
 var _fog := 0.0
+var _code := ""
+var _lock_msg := ""
 
 
 func _ready() -> void:
@@ -36,6 +38,7 @@ func _ready() -> void:
 	Game.inventory_changed.connect(func(): queue_redraw())
 	Game.notes_changed.connect(func(): queue_redraw())
 	Game.open_sink.connect(_open_sink)
+	Game.open_lock.connect(_open_lock)
 
 
 func blocking() -> bool:
@@ -76,6 +79,13 @@ func _open_sink() -> void:
 	queue_redraw()
 
 
+func _open_lock() -> void:
+	mode = Mode.LOCK
+	_code = ""
+	_lock_msg = ""
+	queue_redraw()
+
+
 func _process(delta: float) -> void:
 	if _toast_t > 0.0:
 		_toast_t -= delta
@@ -110,6 +120,8 @@ func _unhandled_key_input(e: InputEvent) -> void:
 				mode = Mode.PLAY
 		Mode.BAG:
 			_bag_key(k)
+		Mode.LOCK:
+			_lock_key(k)
 		Mode.PLAY:
 			if k == KEY_I:
 				mode = Mode.BAG
@@ -129,6 +141,36 @@ func _unhandled_key_input(e: InputEvent) -> void:
 				return
 	get_viewport().set_input_as_handled()
 	queue_redraw()
+
+
+# Four digits on a dial. Numbers go in, backspace takes one back off, and
+# enter tries it.
+func _lock_key(k: int) -> void:
+	if k in [KEY_ESCAPE, KEY_Q, KEY_I]:
+		mode = Mode.PLAY
+		return
+	if k == KEY_BACKSPACE:
+		_code = _code.substr(0, maxi(_code.length() - 1, 0))
+		_lock_msg = ""
+		return
+	if k in [KEY_ENTER, KEY_KP_ENTER, KEY_E]:
+		if _code.length() < 4:
+			_lock_msg = "Four digits."
+			return
+		if Game.try_code(_code):
+			mode = Mode.PLAY
+		else:
+			_lock_msg = "Nothing moves. Not that one."
+			_code = ""
+		return
+	var digit := -1
+	if k >= KEY_0 and k <= KEY_9:
+		digit = k - KEY_0
+	elif k >= KEY_KP_0 and k <= KEY_KP_9:
+		digit = k - KEY_KP_0
+	if digit >= 0 and _code.length() < 4:
+		_code += str(digit)
+		_lock_msg = ""
 
 
 # The bag is shown in two parts: what goes in the mix, then everything else.
@@ -230,6 +272,32 @@ func _draw() -> void:
 		Mode.READ, Mode.REPORT: _draw_reader(f, vp)
 		Mode.NOTES: _draw_notes(f, vp)
 		Mode.BAG: _draw_bag(f, vp)
+		Mode.LOCK: _draw_lock(f, vp)
+
+
+func _draw_lock(f: Font, vp: Vector2) -> void:
+	draw_rect(Rect2(Vector2.ZERO, vp), Color(0, 0, 0, 0.55))
+	var r := _centre(vp, 560, 340)
+	_panel(r)
+	_head(f, r, "LOCKED", "four digits")
+	draw_string(f, Vector2(r.position.x + _n(38), r.position.y + _n(126)),
+		"A dial in the bathroom door. Somebody chose these four numbers because "
+		+ "they could not lose them.", HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(76),
+		_fs(17), DIM)
+	# the four slots, filled left to right as you type
+	var slot: float = _n(56)
+	var x0: float = r.get_center().x - slot * 2.0 - _n(18)
+	for i in 4:
+		var box := Rect2(x0 + i * (slot + _n(12)), r.position.y + _n(176), slot, _n(66))
+		draw_rect(box, Color(0, 0, 0, 0.45))
+		draw_rect(box, EDGE, false, 2.0)
+		if i < _code.length():
+			draw_string(f, Vector2(box.position.x + _n(18), box.end.y - _n(20)),
+				_code[i], HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(30), ACCENT)
+	if _lock_msg != "":
+		draw_string(f, Vector2(r.position.x + _n(38), r.end.y - _n(64)), _lock_msg,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(18), INK)
+	_foot(f, r, "0-9 dial    backspace    [E] try it    [I] step away")
 
 
 # What breathing the green looks like from inside it: the whole view goes

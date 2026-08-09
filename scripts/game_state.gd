@@ -8,6 +8,8 @@ signal notice(title: String, body: String)
 signal toast(text: String)
 signal notes_changed
 signal open_sink
+signal open_lock
+signal lock_opened
 
 var inventory: Array[String] = []
 var notes: Array[String] = []
@@ -111,6 +113,19 @@ func _check_formula() -> void:
 
 func flag(f: String) -> bool:
 	return flags.get(f, false)
+
+
+# ── The lock on the bathroom door ────────────────────────────────────────
+# Four digits, and the only thing that opens it is the date Joe kept
+# everywhere. Returns whether the code was right.
+func try_code(code: String) -> bool:
+	if code != Content.BATHROOM_CODE:
+		Sfx.play("empty", -10.0)
+		return false
+	set_flag("bathroom_open")
+	add_note("The bathroom dial takes Christopher's birthday, 15/10.")
+	lock_opened.emit()
+	return true
 
 
 # ── Mixing ───────────────────────────────────────────────────────────────

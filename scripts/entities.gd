@@ -53,12 +53,31 @@ func _ready() -> void:
 	sink.position = Content.SINK
 	sink.z_index = 40
 	add_child(sink)
+	if not Game.flag("bathroom_open"):
+		var lock := Lock.new()
+		lock.position = Content.LOCK_POS
+		lock.z_index = 40
+		add_child(lock)
+		lock.bolt = _bolt(Content.LOCK_DOOR)
 	for w in Content.FIXED_NOTES:
 		var note := FixedNote.new()
 		note.data = w
 		note.position = w["pos"]
 		note.z_index = 26     # over the wall, under anything lying on the floor
 		add_child(note)
+
+
+# A door that is shut is as solid as the wall it sits in, until it is not.
+func _bolt(r: Rect2) -> StaticBody2D:
+	var body := StaticBody2D.new()
+	body.position = r.get_center()
+	var cs := CollisionShape2D.new()
+	var shape := RectangleShape2D.new()
+	shape.size = r.size
+	cs.shape = shape
+	body.add_child(cs)
+	add_child(body)
+	return body
 
 
 # ══ Pickup ═══════════════════════════════════════════════════════════════
@@ -401,6 +420,56 @@ class Fume extends Node2D:
 			var a0 := TAU * i / 16.0 + _t * 0.12
 			draw_arc(Vector2.ZERO, radius * 0.72, a0, a0 + TAU / 26.0, 5,
 				FUME_EDGE, 2.5)
+
+
+# ══ Combination lock: the bathroom door ══════════════════════════════════
+class Lock extends Node2D:
+	var bolt: StaticBody2D = null      # what actually holds the door shut
+	var _t := 0.0
+
+	func _ready() -> void:
+		add_to_group("act")
+		Game.lock_opened.connect(_open)
+
+	func bias() -> float:
+		return 45.0
+
+	# The dial is set in the door, with the doorway itself in the way, so it
+	# answers from a step back like a cupboard does.
+	func reach() -> float:
+		return 48.0
+
+	func prompt() -> String:
+		return "Locked — a four-digit dial"
+
+	func act() -> void:
+		Game.open_lock.emit()
+
+	func _open() -> void:
+		if bolt != null and is_instance_valid(bolt):
+			bolt.queue_free()
+		Sfx.play("open", -7.0)
+		Game.toast.emit("The dial gives, the bolt comes back, and the door swings in.")
+		queue_free()
+
+	func _process(delta: float) -> void:
+		_t += delta
+		queue_redraw()
+
+	func _draw() -> void:
+		# a brass dial on a bolted plate, set into the door
+		draw_colored_polygon(Mat.rr(Rect2(-17, -13, 34, 26), 4.0), Color("2f2a24"))
+		draw_circle(Vector2.ZERO, 10.0, Mat.BRASS)
+		draw_circle(Vector2.ZERO, 7.0, Mat.shade(Mat.BRASS, 0.72))
+		for i in 8:                       # numbers around the dial
+			var a := TAU * i / 8.0
+			draw_circle(Vector2(cos(a), sin(a)) * 8.5, 1.0, Color("f0e2b0"))
+		draw_line(Vector2.ZERO, Vector2(cos(-PI / 3.0), sin(-PI / 3.0)) * 7.0,
+			Color("2f2a24"), 2.0)         # the pointer
+		for c in [Vector2(-13, -9), Vector2(13, -9), Vector2(-13, 9), Vector2(13, 9)]:
+			draw_circle(c, 1.8, Mat.STEEL_DK)
+		var pulse: float = 0.3 + 0.14 * sin(_t * 2.2)
+		draw_arc(Vector2.ZERO, 24.0, 0, TAU, 26, Color(1, 0.95, 0.7, pulse), 2.0)
 
 
 # ══ Fixed note: read where it is, never taken ════════════════════════════
