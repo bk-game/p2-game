@@ -233,11 +233,10 @@ class Branch extends StaticBody2D:
 			queue_redraw()
 		else:
 			Sfx.play("chop", -14.0, 0.7)
-			Game.add_note("Dark hardened limbs will not cut. Joe weakened them with a "
-				+ "mixture: open the bag with [I], measure the chemicals, press [M].")
-			Game.toast.emit("Hardened heartwood — the blade bounces off. Joe softened "
-				+ "these with his mixture. Open your bag [I], measure out the chemicals, "
-				+ "then press [M] to mix. Pour a dose on this limb to make it brittle.")
+			Game.add_note("Dark hardened limbs will not cut. Joe had something he "
+				+ "mixed up that softened them.")
+			Game.toast.emit("Hardened heartwood — the blade bounces off it. Joe was "
+				+ "pouring something on these.")
 
 	# ── Shape ────────────────────────────────────────────────────────────
 	# A root is not a dowel: it wanders off the straight line, swells at the
