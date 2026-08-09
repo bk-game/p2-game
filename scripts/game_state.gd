@@ -86,6 +86,11 @@ func travel(to: Vector2) -> void:
 		p.global_position = to
 	fog = 0.0
 	Sfx.play("open", -8.0)
+	# the office floor is quiet; the music belongs to the job
+	if to == Content.OFFICE_START:
+		Music.stop()
+	else:
+		Music.play()
 
 
 func has_item(id: String) -> bool:

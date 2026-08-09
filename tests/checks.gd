@@ -26,7 +26,6 @@ func _ready() -> void:
 	spots["<body>"] = Content.BODY_POS
 	spots["<spawn>"] = Content.OFFICE_START
 	spots["<doorstep>"] = Content.ENTRANCE
-	spots["<office door>"] = Content.OFFICE_DOOR
 	spots["<cabin door>"] = Content.CABIN_DOOR
 	for id in spots:
 		for b in blockers:

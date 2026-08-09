@@ -58,10 +58,6 @@ const DOORS := [
 		"a0": 0.0,     "a1": 0.0,  "leaf": 0.0, "ext": false},     # lift, upstairs
 	{"rect": Rect2(-571, 440, 22, 60), "hinge": Vector2.ZERO,     "r": 0.0,
 		"a0": 0.0,     "a1": 0.0,  "leaf": 0.0, "ext": false},     # lift, home
-	# The way out to the job. Shut: you leave through it by using it, not by
-	# walking through the wall, so it is not cut out of the wall.
-	{"rect": Rect2(-330, 704, 88, 37), "hinge": Vector2(-330, 704), "r": 88.0,
-		"a0": -PI / 2, "a1": 0.0,  "leaf": -PI / 2, "ext": true, "shut": true},
 ]
 
 const WINDOWS: Array[Rect2] = [
@@ -123,7 +119,6 @@ const SOLIDS: Array[Rect2] = [
 	Rect2(-280, 250, 56, 244),  # the long desk
 	Rect2(-210, 262, 46, 46),   # chair
 	Rect2(-210, 424, 46, 46),   # chair
-	Rect2(-545, 470, 74, 72),   # rebirth pod
 	Rect2(-196, 176, 44, 44),   # the plant in the corner
 ]
 
@@ -507,17 +502,17 @@ func _office() -> void:
 	_fill(Rect2(-420, 168, 190, 12), Color("f2f2e6"), 3.0)
 	_stroke(Rect2(-420, 168, 190, 12), Mat.STEEL_DK, 1.5, 3.0)
 
-	# the pod: a lid, a seam down the middle, and a light that is always on
-	var pod := Rect2(-545, 470, 74, 72)
-	_obj(pod, Mat.STEEL, 12.0)
-	_fill(Rect2(-539, 476, 62, 60), Mat.shade(Mat.GLASS, 0.96), 10.0)
-	draw_line(Vector2(-508, 476), Vector2(-508, 536), Mat.STEEL_DK, 2.0)
-	draw_circle(Vector2(-527, 530), 3.5, Mat.EMBER)
-
-	# lift doors in the lobby wall, and their call panels
+	# the lift cars: steel floors, a seam where the doors part, a call panel
+	for lift in [Rect2(-783, 157, 212, 181), Rect2(-783, 368, 212, 181)]:
+		_fill(lift.grow(-6.0), Mat.shade(Mat.STEEL, 0.94), 2.0)
+		_stroke(lift.grow(-6.0), Mat.STEEL_DK, 2.0, 2.0)
+		for i in 5:
+			var x: float = lift.position.x + 20.0 + i * 42.0
+			draw_line(Vector2(x, lift.position.y + 10),
+				Vector2(x, lift.end.y - 10), Mat.shade(Mat.STEEL, 0.86), 1.5)
 	for y in [230.0, 440.0]:
 		_fill(Rect2(-571, y, 22, 60), Mat.STEEL, 1.0)
-		draw_line(Vector2(-560, y + 4), Vector2(-560, y + 56), Mat.STEEL_DK, 2.0)
+		draw_line(Vector2(-560, y + 4), Vector2(-560, y + 56), Mat.STEEL_DK, 2.5)
 		_fill(Rect2(-547, y + 22, 6, 16), Mat.IRON, 1.0)
 		draw_circle(Vector2(-544, y + 30), 2.0, Mat.EMBER)
 

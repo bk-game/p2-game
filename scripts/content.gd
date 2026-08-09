@@ -271,25 +271,6 @@ const LOCK_DOOR := Rect2(1272, 578, 70, 37)
 # left on a piece of furniture.
 const FIXED_NOTES := [
 	{
-		"pos": Vector2(-556, 260), "surface": "panel",
-		"prompt": "Read the plate by the lift",
-		"title": "Lift — up",
-		"body": "A brass plate worn back to the metal where thumbs have gone.\n\n"
-			+ "EXECUTIVE FLOOR. NO CALL WITHOUT APPOINTMENT.\n\n"
-			+ "You have been up there twice. Once to be hired, once to be told what "
-			+ "the hiring had cost you. The carpet up there is the same as the "
-			+ "carpet down here, which was the part you kept thinking about.",
-	},
-	{
-		"pos": Vector2(-556, 470), "surface": "panel",
-		"prompt": "Read the plate by the lift",
-		"title": "Lift — down",
-		"body": "RESIDENTIAL. FLOORS 2-11. STAFF ONLY.\n\n"
-			+ "Your flat is eleven floors under your desk, and the rent for it comes "
-			+ "off the job before the debt does. You have not been outside the "
-			+ "building in a while, unless you count the jobs.",
-	},
-	{
 		"pos": Vector2(-340, 178), "surface": "board",
 		"prompt": "Read the job on the board",
 		"title": "The job",
@@ -301,20 +282,7 @@ const FIXED_NOTES := [
 			+ "Nobody has been in since he stopped filing. Take a light.",
 		"note": "The job: recover Joe Wood and whatever says who he was. Paid per "
 			+ "significant item.",
-	},
-	{
-		"pos": Vector2(-473, 506), "surface": "pod",
-		"prompt": "Look into the pod",
-		"title": "Rebirth pod",
-		"body": "A steel shell with a seam down it and a light that has never been "
-			+ "off. Yours is the one on the left, which is not something a person "
-			+ "should be able to say.\n\n"
-			+ "What comes out of it is you, near enough that the office has stopped "
-			+ "making the distinction and started billing for it. Every time it runs "
-			+ "the debt goes up.\n\n"
-			+ "Nothing about the man in the cabin came out of one of these.",
-		"note": "The office brings you back when the job kills you, and adds it to "
-			+ "what you owe.",
+		"grants": "read_job",
 	},
 	{
 		"pos": Vector2(760, 682), "surface": "desk",
@@ -460,5 +428,13 @@ const STAFF := [
 # to; the door out of the office puts you on the cabin's doorstep and the
 # cabin's front door brings you back here.
 const OFFICE_START := Vector2(-360, 400)
-const OFFICE_DOOR := Vector2(-286, 690)     # the way out to the job
 const CABIN_DOOR := Vector2(1462, 952)      # the front door, from inside
+
+# The two lifts are the only way off this floor. The top one goes up to the
+# boss and will not take you until the job on the board is done; the bottom
+# one goes down to the street and will not take you until you have read what
+# the job is.
+const LIFTS := [
+	{"pos": Vector2(-677, 247), "kind": "boss"},
+	{"pos": Vector2(-677, 458), "kind": "job"},
+]

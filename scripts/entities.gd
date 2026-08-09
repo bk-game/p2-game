@@ -65,12 +65,12 @@ func _ready() -> void:
 		person.position = who["pos"]
 		person.z_index = 40
 		add_child(person)
-	var out := Doorway.new()
-	out.position = Content.OFFICE_DOOR
-	out.to = Content.ENTRANCE
-	out.label = "Out to the job"
-	out.z_index = 40
-	add_child(out)
+	for l in Content.LIFTS:
+		var lift := Lift.new()
+		lift.kind = l["kind"]
+		lift.position = l["pos"]
+		lift.z_index = 40
+		add_child(lift)
 	var home := Doorway.new()
 	home.position = Content.CABIN_DOOR
 	home.to = Content.OFFICE_START
@@ -517,6 +517,57 @@ class Person extends Node2D:
 			var a := TAU * i / 24.0
 			pts.append(c + Vector2(cos(a) * rx, sin(a) * ry))
 		draw_colored_polygon(pts, col)
+
+
+# ══ The lifts: the only way off the floor ════════════════════════════════
+class Lift extends Node2D:
+	var kind := "job"           # "job" goes down to the street, "boss" goes up
+	var _t := 0.0
+
+	func _ready() -> void:
+		add_to_group("act")
+
+	func bias() -> float:
+		return 40.0
+
+	func reach() -> float:
+		return 70.0             # the whole car, from anywhere in it
+
+	func prompt() -> String:
+		return "Take the lift up" if kind == "boss" else "Take the lift down"
+
+	func act() -> void:
+		if kind == "boss":
+			Game.notice.emit("Lift — up", "EXECUTIVE FLOOR. NO CALL WITHOUT "
+				+ "APPOINTMENT.\n\nThe panel takes your thumb and gives it back. "
+				+ "You have been up there twice: once to be hired, once to be told "
+				+ "what the hiring had cost you.\n\nThere is no appointment on the "
+				+ "board for you. Finish the job first and there might be.")
+			return
+		if not Game.flag("read_job"):
+			Game.notice.emit("Lift — down", "The car sits there with the doors "
+				+ "open and does nothing.\n\nIt will not run for you without a job "
+				+ "on it. Whatever is on the board by the door, you have not read "
+				+ "it yet, and neither has the lift.")
+			return
+		Game.travel(Content.ENTRANCE)
+
+	func _process(delta: float) -> void:
+		_t += delta
+		queue_redraw()
+
+	func _draw() -> void:
+		var ready_now: bool = kind == "job" and Game.flag("read_job")
+		var col := Color(1, 0.95, 0.7, 0.34 if ready_now else 0.16)
+		if ready_now:
+			col.a = 0.26 + 0.12 * sin(_t * 2.2)
+		draw_arc(Vector2.ZERO, 46.0, 0, TAU, 34, col, 2.0)
+		# the arrow the car is pointing
+		var up: float = -1.0 if kind == "boss" else 1.0
+		var tip := Vector2(0, 16.0 * up)
+		draw_colored_polygon(PackedVector2Array([tip,
+			tip + Vector2(-11, -13.0 * up), tip + Vector2(11, -13.0 * up)]),
+			Color(1, 0.95, 0.7, 0.5 if ready_now else 0.25))
 
 
 # ══ Doorway: the way between the office and the job ══════════════════════

@@ -16,20 +16,42 @@ func _ready() -> void:
 	fails += _expect("you start in the office",
 		pl.global_position.distance_to(Content.OFFICE_START) < 1.0)
 
-	var out = null
+	var boss = null
+	var down = null
 	var home = null
 	for n in get_tree().get_nodes_in_group("act"):
-		if n.get("label") == "Out to the job":
-			out = n
+		if n.get("kind") == "boss":
+			boss = n
+		elif n.get("kind") == "job":
+			down = n
 		elif n.get("label") == "Back to the office":
 			home = n
-	fails += _expect("a way out and a way back", out != null and home != null)
+	fails += _expect("two lifts and a way back",
+		boss != null and down != null and home != null)
 
-	out.act()
-	fails += _expect("the door out puts you on the doorstep",
+	boss.act()
+	_dismiss(hud)
+	fails += _expect("the boss will not see you yet",
+		pl.global_position.distance_to(Content.OFFICE_START) < 1.0)
+
+	down.act()
+	_dismiss(hud)
+	fails += _expect("and the lift down will not run unread",
+		pl.global_position.distance_to(Content.OFFICE_START) < 1.0)
+
+	# read the job off the board and it will
+	for n in get_tree().get_nodes_in_group("act"):
+		if n.has_method("prompt") and n.prompt() == "Read the job on the board":
+			n.act()
+	_dismiss(hud)
+	fails += _expect("reading the board is what starts the day",
+		Game.flag("read_job"))
+	down.act()
+	fails += _expect("the lift down puts you on the doorstep",
 		pl.global_position.distance_to(Content.ENTRANCE) < 1.0)
 
 	home.act()
+	_dismiss(hud)
 	fails += _expect("and you cannot go back empty-handed",
 		pl.global_position.distance_to(Content.ENTRANCE) < 1.0)
 	fails += _expect("which the prompt says", home.prompt().contains("Not done"))
@@ -41,10 +63,9 @@ func _ready() -> void:
 	fails += _expect("both together is", Game.flag("can_leave"))
 	fails += _expect("and it says so", hud.mode == 1)
 	fails += _expect("without eating what you just picked up",
-		hud._body.contains("certificates") or hud._queued.size() == 1)
+		hud._title == "Death certificates" and hud._queued.size() == 1)
 
-	hud._unhandled_key_input(_key(KEY_E))
-	hud._unhandled_key_input(_key(KEY_E))
+	_dismiss(hud)
 	fails += _expect("the popup names the way out",
 		Game.notes[Game.notes.size() - 1].contains("way you came in"))
 
@@ -54,6 +75,14 @@ func _ready() -> void:
 
 	print("TRAVEL: %s" % ("ALL PASS" if fails == 0 else "%d FAILURES" % fails))
 	get_tree().quit()
+
+# Clear the reader and anything waiting behind it.
+func _dismiss(hud) -> void:
+	for i in 6:
+		if hud.mode == 0:
+			return
+		hud._unhandled_key_input(_key(KEY_E))
+
 
 func _key(code: Key) -> InputEventKey:
 	var e := InputEventKey.new()
