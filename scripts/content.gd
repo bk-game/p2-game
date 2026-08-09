@@ -150,7 +150,7 @@ const ITEMS := {
 	},
 	"bunny": {
 		"name": "Stuffed bunny", "kind": "doc", "glyph": "toy",
-		"tint": "d9b9c4", "pos": Vector2(310, 880), "story": true,
+		"tint": "d9b9c4", "pos": Vector2(172, 352), "story": true,
 		"body": "An old stuffed rabbit, worn thin at the ears from handling. A fabric tag "
 			+ "stitched to one foot reads ELEANOR.\n\nJoe's hands are closed around it.",
 		"note": "He died holding his daughter's rabbit.",
@@ -316,5 +316,6 @@ const FUMES := [
 	{"pos": Vector2(188, 700), "r": 100.0},
 ]
 
-const BODY_POS := Vector2(310, 880)
+# The hidden room at the back, behind the panelling the photos covered.
+const BODY_POS := Vector2(172, 352)
 const ENTRANCE := Vector2(1462, 935)
