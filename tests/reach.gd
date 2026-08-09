@@ -86,10 +86,14 @@ func _near(reach: Dictionary, p: Vector2) -> bool:
 
 
 func _flood(strong_ok: bool, cleared: Array) -> Dictionary:
+	# two places with no path between them: seed the flood in both, so the
+	# writing fixed to the office walls counts as reachable as well
 	var seen := {}
-	var start := Vector2i(Content.ENTRANCE / CELL)
-	var q: Array[Vector2i] = [start]
-	seen[start] = true
+	var q: Array[Vector2i] = []
+	for at in [Content.ENTRANCE, Content.OFFICE_START]:
+		var start := Vector2i(at / CELL)
+		seen[start] = true
+		q.append(start)
 	while not q.is_empty():
 		var c: Vector2i = q.pop_back()
 		for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
@@ -97,7 +101,7 @@ func _flood(strong_ok: bool, cleared: Array) -> Dictionary:
 			if seen.has(n):
 				continue
 			var w := Vector2(n.x, n.y) * CELL
-			if w.x < 40 or w.x > 1680 or w.y < 40 or w.y > 1040:
+			if w.x < -900 or w.x > 1680 or w.y < 40 or w.y > 1240:
 				continue
 			if _blocked(w, strong_ok, cleared):
 				continue

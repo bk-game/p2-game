@@ -59,6 +59,12 @@ func _ready() -> void:
 		lock.z_index = 40
 		add_child(lock)
 		lock.bolt = _bolt(Content.LOCK_DOOR)
+	for who in Content.STAFF:
+		var person := Person.new()
+		person.data = who
+		person.position = who["pos"]
+		person.z_index = 40
+		add_child(person)
 	var out := Doorway.new()
 	out.position = Content.OFFICE_DOOR
 	out.to = Content.ENTRANCE
@@ -473,6 +479,46 @@ class Fume extends Node2D:
 				FUME_EDGE, 2.5)
 
 
+# ══ The two who share the floor with you ════════════════════════════════
+class Person extends Node2D:
+	var data := {}
+	var _said := 0
+
+	func _ready() -> void:
+		add_to_group("act")
+
+	func bias() -> float:
+		return 40.0
+
+	func reach() -> float:
+		return 52.0
+
+	func prompt() -> String:
+		return "Talk to %s" % data["name"]
+
+	# A few things each, in turn, so asking again gets you the next one
+	# rather than the same one.
+	func act() -> void:
+		var lines: Array = data["lines"]
+		Game.notice.emit(data["name"], lines[_said % lines.size()])
+		_said += 1
+
+	func _draw() -> void:
+		var tint := Color(data["tint"])
+		draw_circle(Vector2(2, 4), 17.0, Color(0, 0, 0, 0.18))
+		_oval(Vector2(0, 2), 16, 15, tint)                    # shoulders
+		_oval(Vector2(0, -3), 11, 11, Color("d9b48f"))        # head
+		_oval(Vector2(0, -7), 11, 7, Mat.shade(tint, 0.55))   # hair
+		draw_arc(Vector2(0, -3), 11.0, 0, TAU, 22, Mat.shade(tint, 0.5), 1.5)
+
+	func _oval(c: Vector2, rx: float, ry: float, col: Color) -> void:
+		var pts := PackedVector2Array()
+		for i in 24:
+			var a := TAU * i / 24.0
+			pts.append(c + Vector2(cos(a) * rx, sin(a) * ry))
+		draw_colored_polygon(pts, col)
+
+
 # ══ Doorway: the way between the office and the job ══════════════════════
 class Doorway extends Node2D:
 	var to := Vector2.ZERO
@@ -613,10 +659,12 @@ class FixedNote extends Node2D:
 		queue_redraw()
 
 	func _draw() -> void:
-		if data["surface"] == "wall":
-			_scratched()
-		else:
-			_on_paper()
+		match data["surface"]:
+			"wall": _scratched()
+			"panel": _plate()
+			"board": _pinned()
+			"pod": _seam()
+			_: _on_paper()
 		if read:
 			return
 		draw_arc(Vector2.ZERO, 30.0, 0, TAU, 28, Color(1, 0.95, 0.7, 0.4), 2.0)
@@ -633,6 +681,28 @@ class FixedNote extends Node2D:
 				var h: float = 2.4 + Mat.noise(i, row) * 2.2
 				draw_line(Vector2(x, y - h), Vector2(x + 1.5, y + h), deep, 2.0)
 				draw_line(Vector2(x - 0.8, y - h), Vector2(x + 0.7, y + h), pale, 1.0)
+
+	# a brass plate screwed to the wall beside a lift
+	func _plate() -> void:
+		draw_colored_polygon(Mat.rr(Rect2(-13, -9, 26, 18), 2.0), Mat.BRASS)
+		draw_colored_polygon(Mat.rr(Rect2(-11, -7, 22, 14), 1.0),
+			Mat.shade(Mat.BRASS, 0.82))
+		for i in 3:
+			draw_line(Vector2(-8, -3.0 + i * 3.0), Vector2(8, -3.0 + i * 3.0),
+				Mat.shade(Mat.BRASS, 0.6), 1.0)
+
+	# a sheet pinned to the board, with the job on it
+	func _pinned() -> void:
+		draw_colored_polygon(Mat.rr(Rect2(-14, -10, 28, 20), 1.0), Color("f3ecdc"))
+		for i in 4:
+			draw_line(Vector2(-10, -5.0 + i * 3.4), Vector2(10, -5.0 + i * 3.4),
+				Color(0, 0, 0, 0.35), 1.0)
+		draw_circle(Vector2(0, -8), 2.0, Color("b13a2c"))
+
+	# the seam of the pod, with its light on it
+	func _seam() -> void:
+		draw_line(Vector2(0, -22), Vector2(0, 22), Mat.STEEL_DK, 2.0)
+		draw_circle(Vector2(0, 0), 5.0, Color(1, 0.85, 0.55, 0.5))
 
 	# a sheet left where it was put down, with its lines of writing showing
 	func _on_paper() -> void:

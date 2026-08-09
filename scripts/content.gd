@@ -271,6 +271,52 @@ const LOCK_DOOR := Rect2(1272, 578, 70, 37)
 # left on a piece of furniture.
 const FIXED_NOTES := [
 	{
+		"pos": Vector2(-556, 260), "surface": "panel",
+		"prompt": "Read the plate by the lift",
+		"title": "Lift — up",
+		"body": "A brass plate worn back to the metal where thumbs have gone.\n\n"
+			+ "EXECUTIVE FLOOR. NO CALL WITHOUT APPOINTMENT.\n\n"
+			+ "You have been up there twice. Once to be hired, once to be told what "
+			+ "the hiring had cost you. The carpet up there is the same as the "
+			+ "carpet down here, which was the part you kept thinking about.",
+	},
+	{
+		"pos": Vector2(-556, 470), "surface": "panel",
+		"prompt": "Read the plate by the lift",
+		"title": "Lift — down",
+		"body": "RESIDENTIAL. FLOORS 2-11. STAFF ONLY.\n\n"
+			+ "Your flat is eleven floors under your desk, and the rent for it comes "
+			+ "off the job before the debt does. You have not been outside the "
+			+ "building in a while, unless you count the jobs.",
+	},
+	{
+		"pos": Vector2(-340, 178), "surface": "board",
+		"prompt": "Read the job on the board",
+		"title": "The job",
+		"body": "RECOVERY — WOOD, JOSEPH. Cabin, forty minutes out, no next of kin "
+			+ "on file.\n\n"
+			+ "Bring back the man and bring back the paper: who he was, who he "
+			+ "belonged to, what he lost. The office builds the rest from that. "
+			+ "Anything you carry out that says something about him is paid on.\n\n"
+			+ "Nobody has been in since he stopped filing. Take a light.",
+		"note": "The job: recover Joe Wood and whatever says who he was. Paid per "
+			+ "significant item.",
+	},
+	{
+		"pos": Vector2(-473, 506), "surface": "pod",
+		"prompt": "Look into the pod",
+		"title": "Rebirth pod",
+		"body": "A steel shell with a seam down it and a light that has never been "
+			+ "off. Yours is the one on the left, which is not something a person "
+			+ "should be able to say.\n\n"
+			+ "What comes out of it is you, near enough that the office has stopped "
+			+ "making the distinction and started billing for it. Every time it runs "
+			+ "the debt goes up.\n\n"
+			+ "Nothing about the man in the cabin came out of one of these.",
+		"note": "The office brings you back when the job kills you, and adds it to "
+			+ "what you owe.",
+	},
+	{
 		"pos": Vector2(760, 682), "surface": "desk",
 		"prompt": "Read the note on the desk",
 		"title": "Note on the desk",
@@ -378,6 +424,36 @@ const FUMES := [
 # The hidden room at the back, behind the panelling the photos covered.
 const BODY_POS := Vector2(172, 352)
 const ENTRANCE := Vector2(1462, 935)
+
+# The two who share the floor with you. Each has a few things to say and
+# says the next one every time you ask.
+const STAFF := [
+	{
+		"pos": Vector2(-188, 286), "name": "Renn", "tint": "8d9585",
+		"lines": [
+			"\"Wood, Joseph. Forty minutes out. You want the long coat, it is "
+				+ "cold in those.\"",
+			"\"Do not read all of it out there. You will be there all night and "
+				+ "they do not pay for the night.\"",
+			"\"Your number went up again, by the way. The pod ran twice last "
+				+ "month. I am not saying be careful. I am saying it adds up.\"",
+			"\"It is not the end, it is a queue. That is what they told me when "
+				+ "I started, and I have stopped finding it funny.\"",
+		],
+	},
+	{
+		"pos": Vector2(-188, 448), "name": "Oyelaran", "tint": "a97c4a",
+		"lines": [
+			"\"Morning. You look like the pod.\"",
+			"\"Whatever is growing in that one, do not bring it back in your "
+				+ "coat. We had a man do that. We do not have that man now.\"",
+			"\"Take the certificates if there are any. They pay double for "
+				+ "paper with a name on it. Sentiment is cheap, records are not.\"",
+			"\"When you are done, come back through the same door. They only "
+				+ "count you as returned if you use the door.\"",
+		],
+	},
+]
 
 # ── The office ───────────────────────────────────────────────────────────
 # Where the day starts and where it has to end. DESK is where you come back
