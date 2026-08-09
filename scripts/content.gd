@@ -214,6 +214,19 @@ const SINK := Vector2(990, 150)
 # left on a piece of furniture.
 const FIXED_NOTES := [
 	{
+		"pos": Vector2(760, 682), "surface": "desk",
+		"prompt": "Read the note on the desk",
+		"title": "Note on the desk",
+		"body": "Joe's hand, hurried, held down by a mug ring.\n\n"
+			+ "\"The way through to the back is the SECOND door on this side of the "
+			+ "room — not the kitchen one, the one past it. The tree has grown right "
+			+ "over the top of it and I keep walking by without seeing it.\n\n"
+			+ "Everything I have left is through there.\"",
+		"note": "There is a second door out of the living room, past the kitchen door "
+			+ "and under the tree. Joe kept what was left through it.",
+		"grants": "knows_back_door",
+	},
+	{
 		"pos": Vector2(1060, 88), "surface": "wall",
 		"prompt": "Read what is scratched into the wall",
 		"title": "Scratched into the bathroom wall",

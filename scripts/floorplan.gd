@@ -87,6 +87,7 @@ const SOLIDS: Array[Rect2] = [
 	Rect2(830, 617, 370, 83),   # sofa back
 	Rect2(1140, 700, 60, 140),  # sofa chaise
 	Rect2(920, 745, 140, 55),   # coffee table
+	Rect2(700, 640, 120, 48),   # writing desk
 	Rect2(1413, 617, 147, 43),  # sideboard
 	Rect2(102, 452, 98, 38),    # workbench
 	Rect2(206, 926, 98, 52),    # wood stove
@@ -557,6 +558,13 @@ func _living() -> void:
 	var tbl := Rect2(920, 745, 140, 55)                 # coffee table
 	_obj(tbl, Mat.WALNUT, 4.0)
 	_grain(tbl, Mat.WALNUT, true, 4)
+	var desk := Rect2(700, 640, 120, 48)                # writing desk
+	_obj(desk, Mat.OAK_DK, 3.0)
+	_grain(desk, Mat.OAK_DK, true, 4)
+	_fill(Rect2(706, 646, 60, 36), Mat.shade(Mat.OAK_DK, 1.15), 2.0)   # blotter
+	_stroke(Rect2(772, 646, 42, 36), Mat.OAK, 1.5, 2.0)                # drawer
+	draw_circle(Vector2(793, 664), 3.0, Mat.BRASS)
+
 	_obj(Rect2(1413, 617, 147, 43), Mat.OAK, 3.0)       # sideboard
 	_stroke(Rect2(1419, 623, 64, 31), Mat.OAK_DK, 1.5, 3.0)
 	_stroke(Rect2(1491, 623, 64, 31), Mat.OAK_DK, 1.5, 3.0)
