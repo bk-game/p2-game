@@ -16,6 +16,10 @@ var inventory: Array[String] = []
 var notes: Array[String] = []
 var flags := {}
 
+# Which rooms have their light on, keyed by index into Light.ROOMS. Only the
+# rooms with a switch are in here; everywhere else is lit as it always was.
+var room_lights := {}
+
 var solution_charges := 0
 var extinguisher_charges := 3
 
@@ -61,6 +65,17 @@ func _choke_out() -> void:
 	Sfx.play("choke", -5.0)
 	toast.emit("Your throat closes and everything goes white. You come to on the "
 		+ "doorstep. You need clean air to go in there.")
+
+
+func room_lit(room: int) -> bool:
+	return room_lights.get(room, false)
+
+
+func toggle_room_light(room: int) -> void:
+	var on := not room_lit(room)
+	room_lights[room] = on
+	Sfx.play("open" if on else "empty", -12.0, 1.6)
+	toast.emit("The light comes on." if on else "The light goes out.")
 
 
 func has_item(id: String) -> bool:

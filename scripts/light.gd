@@ -1,14 +1,26 @@
 extends Node2D
 
-# The investigator carries a lantern, so the lit area is a circle around them.
-# It stops at the walls of the room they are in rather than shining through
-# them. [C] toggles it.
+# What you can see. Most rooms are lit and the lit area is a circle around
+# you, stopping at the walls of the room you are in rather than shining
+# through them. Two rooms are on the house wiring and are dark until their
+# switch is found: in those you see only as far as your own light reaches,
+# and once they are lit their light gets out through the doorway. [C] toggles
+# the whole thing.
 
 const SEGMENTS := 256
 const RADIUS   := 330.0                 # how far the lantern carries
 const FAR      := 3000.0
 const PAD      := 26.0                  # bleed past the room so walls read
 const STRANDED := 70.0                  # all the light you get somewhere unmapped
+const GLOW     := 78.0                  # what you can see by yourself, unlit
+
+# Two rooms are on the house wiring: pitch dark until their switch is found,
+# and once lit their light gets out of the room through the doorway, which is
+# the rectangle here. Everywhere else is lit as it always was.
+const SWITCHED := {
+	2: Rect2(950, 180, 80, 37),          # bathroom
+	0: Rect2(212, 415, 60, 37),          # the room at the back
+}
 
 # The dark closes in over the outer part of the beam as a gradient rather
 # than in steps: rings of vertex-coloured quads carry the alpha from clear
@@ -89,18 +101,42 @@ func _lit_rects(origin: Vector2) -> Array[Rect2]:
 	return lit
 
 
+# A room with its light on is visible from outside it, but only through its
+# doorway: its floor goes in unpadded and its doorway bridges the gap to the
+# room you are in, so a ray can walk through the opening and no further. The
+# wall either side has nothing under it and stops the ray dead.
+func _spill(lit: Array[Rect2]) -> Array[Rect2]:
+	for i in SWITCHED:
+		if i == _room or not Game.room_lit(i):
+			continue
+		for rect in ROOMS[i]:
+			lit.append(rect as Rect2)
+		lit.append(SWITCHED[i] as Rect2)
+	return lit
+
+
+# How far the lantern carries from here. Your own light is a pool at your
+# feet; the run of a room is only yours if the room is lit.
+func _carry() -> float:
+	if SWITCHED.has(_room) and not Game.room_lit(_room):
+		return GLOW
+	return RADIUS
+
+
 func _draw() -> void:
 	if not enabled or _player == null:
 		return
 	var origin: Vector2 = _player.global_position
-	var lit := _lit_rects(origin)
+	var lit := _spill(_lit_rects(origin))
+	var want := _carry()
 
-	# How far the light gets along each ray: full radius, cut short by walls.
+	# How far the light gets along each ray: as far as it carries, cut short
+	# by walls.
 	var reach := PackedFloat32Array()
 	reach.resize(SEGMENTS)
 	for i in SEGMENTS:
 		var a := TAU * i / SEGMENTS
-		reach[i] = _wall_limit(origin, Vector2(cos(a), sin(a)), RADIUS, lit)
+		reach[i] = _wall_limit(origin, Vector2(cos(a), sin(a)), want, lit)
 
 	for b in BANDS:
 		var k0: float = lerpf(K_IN, 1.0, float(b) / BANDS)

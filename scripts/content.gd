@@ -243,6 +243,14 @@ const ITEMS := {
 # nowhere else.
 const SINK := Vector2(990, 150)
 
+# ── Light switches ───────────────────────────────────────────────────────
+# Two rooms are on the house wiring and are pitch dark until you find the
+# switch by the door. "room" indexes into Light.ROOMS.
+const SWITCHES := [
+	{"pos": Vector2(1045, 174), "room": 2},   # bathroom
+	{"pos": Vector2(196, 407), "room": 0},    # the room at the back
+]
+
 # ── The limb across the door under the tree ──────────────────────────────
 # It has grown into the frame and has three hearts in it. Softening it is not
 # enough: the cuts have to be taken in the order the grain will give, or the

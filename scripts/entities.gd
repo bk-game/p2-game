@@ -59,6 +59,12 @@ func _ready() -> void:
 		lock.z_index = 40
 		add_child(lock)
 		lock.bolt = _bolt(Content.LOCK_DOOR)
+	for sw in Content.SWITCHES:
+		var s2 := Switch.new()
+		s2.room = sw["room"]
+		s2.position = sw["pos"]
+		s2.z_index = 26
+		add_child(s2)
 	for w in Content.FIXED_NOTES:
 		var note := FixedNote.new()
 		note.data = w
@@ -454,7 +460,39 @@ class Fume extends Node2D:
 				FUME_EDGE, 2.5)
 
 
-# ══ Combination lock: the bathroom door ══════════════════════════════════
+# ══ Light switch: the two rooms on the house wiring ══════════════════════
+class Switch extends Node2D:
+	var room := 0
+
+	func _ready() -> void:
+		add_to_group("act")
+
+	func bias() -> float:
+		return 30.0
+
+	func prompt() -> String:
+		return "Turn the light off" if Game.room_lit(room) else "Turn the light on"
+
+	func act() -> void:
+		Game.toggle_room_light(room)
+		queue_redraw()
+
+	func _draw() -> void:
+		var on := Game.room_lit(room)
+		draw_colored_polygon(Mat.rr(Rect2(-9, -12, 18, 24), 2.0),
+			Color(0, 0, 0, 0.2))
+		draw_colored_polygon(Mat.rr(Rect2(-10, -13, 18, 24), 2.0), Mat.PORCELAIN)
+		# the rocker: up when it is on, down when it is off
+		var r := Rect2(-6, -9, 10, 9) if on else Rect2(-6, 0, 10, 9)
+		draw_colored_polygon(Mat.rr(r, 1.5), Mat.shade(Mat.PORC_SH, 0.92 if on else 0.8))
+		draw_polyline(PackedVector2Array([Vector2(-10, -13), Vector2(8, -13),
+			Vector2(8, 11), Vector2(-10, 11), Vector2(-10, -13)]),
+			Mat.shade(Mat.PORC_SH, 0.65), 1.5)
+		if on:
+			draw_circle(Vector2(-1, -1), 15.0, Color(1, 0.95, 0.75, 0.10))
+
+
+# ══ Combination lock: the bedroom door ═══════════════════════════════════
 class Lock extends Node2D:
 	var bolt: StaticBody2D = null      # what actually holds the door shut
 	var _t := 0.0
