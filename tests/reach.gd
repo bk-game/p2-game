@@ -15,6 +15,8 @@ func _ready() -> void:
 	for w in FP.WALLS:
 		var parts: Array = [w]
 		for d in FP.DOORS:
+			if d.get("shut", false):
+				continue      # never walked through, so it is still wall
 			var nxt: Array = []
 			for p in parts:
 				nxt.append_array(_sub(p, d["rect"]))

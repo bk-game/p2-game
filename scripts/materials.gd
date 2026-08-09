@@ -38,6 +38,7 @@ const RUG        := Color("8a5442")
 const RUG_ALT    := Color("b18a63")
 const GLASS      := Color("cfe0e4")
 const EMBER      := Color("e2853a")
+const CARPET     := Color("6f6a63")   # contract carpet, office grey
 const LEAF       := Color("5a7d4a")
 const BRASS      := Color("c9a227")
 const SHADOW     := Color(0, 0, 0, 0.13)

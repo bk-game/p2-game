@@ -16,6 +16,8 @@ func _ready() -> void:
 	var fails := 0
 
 	for d in FP.DOORS:
+		if d.get("shut", false):
+			continue          # nothing on the far side of it to light
 		var r: Rect2 = d["rect"]
 		var c := r.get_center()
 		# walk through the opening, the short way across the wall it sits in

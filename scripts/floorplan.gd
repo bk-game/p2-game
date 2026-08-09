@@ -25,6 +25,18 @@ const WALLS: Array[Rect2] = [
 	Rect2(450, 637, 37, 341),    # store / living divider
 	Rect2(65, 57, 247, 37),      # hidden shed: north
 	Rect2(65, 94, 37, 321),      # hidden shed: west
+
+	# ── The office you work out of, off to the west of the cabin ─────────
+	# Far enough away that the two never share a wall; you only ever get
+	# from one to the other through a door.
+	Rect2(-820, 120, 709, 37),   # office: north
+	Rect2(-820, 157, 37, 429),   # office: west
+	Rect2(-820, 549, 416, 37),   # office: south, under the lifts
+	Rect2(-441, 586, 37, 155),   # office: west of the lower wing
+	Rect2(-441, 704, 330, 37),   # office: south of the wing
+	Rect2(-148, 157, 37, 584),   # office: east
+	Rect2(-571, 157, 22, 429),   # office: lift lobby divider
+	Rect2(-783, 338, 212, 30),   # office: between the two lifts
 ]
 
 # ── Doors: opening rect, hinge, swing radius and arc ──────────────────────
@@ -41,6 +53,15 @@ const DOORS := [
 		"a0": -PI / 2, "a1": 0.0,  "leaf": -PI / 2, "ext": true},  # front entrance
 	{"rect": Rect2(212, 415, 60, 37), "hinge": Vector2.ZERO,      "r": 0.0,
 		"a0": 0.0,     "a1": 0.0,  "leaf": 0.0, "ext": false},     # hidden shed door
+	# ── office ──────────────────────────────────────────────────────────
+	{"rect": Rect2(-571, 230, 22, 60), "hinge": Vector2.ZERO,     "r": 0.0,
+		"a0": 0.0,     "a1": 0.0,  "leaf": 0.0, "ext": false},     # lift, upstairs
+	{"rect": Rect2(-571, 440, 22, 60), "hinge": Vector2.ZERO,     "r": 0.0,
+		"a0": 0.0,     "a1": 0.0,  "leaf": 0.0, "ext": false},     # lift, home
+	# The way out to the job. Shut: you leave through it by using it, not by
+	# walking through the wall, so it is not cut out of the wall.
+	{"rect": Rect2(-330, 704, 88, 37), "hinge": Vector2(-330, 704), "r": 88.0,
+		"a0": -PI / 2, "a1": 0.0,  "leaf": -PI / 2, "ext": true, "shut": true},
 ]
 
 const WINDOWS: Array[Rect2] = [
@@ -61,6 +82,11 @@ const FLOORS := [
 	{"r": Rect2(275, 637, 175, 341), "p": "wood"},
 	{"r": Rect2(487, 615, 1126, 363),"p": "wood"},
 	{"r": Rect2(102, 94, 173, 321), "p": "stone"},
+	# ── office ──────────────────────────────────────────────────────────
+	{"r": Rect2(-783, 157, 212, 181), "p": "ceramic"},   # lift, upstairs
+	{"r": Rect2(-783, 368, 212, 181), "p": "ceramic"},   # lift, home
+	{"r": Rect2(-549, 157, 401, 392), "p": "carpet"},    # the floor you work on
+	{"r": Rect2(-404, 549, 256, 155), "p": "carpet"},    # and its lower end
 ]
 
 # ── Yard: a hedge boxing in the front path ───────────────────────────────
@@ -92,6 +118,13 @@ const SOLIDS: Array[Rect2] = [
 	Rect2(102, 452, 98, 38),    # workbench
 	Rect2(206, 926, 98, 52),    # wood stove
 	Rect2(115, 890, 78, 88),    # firewood
+
+	# ── office ──────────────────────────────────────────────────────────
+	Rect2(-280, 250, 56, 244),  # the long desk
+	Rect2(-210, 262, 46, 46),   # chair
+	Rect2(-210, 424, 46, 46),   # chair
+	Rect2(-545, 470, 74, 72),   # rebirth pod
+	Rect2(-196, 176, 44, 44),   # the plant in the corner
 ]
 
 var _pieces: Array[Rect2] = []
@@ -112,6 +145,8 @@ func _split_walls() -> Array[Rect2]:
 	for w in WALLS:
 		var parts: Array[Rect2] = [w]
 		for d in DOORS:
+			if d.get("shut", false):
+				continue          # a door that is never walked through
 			var next: Array[Rect2] = []
 			for p in parts:
 				next.append_array(_subtract(p, d["rect"]))
@@ -158,6 +193,7 @@ func _draw() -> void:
 		match f["p"]:
 			"wood": _wood_floor(f["r"])
 			"stone": _stone_floor(f["r"])
+			"carpet": _carpet_floor(f["r"])
 			_: _ceramic_floor(f["r"])
 	for d in DOORS:
 		draw_rect((d["rect"] as Rect2).grow(1.0),
@@ -168,6 +204,7 @@ func _draw() -> void:
 	for d in DOORS:
 		if d["r"] > 0.0:
 			_door(d)
+	_office()
 	_kitchen()
 	_bathroom()
 	_bedroom()
@@ -183,6 +220,7 @@ func _ground() -> void:
 		var x := Mat.noise(i * 1.7, 3.1) * 2400.0 - 300.0
 		var y := Mat.noise(i * 2.3, 7.7) * 1700.0 - 300.0
 		draw_line(Vector2(x, y), Vector2(x + 3, y - 6), Mat.shade(g, 0.93), 1.0)
+	_fill(Rect2(-860, 80, 789, 701), Color("9d9d9a"))    # the floor slab it sits on
 	_fill(Rect2(1408, 1015, 108, 200), Color("c2b9a4"), 6.0)
 	for i in 7:
 		draw_line(Vector2(1408, 1040.0 + i * 24.0), Vector2(1516, 1040.0 + i * 24.0),
@@ -208,6 +246,31 @@ func _hedge() -> void:
 			var s: float = 0.88 + 0.3 * Mat.noise(i, r.position.x)
 			draw_circle(c, 14.0, Mat.shade(Mat.LEAF, s))
 			draw_circle(c + Vector2(-3, -3), 7.0, Mat.shade(Mat.LEAF, s * 1.18))
+
+
+# Contract carpet: flat, cheap, and laid in squares that do not quite line up.
+func _carpet_floor(r: Rect2) -> void:
+	draw_rect(r, Mat.CARPET)
+	const T := 46.0
+	var cy := int(floor(r.position.y / T))
+	var y: float = cy * T
+	while y < r.end.y:
+		var cx := int(floor(r.position.x / T))
+		var x: float = cx * T
+		while x < r.end.x:
+			var c := Rect2()
+			c.position = Vector2(maxf(x, r.position.x), maxf(y, r.position.y))
+			c.end = Vector2(minf(x + T, r.end.x), minf(y + T, r.end.y))
+			var s: float = 0.97 + 0.06 * Mat.noise(cx, cy)
+			draw_rect(c, Mat.shade(Mat.CARPET, s))
+			# the pile catches the light one way in every other square
+			if (cx + cy) % 2 == 0:
+				draw_rect(Rect2(c.position, c.size * Vector2(1.0, 0.5)),
+					Mat.shade(Mat.CARPET, s * 1.04))
+			x += T
+			cx += 1
+		y += T
+		cy += 1
 
 
 func _wood_floor(r: Rect2) -> void:
@@ -411,6 +474,57 @@ func _grain(r: Rect2, base: Color, horiz := true, n := 5) -> void:
 func _cushion(r: Rect2, c: Color) -> void:
 	_obj(r, c, 8.0)
 	_stroke(r.grow(-6.0), Mat.shade(c, 0.86), 1.5, 6.0)
+
+
+# ── The office ───────────────────────────────────────────────────────────
+func _office() -> void:
+	# the long desk, two places set at it, screens facing the chairs
+	var desk := Rect2(-280, 250, 56, 244)
+	_obj(desk, Mat.PORCELAIN, 3.0)
+	_stroke(Rect2(-276, 254, 48, 236), Mat.shade(Mat.PORC_SH, 0.94), 1.5, 2.0)
+	for y in [268, 430]:
+		_obj(Rect2(-266, y, 30, 44), Mat.IRON, 2.0)          # screen, edge on
+		_fill(Rect2(-262, y + 4, 8, 36), Mat.GLASS, 1.0)
+		_obj(Rect2(-244, y + 12, 16, 22), Mat.STEEL, 2.0)    # keyboard
+		draw_circle(Vector2(-252, y + 54), 5.0, Mat.STEEL_DK)
+	for y in [262, 424]:                                      # chairs
+		_obj(Rect2(-210, y, 46, 46), Mat.PORCELAIN, 8.0)
+		_stroke(Rect2(-204, y + 6, 34, 34), Mat.PORC_SH, 1.5, 6.0)
+
+	# the plant nobody waters, in the corner
+	_oval(Vector2(-174, 198), 20, 20, Mat.OAK_DK)
+	for i in 7:
+		var a := TAU * i / 7.0 + 0.3
+		var d := Vector2(cos(a), sin(a))
+		draw_colored_polygon(PackedVector2Array([
+			Vector2(-174, 198) + d.orthogonal() * 5.0,
+			Vector2(-174, 198) + d * 30.0,
+			Vector2(-174, 198) - d.orthogonal() * 5.0]),
+			Mat.shade(Mat.LEAF, 0.9 + 0.3 * Mat.noise(i, 2.0)))
+	draw_circle(Vector2(-174, 198), 9.0, Mat.shade(Mat.OAK_DK, 1.2))
+
+	# strip light over the middle of the room
+	_fill(Rect2(-420, 168, 190, 12), Color("f2f2e6"), 3.0)
+	_stroke(Rect2(-420, 168, 190, 12), Mat.STEEL_DK, 1.5, 3.0)
+
+	# the pod: a lid, a seam down the middle, and a light that is always on
+	var pod := Rect2(-545, 470, 74, 72)
+	_obj(pod, Mat.STEEL, 12.0)
+	_fill(Rect2(-539, 476, 62, 60), Mat.shade(Mat.GLASS, 0.96), 10.0)
+	draw_line(Vector2(-508, 476), Vector2(-508, 536), Mat.STEEL_DK, 2.0)
+	draw_circle(Vector2(-527, 530), 3.5, Mat.EMBER)
+
+	# lift doors in the lobby wall, and their call panels
+	for y in [230.0, 440.0]:
+		_fill(Rect2(-571, y, 22, 60), Mat.STEEL, 1.0)
+		draw_line(Vector2(-560, y + 4), Vector2(-560, y + 56), Mat.STEEL_DK, 2.0)
+		_fill(Rect2(-547, y + 22, 6, 16), Mat.IRON, 1.0)
+		draw_circle(Vector2(-544, y + 30), 2.0, Mat.EMBER)
+
+	# the board by the door, where the job comes from
+	_obj(Rect2(-400, 160, 120, 16), Mat.OAK_DK, 2.0)
+	_fill(Rect2(-394, 162, 44, 12), Mat.LINEN, 1.0)
+	_fill(Rect2(-344, 162, 58, 12), Mat.LINEN_DK, 1.0)
 
 
 # ── Kitchen ──────────────────────────────────────────────────────────────

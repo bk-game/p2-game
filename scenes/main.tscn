@@ -28,7 +28,7 @@ shape = SubResource("PlayerShape")
 
 [node name="Camera2D" type="Camera2D" parent="Player" unique_id=862451826]
 zoom = Vector2(2.8, 2.8)
-limit_left = 30
+limit_left = -890
 limit_top = 30
 limit_right = 1690
 limit_bottom = 1250
