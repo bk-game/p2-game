@@ -8,6 +8,7 @@ const SEGMENTS := 256
 const RADIUS   := 330.0                 # how far the lantern carries
 const FAR      := 3000.0
 const PAD      := 26.0                  # bleed past the room so walls read
+const STRANDED := 70.0                  # all the light you get somewhere unmapped
 
 # The dark closes in over the outer part of the beam as a gradient rather
 # than in steps: rings of vertex-coloured quads carry the alpha from clear
@@ -54,21 +55,45 @@ func _process(_d: float) -> void:
 		queue_redraw()
 
 
-func _room_at(p: Vector2) -> int:
+func _room_exact(p: Vector2) -> int:
 	for i in ROOMS.size():
 		for rect in ROOMS[i]:
 			if (rect as Rect2).has_point(p):
 				return i
-	return _room   # keep the last room while standing in a doorway
+	return -1
+
+
+func _room_at(p: Vector2) -> int:
+	var i := _room_exact(p)
+	return i if i != -1 else _room   # keep the last room in a doorway
+
+
+# The rooms the lantern fills. A doorway is thicker than the bleed, so for a
+# few pixels in the middle of one you are past the padded edge of the room
+# you came from and not yet inside the next: the beam then finds no wall to
+# stop at and lights the whole house through them. Standing in a doorway,
+# take every room the bleed reaches from here — you are in both at once.
+func _lit_rects(origin: Vector2) -> Array[Rect2]:
+	var lit: Array[Rect2] = []
+	for rect in ROOMS[_room]:
+		lit.append((rect as Rect2).grow(PAD))
+	if _room_exact(origin) != -1:
+		return lit                     # standing in a room proper
+	for i in ROOMS.size():
+		if i == _room:
+			continue
+		for rect in ROOMS[i]:
+			var g: Rect2 = (rect as Rect2).grow(PAD)
+			if g.has_point(origin):
+				lit.append(g)
+	return lit
 
 
 func _draw() -> void:
 	if not enabled or _player == null:
 		return
 	var origin: Vector2 = _player.global_position
-	var lit: Array[Rect2] = []
-	for rect in ROOMS[_room]:
-		lit.append((rect as Rect2).grow(PAD))
+	var lit := _lit_rects(origin)
 
 	# How far the light gets along each ray: full radius, cut short by walls.
 	var reach := PackedFloat32Array()
@@ -94,7 +119,8 @@ func _alpha(k: float) -> float:
 func _wall_limit(origin: Vector2, dir: Vector2, want: float,
 		lit: Array[Rect2]) -> float:
 	if _which(origin, lit) == -1:
-		return want          # caught in a doorway: do not black everything out
+		# Nowhere known: a pool at your feet rather than the run of the house.
+		return minf(want, STRANDED)
 	var t := 0.0
 	for _hop in 4:           # step across at most a few abutting rectangles
 		var i := _which(origin + dir * (t + 0.5), lit)
