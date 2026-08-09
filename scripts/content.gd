@@ -126,34 +126,30 @@ const ITEMS := {
 	"death_certs": {
 		"name": "Death certificates", "kind": "doc", "glyph": "paper",
 		"tint": "e6e2d2", "pos": Vector2(146, 158), "story": true,
-		"body": "Two certificates, kept flat and clean in a folder.\n\n"
-			+ "Name: Christopher Wood 
-			\nPlace of Death: North Cayus Emergency Room
-			\nUsual Residence: 1053 Meadow Lane. 
-			\nCity: North Cayus
-			\nFull Name of Hospital Institution: North Cayus Emergency Room
-			\nAddress: 0001 Emergency Lane
-			\nDate of Birth: 15/10/2042
-			\nBirthplace: South Cayus
-			\nCause of Death: Collapsed lungs and severed arteries
-			\nName of Cemetery or Crematory: North Cayus Crematorium
-			\nDate: 26/9/2071
-			\nDoctor / Examiner: Dr. Neal
-			\nDate: 25/9/2071" 
-			+ "Name: Eleanor Wood
-			\nPlace of Death: North Cayus Emergency Room
-			\nUsual Residence: 1053 Meadow Lane. 
-			\nCity: North Cayus
-			\nFull Name of Hospital Institution: North Cayus Emergency Room
-			\nAddress: 0001 Emergency Lane
-			\nDate of Birth: 03/05/2061
-			\nBirthplace: North Cayus
-			\nCause of Death: Severed arteries and a severe concussion
-			\nName of Cemetery or Crematory: North Cayus Crematorium
-			\nDate: 26/9/2071
-			\nDoctor / Examiner: Dr. Neal
-			\nDate: 25/9/2071",
-		"note": "He kept their death certificates down here, filed and flattened.",
+		"body": "Two of them, kept flat and clean in a folder, in the order they "
+			+ "were filed.\n"
+			+ "\n"
+			+ "STATE OF NORTH CAYUS — CERTIFICATE OF DEATH        No. 4471-C\n"
+			+ "\n"
+			+ "NAME\tChristopher Wood\n"
+			+ "BORN\t15 October 2042, South Cayus\n"
+			+ "DIED\t25 September 2071, North Cayus Emergency Room\n"
+			+ "CAUSE\tCollapsed lungs and severed arteries, sustained as a "
+			+ "pedestrian in a motor vehicle collision\n"
+			+ "CERTIFIED\tA. Neal MD, 26 September 2071\n"
+			+ "\n"
+			+ "STATE OF NORTH CAYUS — CERTIFICATE OF DEATH        No. 4472-C\n"
+			+ "\n"
+			+ "NAME\tEleanor Wood\n"
+			+ "BORN\t3 May 2061, North Cayus\n"
+			+ "DIED\t25 September 2071, North Cayus Emergency Room\n"
+			+ "CAUSE\tSevered arteries and a severe concussion, sustained as a "
+			+ "passenger in a motor vehicle collision\n"
+			+ "CERTIFIED\tA. Neal MD, 26 September 2071\n"
+			+ "\n"
+			+ "Both filed the day after. Both signed by the same hand.",
+		"note": "He kept their death certificates down here, filed and flattened. "
+			+ "Christopher born 15 October 2042, Eleanor 3 May 2061.",
 	},
 	"marriage_photo": {
 		"name": "Marriage photo", "kind": "doc", "glyph": "photo",

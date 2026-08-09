@@ -388,14 +388,71 @@ func _draw_fog(vp: Vector2) -> void:
 		draw_rect(Rect2(Vector2.ZERO, vp), Color(FOG_DK, 0.22 * beat * beat))
 
 
+const READ_W   := 900.0    # the reader is always this wide
+const READ_MAX := 760.0    # and never taller than this
+const READ_PAD := 176.0    # heading and footer
+const LABEL_W  := 250.0    # the label column of a form
+
+
+# Long documents used to run off the bottom of the panel and keep going, so
+# the reader now grows to what it is holding and, when that is not enough,
+# steps the type down until the whole of it is on the page.
 func _draw_reader(f: Font, vp: Vector2) -> void:
 	draw_rect(Rect2(Vector2.ZERO, vp), Color(0, 0, 0, 0.55))
-	var r := _centre(vp, 860, 540)
+	var probe := _centre(vp, READ_W, READ_MAX)
+	var fs := _fs(19)
+	var h := _reader_flow(f, probe, fs, false)
+	while h > _n(READ_MAX - READ_PAD) and fs > _fs(13):
+		fs = maxi(fs - 2, _fs(13))
+		h = _reader_flow(f, probe, fs, false)
+	var r := _centre(vp, READ_W, clampf(h / S + READ_PAD, 340.0, READ_MAX))
 	_panel(r)
 	_head(f, r, _title, "")
-	draw_multiline_string(f, Vector2(r.position.x + _n(38), r.position.y + _n(120)),
-		_body, HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(76), _fs(19), -1, INK)
+	_reader_flow(f, r, fs, true)
 	_foot(f, r, "[E] put it away")
+
+
+# How much the document currently loaded overruns the reader at the smallest
+# type it will drop to. Zero or less means the whole of it is on the page.
+func reader_overflow() -> float:
+	var probe := _centre(size, READ_W, READ_MAX)
+	return _reader_flow(ThemeDB.fallback_font, probe, _fs(13), false) \
+		- _n(READ_MAX - READ_PAD)
+
+
+# Lay the document out, and draw it if asked. A line with a tab in it is a
+# form field — label in one column, value in the next — so a certificate
+# reads like a certificate instead of a paragraph. Returns the height used.
+func _reader_flow(f: Font, r: Rect2, fs: int, draw_it: bool) -> float:
+	var x: float = r.position.x + _n(38)
+	var w: float = r.size.x - _n(76)
+	var top: float = r.position.y + _n(116)
+	var y := top
+	for line in _body.split("\n"):
+		if line.strip_edges().is_empty():
+			y += fs * 0.5
+			continue
+		var tab := line.find("\t")
+		if tab == -1:
+			var ph: float = f.get_multiline_string_size(line,
+				HORIZONTAL_ALIGNMENT_LEFT, w, fs).y
+			if draw_it:
+				draw_multiline_string(f, Vector2(x, y), line,
+					HORIZONTAL_ALIGNMENT_LEFT, w, fs, -1, INK)
+			y += ph + _n(5)
+			continue
+		var label := line.substr(0, tab).strip_edges()
+		var value := line.substr(tab + 1).strip_edges()
+		var vw: float = w - _n(LABEL_W)
+		var vh: float = f.get_multiline_string_size(value,
+			HORIZONTAL_ALIGNMENT_LEFT, vw, fs).y
+		if draw_it:
+			draw_string(f, Vector2(x, y), label, HORIZONTAL_ALIGNMENT_LEFT,
+				_n(LABEL_W) - _n(14), fs, DIM)
+			draw_multiline_string(f, Vector2(x + _n(LABEL_W), y), value,
+				HORIZONTAL_ALIGNMENT_LEFT, vw, fs, -1, INK)
+		y += vh + _n(5)
+	return y - top
 
 
 func _draw_notes(f: Font, vp: Vector2) -> void:
