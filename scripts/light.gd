@@ -42,7 +42,7 @@ const ROOMS := [
 	[Rect2(1380, 978, 180, 260)],                                # front step
 	[Rect2(-783, 157, 212, 181)],                                # lift, upstairs
 	[Rect2(-783, 368, 212, 181)],                                # lift, home
-	[Rect2(-549, 157, 401, 392), Rect2(-404, 549, 256, 155)],    # the office
+	[Rect2(-549, 157, 289, 392)],                                # the office
 ]
 
 var enabled := true

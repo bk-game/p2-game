@@ -397,7 +397,7 @@ const ENTRANCE := Vector2(1462, 935)
 # says the next one every time you ask.
 const STAFF := [
 	{
-		"pos": Vector2(-188, 286), "name": "Renn", "tint": "8d9585",
+		"pos": Vector2(-410, 342), "name": "Renn", "tint": "8d9585",
 		"lines": [
 			"\"Wood, Joseph. Forty minutes out. You want the long coat, it is "
 				+ "cold in those.\"",
@@ -410,7 +410,7 @@ const STAFF := [
 		],
 	},
 	{
-		"pos": Vector2(-188, 448), "name": "Oyelaran", "tint": "a97c4a",
+		"pos": Vector2(-338, 342), "name": "Oyelaran", "tint": "a97c4a",
 		"lines": [
 			"\"Morning. You look like the pod.\"",
 			"\"Whatever is growing in that one, do not bring it back in your "
