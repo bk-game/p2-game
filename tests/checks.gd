@@ -45,6 +45,11 @@ func _ready() -> void:
 	fails += _expect("correct formula works",
 		Game.mix({"norust": 2.0, "bleach": 1.0, "exfluid": 2.5, "water": 0.0}).contains("amber"))
 	fails += _expect("three charges", Game.solution_charges == 3)
+	# the sink can be come back to: nothing but the doses is used up
+	fails += _expect("mixing again works",
+		Game.mix({"norust": 2.0, "bleach": 1.0, "exfluid": 2.5, "water": 0.0})
+			.contains("Another batch"))
+	fails += _expect("doses stack up", Game.solution_charges == 6)
 
 	# 3. scoring
 	fails += _expect("12 story items", Game.story_total() == 12)

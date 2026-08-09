@@ -33,9 +33,9 @@ func _ready() -> void:
 		"log_dregs", "<wall>", "norust", "bleach", "exfluid", "water",
 		"police_report"])
 	fails += _stage("B extinguisher clears the utility fume", false, [1], [
-		"<sink>", "axe", "family_photos"])
+		"<sink>", "letter_doctor"])
 	fails += _stage("C solution breaks strong limbs", true, [1], [
-		"death_certs", "marriage_photo", "letter_doctor"])
+		"axe", "family_photos", "death_certs", "marriage_photo"])
 	fails += _stage("D extinguisher clears the rest of the air", true, [0, 1],
 		["<body>"])
 

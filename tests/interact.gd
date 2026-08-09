@@ -27,22 +27,33 @@ func _ready() -> void:
 		_walls.append(s)
 
 	var fails := 0
-	# Fumes all cleared, strong limbs still standing: you must be able to
-	# prompt on every strong limb in order to dissolve it.
-	var reach := _flood(false, [0, 1])
+	# Hardened limbs gate each other: dissolving the one across a doorway is
+	# what puts you within reach of the ones behind it. Work outwards from
+	# what is in reach now, the way play does, and every one of them has to
+	# come up at some point — a limb no round can reach is a dead end.
+	var gone := {}
+	var moved := true
+	while moved:
+		moved = false
+		var reach := _flood(gone, [0, 1])
+		for i in Content.BRANCHES.size():
+			if not Content.BRANCHES[i]["strong"] or gone.has(i):
+				continue
+			if _nearest_limb(reach, Content.BRANCHES[i]) <= REACH:
+				gone[i] = true
+				moved = true
 	for i in Content.BRANCHES.size():
 		var b: Dictionary = Content.BRANCHES[i]
 		if not b["strong"]:
 			continue
-		var d := _nearest_limb(reach, b)
-		var ok := d <= REACH
-		print("%s strong limb %d at %s — closest you can stand: %.0f px (reach %d)"
-			% ["ok  " if ok else "FAIL", i, b["pos"], d, REACH])
-		if not ok:
+		if gone.has(i):
+			print("ok   strong limb %d at %s" % [i, b["pos"]])
+		else:
+			print("FAIL strong limb %d at %s is never within reach" % [i, b["pos"]])
 			fails += 1
 
 	# With the limbs gone, every container must be promptable too.
-	var open_reach := _flood(true, [0, 1])
+	var open_reach := _flood(_all_strong(), [0, 1])
 	for i in Content.CONTAINERS.size():
 		var d := _nearest(open_reach, Content.CONTAINERS[i]["pos"])
 		if d > OPEN:
@@ -84,7 +95,18 @@ func _nearest(reach: Dictionary, target: Vector2) -> float:
 	return best
 
 
-func _flood(strong_ok: bool, cleared: Array) -> Dictionary:
+# Every hardened limb, as the "all of them dissolved" state.
+func _all_strong() -> Dictionary:
+	var all := {}
+	for i in Content.BRANCHES.size():
+		if Content.BRANCHES[i]["strong"]:
+			all[i] = true
+	return all
+
+
+# `gone` holds the indices of hardened limbs already dissolved; the rest of
+# them still block.
+func _flood(gone: Dictionary, cleared: Array) -> Dictionary:
 	var seen := {}
 	var start := Vector2i(Content.ENTRANCE / CELL)
 	var q: Array[Vector2i] = [start]
@@ -98,19 +120,20 @@ func _flood(strong_ok: bool, cleared: Array) -> Dictionary:
 			var w := Vector2(n.x, n.y) * CELL
 			if w.x < 40 or w.x > 1680 or w.y < 40 or w.y > 1040:
 				continue
-			if _blocked(w, strong_ok, cleared):
+			if _blocked(w, gone, cleared):
 				continue
 			seen[n] = true
 			q.append(n)
 	return seen
 
 
-func _blocked(p: Vector2, strong_ok: bool, cleared: Array) -> bool:
+func _blocked(p: Vector2, gone: Dictionary, cleared: Array) -> bool:
 	for r in _walls:
 		if r.grow(PR).has_point(p):
 			return true
-	for b in Content.BRANCHES:
-		if not b["strong"] or strong_ok:
+	for i in Content.BRANCHES.size():
+		var b: Dictionary = Content.BRANCHES[i]
+		if not b["strong"] or gone.has(i):
 			continue
 		var l: Vector2 = (p - b["pos"]).rotated(-deg_to_rad(b["deg"]))
 		if abs(l.x) <= b["len"] * 0.5 + PR and abs(l.y) <= b["thick"] * 0.5 + PR:

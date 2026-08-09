@@ -137,14 +137,20 @@ func mix(cups: Dictionary) -> String:
 			return "The mixture curdles into a grey sludge and does nothing. " \
 				+ "The proportions must be wrong."
 
+	var again := flag("made_solution")
 	solution_charges += 3
 	Sfx.play("mix_ok", -5.0)
 	set_flag("made_solution")
 	add_note("Two no-rust, one bleach, two and a half extinguisher fluid, no water — "
-		+ "this is what weakens the tree.")
+		+ "this is what weakens the tree. The bottles hold enough to make it again "
+		+ "at the sink whenever the doses run out.")
+	# Nothing is used up but the doses, so the sink can be come back to.
+	if again:
+		return "Another batch, the same thin amber. Three more doses — %d in hand." \
+			% solution_charges
 	return "The water in the basin clears to a thin amber liquid that smells like " \
-		+ "a swimming pool. " \
-		+ "Three doses. Pour it on a dark limb to make it brittle."
+		+ "a swimming pool. Three doses. Pour it on a dark limb to make it brittle. " \
+		+ "There is enough in the bottles to mix this again when they run out."
 
 
 # ── Scoring ──────────────────────────────────────────────────────────────

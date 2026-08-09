@@ -245,6 +245,10 @@ const FIXED_NOTES := [
 const BRANCHES := [
 	# ── gates: only these need the brittle solution ──────────────────────
 	{"pos": Vector2(242, 460), "len": 110, "thick": 40, "deg": 90,  "strong": true},
+	{"pos": Vector2(468, 745), "len": 110, "thick": 34, "deg": 90,  "strong": true},
+	{"pos": Vector2(360, 770), "len": 150, "thick": 30, "deg": 24,  "strong": true},
+	{"pos": Vector2(188, 620), "len": 130, "thick": 28, "deg": 96,  "strong": true},
+	{"pos": Vector2(180, 200), "len": 140, "thick": 30, "deg": 40,  "strong": true},
 	{"pos": Vector2(408, 890), "len": 170, "thick": 32, "deg": 20,  "strong": true},
 	{"pos": Vector2(318, 946), "len": 150, "thick": 30, "deg": 108, "strong": true},
 	{"pos": Vector2(806, 858), "len": 180, "thick": 32, "deg": 74,  "strong": true},

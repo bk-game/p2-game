@@ -35,7 +35,11 @@ func _ready() -> void:
 	for s in FP.SOLIDS:
 		_walls.append(s)
 
-	var for_strong := _flood(false, [0, 1])   # limbs up, air clear
+	# Hardened limbs gate each other, so which ones are standing depends on
+	# how far in you are; tests/interact covers that chain. Here the question
+	# is only whether a limb can be picked out from where you stand, so probe
+	# from open floor.
+	var for_strong := _flood(true, [0, 1])   # limbs cleared, air clear
 	var for_fumes := _flood(true, [])            # clouds still there
 	var for_rest := _flood(true, [0, 1])      # everything opened up
 
