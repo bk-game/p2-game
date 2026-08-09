@@ -313,7 +313,9 @@ const CONTAINERS := [
 # cloud has to be blown out with the extinguisher before you can pass it.
 const FUMES := [
 	{"pos": Vector2(576, 900), "r": 104.0},
-	{"pos": Vector2(188, 700), "r": 100.0},
+	# over the hidden door and the hardened limb across it, so the way in to
+	# the room at the back is hidden in the green as well as blocked
+	{"pos": Vector2(230, 455), "r": 95.0},
 ]
 
 # The hidden room at the back, behind the panelling the photos covered.
