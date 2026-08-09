@@ -148,6 +148,27 @@ const ITEMS := {
 			+ "mean that.'",
 		"note": "Joe and Christopher were married. He kept the photo where no one could see it.",
 	},
+	"card_christopher": {
+		"name": "Birthday card, unsent", "kind": "doc", "glyph": "letter",
+		"tint": "d8cfc0", "pos": Vector2(1540, 700), "story": true,
+		"body": "A card with a boat on the front, written in and never sent.\n\n"
+			+ "\"Chris — 15/10 again. Twenty-nine years of me getting you the wrong "
+			+ "thing. I have kept the date on everything in this house because it is "
+			+ "the only four numbers I will never lose.\n\nAll my love, always. J.\"",
+		"note": "Christopher's birthday is 15/10. Joe used the date on things around "
+			+ "the house because he could not lose it.",
+		"grants": "knows_chris_birthday",
+	},
+	"card_eleanor": {
+		"name": "Child's birthday card", "kind": "doc", "glyph": "photo",
+		"tint": "e8c9d4", "pos": Vector2(1306, 306), "story": true,
+		"body": "Card stock folded by a child, a cake drawn on it in wax crayon with "
+			+ "ten candles counted out carefully.\n\n"
+			+ "\"TO ELEANOR. 3/5. LOVE DAD AND DAD.\"\n\n"
+			+ "Inside, in an adult hand: \"Ten. How.\"",
+		"note": "Eleanor's birthday is 3/5. She turned ten.",
+		"grants": "knows_eleanor_birthday",
+	},
 	"bunny": {
 		"name": "Stuffed bunny", "kind": "doc", "glyph": "toy",
 		"tint": "d9b9c4", "pos": Vector2(172, 352), "story": true,
@@ -300,12 +321,12 @@ const CONTAINERS := [
 	{"pos": Vector2(700, 186), "items": []},
 	{"pos": Vector2(408, 462), "items": []},
 	{"pos": Vector2(1120, 506), "items": []},
-	{"pos": Vector2(1306, 306), "items": []},
+	{"pos": Vector2(1306, 306), "items": ["card_eleanor"]},
 	{"pos": Vector2(1014, 722), "items": ["log_dregs"]},
 	{"pos": Vector2(992, 822), "items": []},
 	{"pos": Vector2(262, 894), "items": []},
 	{"pos": Vector2(170, 852), "items": []},
-	{"pos": Vector2(1540, 700), "items": []},
+	{"pos": Vector2(1540, 700), "items": ["card_christopher"]},
 	{"pos": Vector2(214, 306), "items": []},
 ]
 
