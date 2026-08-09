@@ -108,7 +108,7 @@ func _check_formula() -> void:
 			return
 	flags["knows_formula"] = true     # set directly: set_flag comes back here
 	add_note("Full formula: two cups no-rust, one cup bleach, two and a half cups "
-		+ "extinguisher fluid, no water. Made up in the bathroom sink.")
+		+ "extinguisher fluid, no water.")
 
 
 func flag(f: String) -> bool:

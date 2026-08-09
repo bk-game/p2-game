@@ -39,11 +39,12 @@ const ITEMS := {
 			+ "TWO CUPS of the no rust. The other two measures are further down the "
 			+ "page, and the last one I gave up on paper and put somewhere I could not "
 			+ "lose it.\n\n"
-			+ "Mix it in the BATHROOM SINK — it needs a basin and a running tap, and "
-			+ "I am not doing this on the kitchen table again.\n\n"
+			+ "It wants a basin and a tap running, so not in here. I am not doing "
+			+ "this on the kitchen table again.\n\n"
 			+ "  [ the rest of this page has been torn away ]",
-		"note": "The mix is no-rust, bleach and extinguisher fluid, made up in the "
-			+ "bathroom sink. Two cups of no-rust. The other measures are elsewhere.",
+		"note": "The mix is no-rust, bleach and extinguisher fluid. Two cups of "
+			+ "no-rust. Joe made it up somewhere with a basin and a tap, not the "
+			+ "kitchen. The other two measures are written down elsewhere.",
 		"grants": "knows_dose_norust",
 	},
 	"log_dregs": {
@@ -52,10 +53,11 @@ const ITEMS := {
 		"body": "The bottom half of the torn page, folded twice.\n\n"
 			+ "...and ONE CUP of the BLEACH. No more than that — at two it goes cloudy "
 			+ "and does nothing at all.\n\n"
-			+ "The third measure is the one I keep getting wrong, so it is not on paper "
-			+ "any more. It is on the wall where I mix.",
-		"note": "One cup of bleach in the mix, no more. The third measure is written "
-			+ "on the wall where Joe mixed.",
+			+ "The third measure is the one I kept getting wrong, so it is not on "
+			+ "paper any more. I put it through the wall of the room where I first "
+			+ "tried this, and I am not going over it again.",
+		"note": "One cup of bleach in the mix, no more. The third measure Joe cut "
+			+ "into a wall somewhere, in the room where he first tried mixing.",
 		"grants": "knows_dose_bleach",
 	},
 	"log_water": {
@@ -247,24 +249,23 @@ const FIXED_NOTES := [
 		"prompt": "Read the note on the desk",
 		"title": "Note on the desk",
 		"body": "Joe's hand, hurried, held down by a mug ring.\n\n"
-			+ "\"The way through to the back is the SECOND door on this side of the "
-			+ "room — not the kitchen one, the one past it. The tree has grown right "
-			+ "over the top of it and I keep walking by without seeing it.\n\n"
-			+ "Everything I have left is through there.\"",
-		"note": "There is a second door out of the living room, past the kitchen door "
-			+ "and under the tree. Joe kept what was left through it.",
+			+ "\"Two ways out of this room and I only ever use the one. The other you "
+			+ "would have to know was there — it has taken that end of the room and I "
+			+ "walk straight past it.\n\n"
+			+ "Everything I have left is on the far side of it.\"",
+		"note": "There is another way out of the living room, and the tree has taken "
+			+ "that end of it. What Joe had left is through there.",
 		"grants": "knows_back_door",
 	},
 	{
-		"pos": Vector2(1060, 88), "surface": "wall",
-		"prompt": "Read what is scratched into the wall",
-		"title": "Scratched into the bathroom wall",
-		"body": "Cut into the boards beside the sink, deep, with something sharper "
+		"pos": Vector2(540, 598), "surface": "wall",
+		"prompt": "Read what is cut into the wall",
+		"title": "Cut into the kitchen wall",
+		"body": "Low down on the boards by the table, deep, with something sharper "
 			+ "than a knife. The letters are gone over twice.\n\n"
 			+ "TWO AND A HALF CUPS OF THE EXTINGUISHER STUFF.\n\n"
-			+ "Under it, smaller: \"STOP GUESSING. YOU HAVE WASTED FOUR BATCHES.\"",
-		"note": "Scratched by the bathroom sink: two and a half cups of extinguisher "
-			+ "fluid.",
+			+ "Under it, smaller: \"STOP GUESSING. FOUR BATCHES WASTED.\"",
+		"note": "Cut into the kitchen wall: two and a half cups of extinguisher fluid.",
 		"grants": "knows_dose_exfluid",
 	},
 ]

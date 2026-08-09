@@ -210,8 +210,7 @@ func _bag_key(k: int) -> void:
 				mode = Mode.READ
 		KEY_M:
 			if not _at_sink:
-				_mix_msg = "Not here. Joe mixed this in the bathroom sink — you " \
-					+ "need a basin and a tap."
+				_mix_msg = "Not here. This wants a basin and a tap running."
 				return
 			_mix_msg = Game.mix(_cups)
 			if Game.flag("made_solution"):

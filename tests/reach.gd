@@ -30,7 +30,7 @@ func _ready() -> void:
 	# all three pieces belong in the first stage
 	fails += _stage("A start (bare hands)", false, [], [
 		"extinguisher", "log_1_2", "log_3", "log_5_6", "log_formula", "log_water",
-		"log_dregs", "<wall>", "norust", "bleach", "exfluid", "water",
+		"log_dregs", "norust", "bleach", "exfluid", "water",
 		"police_report", "card_christopher", "card_eleanor"])
 	fails += _stage("B extinguisher clears the utility fume", false, [1], [
 		"<sink>", "letter_doctor"])
@@ -38,6 +38,15 @@ func _ready() -> void:
 		"axe", "family_photos", "death_certs", "marriage_photo"])
 	fails += _stage("D extinguisher clears the rest of the air", true, [0, 1],
 		["<body>"])
+
+	# writing fixed to the house is part of the formula, so it has to be
+	# readable bare-handed, before anything has been cleared or cut
+	var bare := _flood(false, [])
+	for i in Content.FIXED_NOTES.size():
+		var np: Vector2 = Content.FIXED_NOTES[i]["pos"]
+		if not _near(bare, np):
+			print("FAIL  [A start] cannot read the note fixed at %s" % np)
+			fails += 1
 
 	if OS.get_environment("DUMP") != "":
 		_dump(_flood(false, [1]))
@@ -50,8 +59,7 @@ func _stage(label: String, strong_ok: bool, cleared: Array, targets: Array) -> i
 	var bad := 0
 	for t in targets:
 		var p: Vector2 = Content.SINK if t == "<sink>" else \
-			(Content.BODY_POS if t == "<body>" else \
-			(Content.FIXED_NOTES[0]["pos"] if t == "<wall>" else Content.ITEMS[t]["pos"]))
+			(Content.BODY_POS if t == "<body>" else Content.ITEMS[t]["pos"])
 		if not _near(reach, p):
 			print("FAIL  [%s] cannot reach %s at %s" % [label, t, p])
 			bad += 1
