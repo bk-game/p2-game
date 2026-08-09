@@ -88,8 +88,25 @@ func add_note(text: String) -> void:
 		notes_changed.emit()
 
 
+# The three measures are written down in three different places, one of them
+# on a wall. Holding all three is what counts as knowing the formula.
+const FORMULA_PARTS := ["knows_dose_norust", "knows_dose_bleach", "knows_dose_exfluid"]
+
+
 func set_flag(f: String, v := true) -> void:
 	flags[f] = v
+	_check_formula()
+
+
+func _check_formula() -> void:
+	if flag("knows_formula"):
+		return
+	for part in FORMULA_PARTS:
+		if not flag(part):
+			return
+	flags["knows_formula"] = true     # set directly: set_flag comes back here
+	add_note("Full formula: two cups no-rust, one cup bleach, two and a half cups "
+		+ "extinguisher fluid, no water. Made up in the bathroom sink.")
 
 
 func flag(f: String) -> bool:

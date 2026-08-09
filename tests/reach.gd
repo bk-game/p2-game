@@ -26,9 +26,12 @@ func _ready() -> void:
 
 	var fails := 0
 	# stage: which branch strengths are passable, which fumes are cleared
+	# every measure of the formula has to be readable before you can mix, so
+	# all three pieces belong in the first stage
 	fails += _stage("A start (bare hands)", false, [], [
 		"extinguisher", "log_1_2", "log_3", "log_5_6", "log_formula", "log_water",
-		"norust", "bleach", "exfluid", "water", "police_report"])
+		"log_dregs", "<wall>", "norust", "bleach", "exfluid", "water",
+		"police_report"])
 	fails += _stage("B extinguisher clears the utility fume", false, [1], [
 		"<sink>", "axe", "family_photos"])
 	fails += _stage("C solution breaks strong limbs", true, [1], [
@@ -47,7 +50,8 @@ func _stage(label: String, strong_ok: bool, cleared: Array, targets: Array) -> i
 	var bad := 0
 	for t in targets:
 		var p: Vector2 = Content.SINK if t == "<sink>" else \
-			(Content.BODY_POS if t == "<body>" else Content.ITEMS[t]["pos"])
+			(Content.BODY_POS if t == "<body>" else \
+			(Content.FIXED_NOTES[0]["pos"] if t == "<wall>" else Content.ITEMS[t]["pos"]))
 		if not _near(reach, p):
 			print("FAIL  [%s] cannot reach %s at %s" % [label, t, p])
 			bad += 1

@@ -34,15 +34,29 @@ const ITEMS := {
 		"name": "Logbook (page 4, torn)", "kind": "doc", "glyph": "paper",
 		"tint": "bfae84", "pos": Vector2(824, 214), "story": true,
 		"body": "18/9 — I've been experimenting with different chemicals, I think I've "
-			+ "found the correct formula to weaken the tree. In case I forget it's: two "
-			+ "cups of NO RUST BUILDUP, one cup of BLEACH, and two and a half cups of the "
-			+ "stuff inside the FIRE EXTINGUISHER.\n\n"
+			+ "found the correct formula to weaken the tree. It takes three things: NO "
+			+ "RUST BUILDUP, BLEACH, and the stuff inside the FIRE EXTINGUISHER.\n\n"
+			+ "TWO CUPS of the no rust. The other two measures are further down the "
+			+ "page, and the last one I gave up on paper and put somewhere I could not "
+			+ "lose it.\n\n"
 			+ "Mix it in the BATHROOM SINK — it needs a basin and a running tap, and "
 			+ "I am not doing this on the kitchen table again.\n\n"
 			+ "  [ the rest of this page has been torn away ]",
-		"note": "Formula: 2 no-rust, 1 bleach, 2.5 extinguisher fluid. Mix it in the "
-			+ "bathroom sink. Page is torn.",
-		"grants": "knows_formula",
+		"note": "The mix is no-rust, bleach and extinguisher fluid, made up in the "
+			+ "bathroom sink. Two cups of no-rust. The other measures are elsewhere.",
+		"grants": "knows_dose_norust",
+	},
+	"log_dregs": {
+		"name": "Logbook (page 4, lower half)", "kind": "doc", "glyph": "scrap",
+		"tint": "bfae84", "pos": Vector2(1014, 722), "story": true,
+		"body": "The bottom half of the torn page, folded twice.\n\n"
+			+ "...and ONE CUP of the BLEACH. No more than that — at two it goes cloudy "
+			+ "and does nothing at all.\n\n"
+			+ "The third measure is the one I keep getting wrong, so it is not on paper "
+			+ "any more. It is on the wall where I mix.",
+		"note": "One cup of bleach in the mix, no more. The third measure is written "
+			+ "on the wall where Joe mixed.",
+		"grants": "knows_dose_bleach",
 	},
 	"log_water": {
 		"name": "Torn scrap", "kind": "doc", "glyph": "scrap",
@@ -193,6 +207,26 @@ const ITEMS := {
 # nowhere else.
 const SINK := Vector2(990, 150)
 
+# ── Notes fixed in place ─────────────────────────────────────────────────
+# Writing that belongs to the house rather than to you: read it where it is,
+# it never comes into the bag, and it never counts towards what you
+# recovered. "surface" picks how it is drawn — gouged into a wall, or a sheet
+# left on a piece of furniture.
+const FIXED_NOTES := [
+	{
+		"pos": Vector2(1060, 88), "surface": "wall",
+		"prompt": "Read what is scratched into the wall",
+		"title": "Scratched into the bathroom wall",
+		"body": "Cut into the boards beside the sink, deep, with something sharper "
+			+ "than a knife. The letters are gone over twice.\n\n"
+			+ "TWO AND A HALF CUPS OF THE EXTINGUISHER STUFF.\n\n"
+			+ "Under it, smaller: \"STOP GUESSING. YOU HAVE WASTED FOUR BATCHES.\"",
+		"note": "Scratched by the bathroom sink: two and a half cups of extinguisher "
+			+ "fluid.",
+		"grants": "knows_dose_exfluid",
+	},
+]
+
 # Branches radiating from the tree. strong = needs the brittle solution.
 # {pos, len, thick, deg, strong}
 const BRANCHES := [
@@ -250,7 +284,7 @@ const CONTAINERS := [
 	{"pos": Vector2(408, 462), "items": []},
 	{"pos": Vector2(1120, 506), "items": []},
 	{"pos": Vector2(1306, 306), "items": []},
-	{"pos": Vector2(1014, 722), "items": []},
+	{"pos": Vector2(1014, 722), "items": ["log_dregs"]},
 	{"pos": Vector2(992, 822), "items": []},
 	{"pos": Vector2(262, 894), "items": []},
 	{"pos": Vector2(170, 852), "items": []},

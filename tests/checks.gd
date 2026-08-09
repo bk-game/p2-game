@@ -47,11 +47,11 @@ func _ready() -> void:
 	fails += _expect("three charges", Game.solution_charges == 3)
 
 	# 3. scoring
-	fails += _expect("11 story items", Game.story_total() == 11)
+	fails += _expect("12 story items", Game.story_total() == 12)
 	for id in Content.ITEMS:
 		if not Game.inventory.has(id):
 			Game.inventory.append(id)
-	fails += _expect("full score", Game.story_found() == 11)
+	fails += _expect("full score", Game.story_found() == 12)
 	# 4. the report's body line has to follow the body
 	fails += _expect("body not recovered until you find him",
 		Game.report().contains("Body NOT recovered"))

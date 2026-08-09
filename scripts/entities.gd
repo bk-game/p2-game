@@ -53,6 +53,12 @@ func _ready() -> void:
 	sink.position = Content.SINK
 	sink.z_index = 40
 	add_child(sink)
+	for w in Content.FIXED_NOTES:
+		var note := FixedNote.new()
+		note.data = w
+		note.position = w["pos"]
+		note.z_index = 26     # over the wall, under anything lying on the floor
+		add_child(note)
 
 
 # ══ Pickup ═══════════════════════════════════════════════════════════════
@@ -395,6 +401,68 @@ class Fume extends Node2D:
 			var a0 := TAU * i / 16.0 + _t * 0.12
 			draw_arc(Vector2.ZERO, radius * 0.72, a0, a0 + TAU / 26.0, 5,
 				FUME_EDGE, 2.5)
+
+
+# ══ Fixed note: read where it is, never taken ════════════════════════════
+class FixedNote extends Node2D:
+	var data := {}
+	var read := false
+
+	func _ready() -> void:
+		add_to_group("act")
+
+	func bias() -> float:
+		return 45.0
+
+	func prompt() -> String:
+		return data["prompt"]
+
+	# Nothing comes off the wall: this reads out and writes to the notebook,
+	# and never touches the inventory, so it cannot count as recovered.
+	func act() -> void:
+		read = true
+		Game.notice.emit(data["title"], data["body"])
+		if data.get("note", "") != "":
+			Game.add_note(data["note"])
+		if data.get("grants", "") != "":
+			Game.set_flag(data["grants"])
+		queue_redraw()
+
+	func _draw() -> void:
+		if data["surface"] == "wall":
+			_scratched()
+		else:
+			_on_paper()
+		if read:
+			return
+		draw_arc(Vector2.ZERO, 30.0, 0, TAU, 28, Color(1, 0.95, 0.7, 0.4), 2.0)
+
+	# gouged letters: short strokes cut into the boards, catching the light
+	func _scratched() -> void:
+		var pale := Color(0.86, 0.82, 0.68, 0.85)
+		var deep := Color(0.16, 0.11, 0.06, 0.8)
+		for row in 3:
+			var y: float = -7.0 + row * 7.0
+			var n := 7 - row
+			for i in n:
+				var x: float = -22.0 + i * 6.4 + Mat.noise(row * 3.0 + i, 1.3) * 2.0
+				var h: float = 2.4 + Mat.noise(i, row) * 2.2
+				draw_line(Vector2(x, y - h), Vector2(x + 1.5, y + h), deep, 2.0)
+				draw_line(Vector2(x - 0.8, y - h), Vector2(x + 0.7, y + h), pale, 1.0)
+
+	# a sheet left where it was put down, with its lines of writing showing
+	func _on_paper() -> void:
+		var r := Rect2(-15, -19, 30, 38)
+		draw_colored_polygon(Mat.rr(Rect2(r.position + Vector2(2, 3), r.size), 2.0),
+			Color(0, 0, 0, 0.18))
+		draw_colored_polygon(Mat.rr(r, 2.0), Color("eae4d6"))
+		var edge := Mat.rr(r, 2.0)
+		edge.append(edge[0])
+		draw_polyline(edge, Color("bdb49c"), 1.5)
+		for i in 6:
+			var y: float = r.position.y + 6.0 + i * 5.2
+			draw_line(Vector2(r.position.x + 4, y), Vector2(r.end.x - 4, y),
+				Color(0, 0, 0, 0.32), 1.0)
 
 
 # ══ Sink: the one place the chemicals can be mixed ═══════════════════════
