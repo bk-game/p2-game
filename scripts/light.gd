@@ -14,13 +14,14 @@ const PAD      := 26.0                  # bleed past the room so walls read
 const STRANDED := 70.0                  # all the light you get somewhere unmapped
 const GLOW     := 78.0                  # what you can see by yourself, unlit
 
-# Two rooms are on the house wiring: pitch dark until their switch is found,
-# and once lit their light gets out of the room through the doorway, which is
-# the rectangle here. Everywhere else is lit as it always was.
-const SWITCHED := {
-	2: Rect2(950, 180, 80, 37),          # bathroom
-	0: Rect2(212, 415, 60, 37),          # the room at the back
-}
+# Rooms on the house wiring: pitch dark until their switch is found.
+# Everywhere else is lit as it always was.
+const SWITCHED := [2, 0]                 # bathroom, the room at the back
+
+# The openings, taken from the plan so there is one copy of where they are.
+const PLAN := preload("res://scripts/floorplan.gd")
+
+var _doorways: Array[Rect2] = []
 
 # The dark closes in over the outer part of the beam as a gradient rather
 # than in steps: rings of vertex-coloured quads carry the alpha from clear
@@ -49,6 +50,22 @@ var _room := 5
 func _ready() -> void:
 	add_to_group("light")
 	global_position = Vector2.ZERO
+	for d in PLAN.DOORS:
+		_doorways.append(d["rect"] as Rect2)
+
+
+func _dark(room: int) -> bool:
+	return SWITCHED.has(room) and not Game.room_lit(room)
+
+
+# The openings into a room, for carrying its light out or your own in.
+func _mouths(room: int) -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	for d in _doorways:
+		for rect in ROOMS[room]:
+			if (rect as Rect2).grow(2.0).intersects(d):
+				out.append(d)
+	return out
 
 
 func toggle() -> void:
@@ -91,8 +108,15 @@ func _lit_rects(origin: Vector2) -> Array[Rect2]:
 		lit.append((rect as Rect2).grow(PAD))
 	if _room_exact(origin) != -1:
 		return lit                     # standing in a room proper
+	# In a doorway: the opening itself carries the light across the gap, so
+	# there is always something under you. The room on the far side comes in
+	# only if it is lit — standing in the frame of a dark room should show
+	# you no more of it than standing outside it does.
+	for d in _doorways:
+		if d.has_point(origin):
+			lit.append(d)
 	for i in ROOMS.size():
-		if i == _room:
+		if i == _room or _dark(i):
 			continue
 		for rect in ROOMS[i]:
 			var g: Rect2 = (rect as Rect2).grow(PAD)
@@ -107,20 +131,18 @@ func _lit_rects(origin: Vector2) -> Array[Rect2]:
 # wall either side has nothing under it and stops the ray dead.
 func _spill(lit: Array[Rect2]) -> Array[Rect2]:
 	for i in SWITCHED:
-		if i == _room or not Game.room_lit(i):
+		if i == _room or _dark(i):
 			continue
 		for rect in ROOMS[i]:
 			lit.append(rect as Rect2)
-		lit.append(SWITCHED[i] as Rect2)
+		lit.append_array(_mouths(i))
 	return lit
 
 
 # How far the lantern carries from here. Your own light is a pool at your
 # feet; the run of a room is only yours if the room is lit.
 func _carry() -> float:
-	if SWITCHED.has(_room) and not Game.room_lit(_room):
-		return GLOW
-	return RADIUS
+	return GLOW if _dark(_room) else RADIUS
 
 
 func _draw() -> void:

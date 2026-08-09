@@ -51,6 +51,21 @@ func _ready() -> void:
 	fails += _expect("the room you are in is unaffected",
 		light._carry() == light.RADIUS)
 
+	# standing in the frame of a dark room shows you no more of it than
+	# standing outside it does
+	Game.room_lights[2] = false
+	light._room = 3
+	var mouth := Vector2(990, 198)          # in the opening itself
+	var at_door: Array[Rect2] = light._spill(light._lit_rects(mouth))
+	fails += _expect("a dark room stays dark from its own doorway",
+		light._wall_limit(mouth, up, light.RADIUS, at_door) < 30.0)
+	fails += _expect("and the doorway still has something under it",
+		light._which(mouth, at_door) != -1)
+	Game.room_lights[2] = true
+	var at_door_lit: Array[Rect2] = light._spill(light._lit_rects(mouth))
+	fails += _expect("but opens up once it is lit",
+		light._wall_limit(mouth, up, light.RADIUS, at_door_lit) > 80.0)
+
 	print("ROOMS: %s" % ("ALL PASS" if fails == 0 else "%d FAILURES" % fails))
 	get_tree().quit()
 
