@@ -14,7 +14,7 @@ const ACCENT := Color("e0b25c")
 const FOG    := Color(0.62, 0.82, 0.18)   # the green closing over your eyes
 const FOG_DK := Color(0.16, 0.26, 0.06)
 
-enum Mode {PLAY, READ, BAG, NOTES, REPORT, LOCK}
+enum Mode {PLAY, READ, BAG, NOTES, REPORT, LOCK, CUT}
 
 var mode: int = Mode.PLAY
 var _title := ""
@@ -39,6 +39,7 @@ func _ready() -> void:
 	Game.notes_changed.connect(func(): queue_redraw())
 	Game.open_sink.connect(_open_sink)
 	Game.open_lock.connect(_open_lock)
+	Game.open_cut.connect(_open_cut)
 
 
 func blocking() -> bool:
@@ -86,6 +87,13 @@ func _open_lock() -> void:
 	queue_redraw()
 
 
+func _open_cut() -> void:
+	mode = Mode.CUT
+	_code = ""
+	_lock_msg = ""
+	queue_redraw()
+
+
 func _process(delta: float) -> void:
 	if _toast_t > 0.0:
 		_toast_t -= delta
@@ -122,6 +130,8 @@ func _unhandled_key_input(e: InputEvent) -> void:
 			_bag_key(k)
 		Mode.LOCK:
 			_lock_key(k)
+		Mode.CUT:
+			_cut_key(k)
 		Mode.PLAY:
 			if k == KEY_I:
 				mode = Mode.BAG
@@ -141,6 +151,36 @@ func _unhandled_key_input(e: InputEvent) -> void:
 				return
 	get_viewport().set_input_as_handled()
 	queue_redraw()
+
+
+# Which of the three marks to take, and in what order. Same entry as the
+# dial, but three slots and each mark only once.
+func _cut_key(k: int) -> void:
+	if k in [KEY_ESCAPE, KEY_Q, KEY_I]:
+		mode = Mode.PLAY
+		return
+	if k == KEY_BACKSPACE:
+		_code = _code.substr(0, maxi(_code.length() - 1, 0))
+		_lock_msg = ""
+		return
+	if k in [KEY_ENTER, KEY_KP_ENTER, KEY_E]:
+		if _code.length() < 3:
+			_lock_msg = "All three, in order."
+			return
+		if Game.try_cut(_code):
+			mode = Mode.PLAY
+		else:
+			_lock_msg = "The blade binds and the cut closes over. Not that way."
+			_code = ""
+		return
+	var mark := -1
+	if k >= KEY_1 and k <= KEY_3:
+		mark = k - KEY_0
+	elif k >= KEY_KP_1 and k <= KEY_KP_3:
+		mark = k - KEY_KP_0
+	if mark > 0 and _code.length() < 3 and not _code.contains(str(mark)):
+		_code += str(mark)
+		_lock_msg = ""
 
 
 # Four digits on a dial. Numbers go in, backspace takes one back off, and
@@ -275,6 +315,7 @@ func _draw() -> void:
 		Mode.NOTES: _draw_notes(f, vp)
 		Mode.BAG: _draw_inventory(f, vp)
 		Mode.LOCK: _draw_lock(f, vp)
+		Mode.CUT: _draw_cut(f, vp)
 
 
 func _draw_lock(f: Font, vp: Vector2) -> void:
@@ -300,6 +341,33 @@ func _draw_lock(f: Font, vp: Vector2) -> void:
 		draw_string(f, Vector2(r.position.x + _n(38), r.end.y - _n(64)), _lock_msg,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(18), INK)
 	_foot(f, r, "0-9 dial    backspace    [E] try it    [I] step away")
+
+
+func _draw_cut(f: Font, vp: Vector2) -> void:
+	draw_rect(Rect2(Vector2.ZERO, vp), Color(0, 0, 0, 0.55))
+	var r := _centre(vp, 640, 380)
+	_panel(r)
+	_head(f, r, "THE GRAIN", "three hearts in it")
+	draw_string(f, Vector2(r.position.x + _n(38), r.position.y + _n(124)),
+		"Take them in the order the grain will give, or the last cut binds.",
+		HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(76), _fs(17), DIM)
+	for i in Content.CUT_MARKS.size():
+		draw_string(f, Vector2(r.position.x + _n(38), r.position.y + _n(160) + i * _n(28)),
+			"%d   %s" % [i + 1, Content.CUT_MARKS[i]],
+			HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(19), INK)
+	var slot: float = _n(56)
+	var x0: float = r.get_center().x + _n(40)
+	for i in 3:
+		var box := Rect2(x0 + i * (slot + _n(12)), r.position.y + _n(168), slot, _n(66))
+		draw_rect(box, Color(0, 0, 0, 0.45))
+		draw_rect(box, EDGE, false, 2.0)
+		if i < _code.length():
+			draw_string(f, Vector2(box.position.x + _n(18), box.end.y - _n(20)),
+				_code[i], HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(30), ACCENT)
+	if _lock_msg != "":
+		draw_string(f, Vector2(r.position.x + _n(38), r.end.y - _n(64)), _lock_msg,
+			HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(76), _fs(17), INK)
+	_foot(f, r, "1-3 in order    backspace    [E] cut    [I] step back")
 
 
 # What breathing the green looks like from inside it: the whole view goes

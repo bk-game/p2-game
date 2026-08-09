@@ -9,6 +9,7 @@ signal toast(text: String)
 signal notes_changed
 signal open_sink
 signal open_lock
+signal open_cut
 signal lock_opened
 
 var inventory: Array[String] = []
@@ -125,6 +126,18 @@ func try_code(code: String) -> bool:
 	set_flag("bedroom_open")
 	add_note("The dial on their bedroom door takes Christopher's birthday, 15/10.")
 	lock_opened.emit()
+	return true
+
+
+# ── Cutting the limb in the doorframe ────────────────────────────────────
+# Three marks, taken in the order the grain gives. Returns whether it held.
+func try_cut(seq: String) -> bool:
+	if seq != Content.CUT_ORDER:
+		Sfx.play("chop", -12.0, 0.7)
+		return false
+	set_flag("gate_cut")
+	Sfx.play("crack", -8.0)
+	add_note("The limb in the doorframe gives up its cuts knot, split, pale ring.")
 	return true
 
 

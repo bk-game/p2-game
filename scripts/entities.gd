@@ -157,6 +157,7 @@ class Branch extends StaticBody2D:
 	var thick := 30.0
 	var cut := 0.0          # seconds of sawing done so far
 	var seed_v := 0.0       # fixed per root, so its shape never shifts
+	var gate := false       # grown into a doorframe: softening is not enough
 	var _chop := 0.0
 
 	func bias() -> float:
@@ -168,6 +169,7 @@ class Branch extends StaticBody2D:
 		length = d["len"]
 		thick = d["thick"]
 		strong = d["strong"]
+		gate = d.get("gate", false)
 		seed_v = Mat.noise(d["pos"].x, d["pos"].y) * TAU
 
 	func _ready() -> void:
@@ -187,9 +189,18 @@ class Branch extends StaticBody2D:
 		return global_position + l.rotated(rotation)
 
 	func cuttable() -> bool:
-		return not strong or brittle
+		if strong and not brittle:
+			return false
+		# softened is only half of the one in the doorframe: the cuts have to
+		# be taken in the order the grain gives, or the blade binds
+		return not gate or Game.flag("gate_cut")
+
+	func _bound() -> bool:
+		return gate and brittle and not Game.flag("gate_cut")
 
 	func prompt() -> String:
+		if _bound():
+			return "Softened, but the grain in it will bind the blade"
 		if cuttable():
 			if cut > 0.0:
 				return "Cutting through... %d%%" % int(cut / CUT_TIME * 100.0)
@@ -223,6 +234,9 @@ class Branch extends StaticBody2D:
 			queue_redraw()
 
 	func act() -> void:
+		if _bound():
+			Game.open_cut.emit()
+			return
 		if cuttable():
 			return          # cutting is a hold, handled by the player
 		if Game.solution_charges > 0:
@@ -294,6 +308,8 @@ class Branch extends StaticBody2D:
 		edge.append(edge[0])            # outline, or pale roots vanish into the
 		draw_polyline(edge, Mat.shade(base[0], 0.55), 2.0)   # wood floor
 
+		if gate:
+			_marks()
 		if brittle:
 			for i in 4:
 				var t: float = 0.2 + 0.2 * i
@@ -303,6 +319,23 @@ class Branch extends StaticBody2D:
 					Color(0.25, 0.22, 0.18, 0.8), 1.5)
 		if cut > 0.0:
 			_draw_cracks(cut / CUT_TIME)
+
+	# The three hearts you have to cut, drawn so the page has something to
+	# name: a pale ring, a black knot, a split.
+	func _marks() -> void:
+		var ring := _mid(0.24)
+		var h := _half(0.24)
+		draw_line(ring + Vector2(0, -h), ring + Vector2(0, h),
+			Color(0.90, 0.86, 0.72, 0.9), 5.0)
+		var knot := _mid(0.5)
+		draw_circle(knot, _half(0.5) * 0.55, Color(0.12, 0.09, 0.06, 0.95))
+		draw_circle(knot, _half(0.5) * 0.3, Color(0.30, 0.22, 0.14, 0.95))
+		var split := _mid(0.78)
+		var sh := _half(0.78)
+		for i in 3:
+			var f: float = -1.0 + i
+			draw_line(split + Vector2(f * 2.0, -sh + 2.0),
+				split + Vector2(-f * 2.0, sh - 2.0), Color(0.08, 0.06, 0.04, 0.9), 2.0)
 
 	# One fine root leaving the side of the run and forking once.
 	func _rootlet(t: float, side: float, base: Color) -> void:

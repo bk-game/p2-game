@@ -60,6 +60,19 @@ const ITEMS := {
 			+ "into a wall somewhere, in the room where he first tried mixing.",
 		"grants": "knows_dose_bleach",
 	},
+	"log_cut": {
+		"name": "Logbook (page 5)", "kind": "doc", "glyph": "paper",
+		"tint": "c8b78d", "pos": Vector2(700, 186), "story": true,
+		"body": "17/9 — The one growing through the doorframe will not come apart "
+			+ "like the others even softened. There are three hearts in it and they "
+			+ "let go in an order. Take them wrong and the last cut binds, the blade "
+			+ "sticks, and it closes over by morning.\n\n"
+			+ "The knot first. Then the split. The pale ring last, and only last — "
+			+ "that is the one holding the weight.",
+		"note": "A limb grown into a doorframe has three hearts. Cut the knot, then "
+			+ "the split, then the pale ring last.",
+		"grants": "knows_cut_order",
+	},
 	"log_water": {
 		"name": "Torn scrap", "kind": "doc", "glyph": "scrap",
 		"tint": "bfae84", "pos": Vector2(806, 504), "story": true,
@@ -230,6 +243,14 @@ const ITEMS := {
 # nowhere else.
 const SINK := Vector2(990, 150)
 
+# ── The limb across the door under the tree ──────────────────────────────
+# It has grown into the frame and has three hearts in it. Softening it is not
+# enough: the cuts have to be taken in the order the grain will give, or the
+# last one binds the blade and the whole thing closes up again. The marks are
+# what you see on it; Joe worked the order out and wrote it down.
+const CUT_MARKS := ["the pale ring", "the black knot", "the split"]
+const CUT_ORDER := "231"
+
 # ── The lock on the bedroom ──────────────────────────────────────────────
 # Their room, and the way through to the bathroom beyond it. Joe put the date
 # on everything in the house because it was four numbers he could not lose:
@@ -276,7 +297,8 @@ const FIXED_NOTES := [
 const BRANCHES := [
 	# ── gates: only these need the brittle solution ──────────────────────
 	{"pos": Vector2(242, 460), "len": 110, "thick": 40, "deg": 90,  "strong": true},
-	{"pos": Vector2(468, 745), "len": 110, "thick": 34, "deg": 90,  "strong": true},
+	{"pos": Vector2(468, 745), "len": 110, "thick": 34, "deg": 90,  "strong": true,
+		"gate": true},
 	{"pos": Vector2(360, 770), "len": 150, "thick": 30, "deg": 24,  "strong": true},
 	{"pos": Vector2(188, 620), "len": 130, "thick": 28, "deg": 96,  "strong": true},
 	{"pos": Vector2(180, 200), "len": 140, "thick": 30, "deg": 40,  "strong": true},
@@ -328,7 +350,7 @@ const CONTAINERS := [
 	{"pos": Vector2(150, 516), "items": ["axe"]},
 	{"pos": Vector2(500, 186), "items": []},
 	{"pos": Vector2(610, 186), "items": []},
-	{"pos": Vector2(700, 186), "items": []},
+	{"pos": Vector2(700, 186), "items": ["log_cut"]},
 	{"pos": Vector2(408, 462), "items": []},
 	{"pos": Vector2(1120, 506), "items": []},
 	{"pos": Vector2(1306, 306), "items": ["card_eleanor"]},

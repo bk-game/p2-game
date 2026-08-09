@@ -30,7 +30,7 @@ func _ready() -> void:
 	# all three pieces belong in the first stage
 	fails += _stage("A start (bare hands)", false, [], [
 		"extinguisher", "log_1_2", "log_3", "log_5_6", "log_formula", "log_water",
-		"log_dregs", "norust", "bleach", "exfluid", "water",
+		"log_dregs", "log_cut", "norust", "bleach", "exfluid", "water",
 		"police_report", "card_christopher", "card_eleanor"])
 	fails += _stage("B extinguisher clears the utility fume", false, [1], [
 		"<sink>", "letter_doctor"])
