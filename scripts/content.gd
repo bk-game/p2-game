@@ -230,13 +230,14 @@ const ITEMS := {
 # nowhere else.
 const SINK := Vector2(990, 150)
 
-# ── The bathroom lock ────────────────────────────────────────────────────
-# Joe put the date on everything in the house because it was four numbers he
-# could not lose: Christopher's birthday, 15/10. The cards in the living room
-# and the death certificates both carry it.
-const BATHROOM_CODE := "1510"
-const LOCK_POS := Vector2(990, 202)
-const LOCK_DOOR := Rect2(950, 180, 80, 37)
+# ── The lock on the bedroom ──────────────────────────────────────────────
+# Their room, and the way through to the bathroom beyond it. Joe put the date
+# on everything in the house because it was four numbers he could not lose:
+# Christopher's birthday, 15/10. The card in the living room carries it, and
+# so do the death certificates, once you can get to them.
+const LOCK_CODE := "1510"
+const LOCK_POS := Vector2(1307, 596)
+const LOCK_DOOR := Rect2(1272, 578, 70, 37)
 
 # ── Notes fixed in place ─────────────────────────────────────────────────
 # Writing that belongs to the house rather than to you: read it where it is,

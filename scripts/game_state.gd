@@ -119,11 +119,11 @@ func flag(f: String) -> bool:
 # Four digits, and the only thing that opens it is the date Joe kept
 # everywhere. Returns whether the code was right.
 func try_code(code: String) -> bool:
-	if code != Content.BATHROOM_CODE:
+	if code != Content.LOCK_CODE:
 		Sfx.play("empty", -10.0)
 		return false
-	set_flag("bathroom_open")
-	add_note("The bathroom dial takes Christopher's birthday, 15/10.")
+	set_flag("bedroom_open")
+	add_note("The dial on their bedroom door takes Christopher's birthday, 15/10.")
 	lock_opened.emit()
 	return true
 

@@ -48,6 +48,15 @@ func _ready() -> void:
 			print("FAIL  [A start] cannot read the note fixed at %s" % np)
 			fails += 1
 
+	# the dial has to be workable from outside: whatever gives you the code
+	# cannot be shut behind the door it opens
+	_walls.append(Content.LOCK_DOOR)          # the bolt, while it is still shut
+	var shut := _flood(false, [])
+	if not _near(shut, Content.ITEMS["card_christopher"]["pos"]):
+		print("FAIL  the code for the locked door is behind the locked door")
+		fails += 1
+	_walls.erase(Content.LOCK_DOOR)
+
 	if OS.get_environment("DUMP") != "":
 		_dump(_flood(false, [1]))
 	print("REACH: %s" % ("ALL PASS" if fails == 0 else "%d UNREACHABLE" % fails))

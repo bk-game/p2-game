@@ -283,8 +283,8 @@ func _draw_lock(f: Font, vp: Vector2) -> void:
 	_panel(r)
 	_head(f, r, "LOCKED", "four digits")
 	draw_string(f, Vector2(r.position.x + _n(38), r.position.y + _n(126)),
-		"A dial in the bathroom door. Somebody chose these four numbers because "
-		+ "they could not lose them.", HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(76),
+		"A dial set into the bedroom door. Somebody chose these four numbers "
+		+ "because they could not lose them.", HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(76),
 		_fs(17), DIM)
 	# the four slots, filled left to right as you type
 	var slot: float = _n(56)

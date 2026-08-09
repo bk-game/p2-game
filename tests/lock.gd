@@ -25,7 +25,7 @@ func _ready() -> void:
 	for k in [KEY_1, KEY_2, KEY_3, KEY_4]:
 		hud._lock_key(k)
 	hud._lock_key(KEY_ENTER)
-	fails += _expect("a wrong code does nothing", not Game.flag("bathroom_open"))
+	fails += _expect("a wrong code does nothing", not Game.flag("bedroom_open"))
 	fails += _expect("and clears itself to try again", hud._code == "")
 	fails += _expect("the door is still shut", is_instance_valid(bolt))
 
@@ -33,7 +33,7 @@ func _ready() -> void:
 		hud._lock_key(k)
 	hud._lock_key(KEY_ENTER)
 	await get_tree().process_frame
-	fails += _expect("Christopher's birthday opens it", Game.flag("bathroom_open"))
+	fails += _expect("Christopher's birthday opens it", Game.flag("bedroom_open"))
 	fails += _expect("back to walking around", hud.mode == 0)
 	fails += _expect("and the doorway is clear now", not is_instance_valid(bolt))
 	fails += _expect("the dial goes with it", not is_instance_valid(lock))

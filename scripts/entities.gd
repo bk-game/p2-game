@@ -53,7 +53,7 @@ func _ready() -> void:
 	sink.position = Content.SINK
 	sink.z_index = 40
 	add_child(sink)
-	if not Game.flag("bathroom_open"):
+	if not Game.flag("bedroom_open"):
 		var lock := Lock.new()
 		lock.position = Content.LOCK_POS
 		lock.z_index = 40
@@ -448,7 +448,7 @@ class Lock extends Node2D:
 		if bolt != null and is_instance_valid(bolt):
 			bolt.queue_free()
 		Sfx.play("open", -7.0)
-		Game.toast.emit("The dial gives, the bolt comes back, and the door swings in.")
+		Game.toast.emit("The dial gives, the bolt comes back, and their door swings in.")
 		queue_free()
 
 	func _process(delta: float) -> void:
