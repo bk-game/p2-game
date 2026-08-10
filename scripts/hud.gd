@@ -11,6 +11,13 @@ const DIM    := Color("b3a992")
 const PANEL  := Color(0.10, 0.09, 0.08, 0.94)
 const EDGE   := Color("6d5a3e")
 const ACCENT := Color("e0b25c")
+# What you read is on paper, in ink, held up in front of you.
+const PAPER  := Color("efe6d2")
+const PAPER_E := Color("cdc0a2")
+const PEN    := Color("2c2419")
+const PEN_DIM := Color("6f6252")
+const RULE   := Color("b19c74")
+
 const FOG    := Color(0.62, 0.82, 0.18)   # the green closing over your eyes
 const FOG_DK := Color(0.16, 0.26, 0.06)
 
@@ -31,6 +38,7 @@ var _fog := 0.0
 var _code := ""
 var _lock_msg := ""
 var _queued: Array = []
+var _read_t := 0.0
 
 
 func _ready() -> void:
@@ -68,6 +76,7 @@ func _on_notice(title: String, body: String) -> void:
 	_title = title
 	_body = body
 	mode = Mode.READ
+	_read_t = 0.0
 	queue_redraw()
 
 
@@ -106,6 +115,10 @@ func _process(delta: float) -> void:
 		if _toast_t <= 0.0:
 			_toast = ""
 		queue_redraw()
+	if mode == Mode.READ or mode == Mode.REPORT:
+		if _read_t < 1.0:
+			_read_t = minf(_read_t + delta / OPEN_T, 1.0)
+			queue_redraw()
 	if not is_equal_approx(Game.fog_ratio(), _fog):
 		_fog = Game.fog_ratio()
 		queue_redraw()
@@ -134,6 +147,7 @@ func _unhandled_key_input(e: InputEvent) -> void:
 					var nxt: Array = _queued.pop_front()
 					_title = nxt[0]
 					_body = nxt[1]
+					_read_t = 0.0
 		Mode.NOTES, Mode.REPORT:
 			if k in [KEY_N, KEY_R, KEY_ESCAPE, KEY_E, KEY_I]:
 				mode = Mode.PLAY
@@ -401,26 +415,9 @@ func _draw_fog(vp: Vector2) -> void:
 
 const READ_W   := 900.0    # the reader is always this wide
 const READ_MAX := 760.0    # and never taller than this
-const READ_PAD := 176.0    # heading and footer
+const READ_PAD := 190.0    # heading and footer
 const LABEL_W  := 250.0    # the label column of a form
-
-
-# Long documents used to run off the bottom of the panel and keep going, so
-# the reader now grows to what it is holding and, when that is not enough,
-# steps the type down until the whole of it is on the page.
-func _draw_reader(f: Font, vp: Vector2) -> void:
-	draw_rect(Rect2(Vector2.ZERO, vp), Color(0, 0, 0, 0.55))
-	var probe := _centre(vp, READ_W, READ_MAX)
-	var fs := _fs(19)
-	var h := _reader_flow(f, probe, fs, false)
-	while h > _n(READ_MAX - READ_PAD) and fs > _fs(13):
-		fs = maxi(fs - 2, _fs(13))
-		h = _reader_flow(f, probe, fs, false)
-	var r := _centre(vp, READ_W, clampf(h / S + READ_PAD, 340.0, READ_MAX))
-	_panel(r)
-	_head(f, r, _title, "")
-	_reader_flow(f, r, fs, true)
-	_foot(f, r, "[E] put it away")
+const OPEN_T   := 0.13     # how long the sheet takes to come up
 
 
 # How much the document currently loaded overruns the reader at the smallest
@@ -431,13 +428,70 @@ func reader_overflow() -> float:
 		- _n(READ_MAX - READ_PAD)
 
 
+# A sheet of paper held up in front of you, rather than a panel of the
+# interface: it comes up as you lift it, the type is ink on paper, and the
+# key that puts it away is drawn as the key.
+func _draw_reader(f: Font, vp: Vector2) -> void:
+	var t: float = clampf(_read_t, 0.0, 1.0)
+	draw_rect(Rect2(Vector2.ZERO, vp), Color(0, 0, 0, 0.6 * t))
+
+	var probe := _centre(vp, READ_W, READ_MAX)
+	var fs := _fs(19)
+	var h := _reader_flow(f, probe, fs, false)
+	while h > _n(READ_MAX - READ_PAD) and fs > _fs(13):
+		fs = maxi(fs - 2, _fs(13))
+		h = _reader_flow(f, probe, fs, false)
+	var r := _centre(vp, READ_W, clampf(h / S + READ_PAD, 340.0, READ_MAX))
+
+	# lift it into place: scale about the middle of the sheet
+	var k: float = 0.955 + 0.045 * t
+	var c := r.get_center()
+	draw_set_transform(c * (1.0 - k), 0.0, Vector2(k, k))
+
+	# the sheet, its shadow, and the shading down its right edge
+	draw_colored_polygon(Mat.rr(Rect2(r.position + Vector2(_n(7), _n(10)), r.size),
+		_n(4)), Color(0, 0, 0, 0.4))
+	draw_colored_polygon(Mat.rr(r, _n(4)), PAPER)
+	draw_colored_polygon(Mat.rr(Rect2(r.end.x - _n(26), r.position.y, _n(26),
+		r.size.y), _n(4)), Color(PAPER_E, 0.5))
+	var edge := Mat.rr(r, _n(4))
+	edge.append(edge[0])
+	draw_polyline(edge, Color(PAPER_E, 0.9), 2.0)
+
+	# heading, ruled off
+	draw_string(f, Vector2(r.position.x + _n(38), r.position.y + _n(62)), _title,
+		HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(76), _fs(26), PEN)
+	draw_line(Vector2(r.position.x + _n(38), r.position.y + _n(82)),
+		Vector2(r.end.x - _n(38), r.position.y + _n(82)), RULE, 2.0)
+
+	_reader_flow(f, r, fs, true)
+
+	# the key that puts it away, drawn as a key
+	var cap := Rect2(r.position.x + _n(38), r.end.y - _n(56), _n(30), _n(30))
+	draw_colored_polygon(Mat.rr(cap, _n(5)), Color(PEN, 0.10))
+	var cape := Mat.rr(cap, _n(5))
+	cape.append(cape[0])
+	draw_polyline(cape, Color(PEN, 0.45), 2.0)
+	draw_string(f, Vector2(cap.position.x + _n(9), cap.end.y - _n(9)), "E",
+		HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(17), PEN)
+	draw_string(f, Vector2(cap.end.x + _n(12), cap.end.y - _n(9)), "put it away",
+		HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(17), PEN_DIM)
+	if not _queued.is_empty():
+		var more := "%d more to look at" % _queued.size()
+		var mw: float = f.get_string_size(more, HORIZONTAL_ALIGNMENT_LEFT, -1,
+			_fs(17)).x
+		draw_string(f, Vector2(r.end.x - _n(38) - mw, cap.end.y - _n(9)), more,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(17), PEN_DIM)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
 # Lay the document out, and draw it if asked. A line with a tab in it is a
 # form field — label in one column, value in the next — so a certificate
 # reads like a certificate instead of a paragraph. Returns the height used.
 func _reader_flow(f: Font, r: Rect2, fs: int, draw_it: bool) -> float:
 	var x: float = r.position.x + _n(38)
 	var w: float = r.size.x - _n(76)
-	var top: float = r.position.y + _n(116)
+	var top: float = r.position.y + _n(112)
 	var y := top
 	for line in _body.split("\n"):
 		if line.strip_edges().is_empty():
@@ -449,7 +503,7 @@ func _reader_flow(f: Font, r: Rect2, fs: int, draw_it: bool) -> float:
 				HORIZONTAL_ALIGNMENT_LEFT, w, fs).y
 			if draw_it:
 				draw_multiline_string(f, Vector2(x, y), line,
-					HORIZONTAL_ALIGNMENT_LEFT, w, fs, -1, INK)
+					HORIZONTAL_ALIGNMENT_LEFT, w, fs, -1, PEN)
 			y += ph + _n(5)
 			continue
 		var label := line.substr(0, tab).strip_edges()
@@ -459,9 +513,9 @@ func _reader_flow(f: Font, r: Rect2, fs: int, draw_it: bool) -> float:
 			HORIZONTAL_ALIGNMENT_LEFT, vw, fs).y
 		if draw_it:
 			draw_string(f, Vector2(x, y), label, HORIZONTAL_ALIGNMENT_LEFT,
-				_n(LABEL_W) - _n(14), fs, DIM)
+				_n(LABEL_W) - _n(14), fs, PEN_DIM)
 			draw_multiline_string(f, Vector2(x + _n(LABEL_W), y), value,
-				HORIZONTAL_ALIGNMENT_LEFT, vw, fs, -1, INK)
+				HORIZONTAL_ALIGNMENT_LEFT, vw, fs, -1, PEN)
 		y += vh + _n(5)
 	return y - top
 
