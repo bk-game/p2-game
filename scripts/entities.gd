@@ -714,9 +714,7 @@ class FixedNote extends Node2D:
 	func _draw() -> void:
 		match data["surface"]:
 			"wall": _scratched()
-			"panel": _plate()
 			"board": _pinned()
-			"pod": _seam()
 			_: _on_paper()
 		if read:
 			return
@@ -735,15 +733,6 @@ class FixedNote extends Node2D:
 				draw_line(Vector2(x, y - h), Vector2(x + 1.5, y + h), deep, 2.0)
 				draw_line(Vector2(x - 0.8, y - h), Vector2(x + 0.7, y + h), pale, 1.0)
 
-	# a brass plate screwed to the wall beside a lift
-	func _plate() -> void:
-		draw_colored_polygon(Mat.rr(Rect2(-13, -9, 26, 18), 2.0), Mat.BRASS)
-		draw_colored_polygon(Mat.rr(Rect2(-11, -7, 22, 14), 1.0),
-			Mat.shade(Mat.BRASS, 0.82))
-		for i in 3:
-			draw_line(Vector2(-8, -3.0 + i * 3.0), Vector2(8, -3.0 + i * 3.0),
-				Mat.shade(Mat.BRASS, 0.6), 1.0)
-
 	# a sheet pinned to the board, with the job on it
 	func _pinned() -> void:
 		draw_colored_polygon(Mat.rr(Rect2(-14, -10, 28, 20), 1.0), Color("f3ecdc"))
@@ -751,11 +740,6 @@ class FixedNote extends Node2D:
 			draw_line(Vector2(-10, -5.0 + i * 3.4), Vector2(10, -5.0 + i * 3.4),
 				Color(0, 0, 0, 0.35), 1.0)
 		draw_circle(Vector2(0, -8), 2.0, Color("b13a2c"))
-
-	# the seam of the pod, with its light on it
-	func _seam() -> void:
-		draw_line(Vector2(0, -22), Vector2(0, 22), Mat.STEEL_DK, 2.0)
-		draw_circle(Vector2(0, 0), 5.0, Color(1, 0.85, 0.55, 0.5))
 
 	# a sheet left where it was put down, with its lines of writing showing
 	func _on_paper() -> void:

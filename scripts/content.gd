@@ -402,8 +402,8 @@ const STAFF := [
 				+ "freezing.\"",
 			"\"Don't try and read it all out there. You'll be up half the night "
 				+ "and nights aren't paid.\"",
-			"\"Your number went up again, by the way. Pod ran twice last month. "
-				+ "It adds up, that's all I'm saying.\"",
+			"\"They docked me for the van again. Check what they're taking off "
+				+ "you before you sign anything.\"",
 			"\"Better you than me. I did two cabins last year and I'm still not "
 				+ "right about it.\"",
 		],
@@ -411,7 +411,7 @@ const STAFF := [
 	{
 		"pos": Vector2(-283, 443), "name": "Oyelaran", "tint": "a97c4a",
 		"lines": [
-			"\"Morning. You look like you slept in the pod.\"",
+			"\"Morning. You look like you slept in the stairwell.\"",
 			"\"Whatever's growing out there, don't bring it back in your coat. "
 				+ "Someone did that. He's not here any more.\"",
 			"\"Take the certificates if there are any. Paper with a name on it "
