@@ -9,12 +9,14 @@ const RADIUS   := 330.0                 # how far the lantern carries
 const FAR      := 3000.0
 const PAD      := 26.0                  # bleed past the room so walls read
 
-# Successively smaller circles layered on top of each other make a soft edge.
-const PASSES := [
-	{"k": 1.00, "a": 0.97},
-	{"k": 0.86, "a": 0.42},
-	{"k": 0.70, "a": 0.24},
-]
+# The dark closes in over the outer part of the beam as a gradient rather
+# than in steps: rings of vertex-coloured quads carry the alpha from clear
+# at K_IN up to A_MAX where the beam runs out, sampling a smoothstep so
+# neither end of the falloff shows an edge.
+const DARK   := Color(0.012, 0.016, 0.022)
+const K_IN   := 0.55    # fraction of the reach where the falloff starts
+const A_MAX  := 0.985   # opacity beyond the beam
+const BANDS  := 5
 
 const ROOMS := [
 	[Rect2(102, 94, 173, 321)],                                  # hidden shed
@@ -75,8 +77,16 @@ func _draw() -> void:
 		var a := TAU * i / SEGMENTS
 		reach[i] = _wall_limit(origin, Vector2(cos(a), sin(a)), RADIUS, lit)
 
-	for step in PASSES:
-		_shroud(origin, reach, step["k"], Color(0.012, 0.016, 0.022, step["a"]))
+	for b in BANDS:
+		var k0: float = lerpf(K_IN, 1.0, float(b) / BANDS)
+		var k1: float = lerpf(K_IN, 1.0, float(b + 1) / BANDS)
+		_band(origin, reach, k0, k1)
+	_shroud(origin, reach, 1.0, Color(DARK, A_MAX))
+
+
+# How dark it is at a given fraction of the way out along a ray.
+func _alpha(k: float) -> float:
+	return A_MAX * smoothstep(K_IN, 1.0, k)
 
 
 # Where the ray leaves the room. Solved exactly against the rectangle edges,
@@ -115,6 +125,27 @@ func _exit(o: Vector2, d: Vector2, r: Rect2) -> float:
 	if absf(d.y) > 1e-6:
 		ty = maxf((r.position.y - o.y) / d.y, (r.end.y - o.y) / d.y)
 	return minf(tx, ty)
+
+
+# One ring of the falloff: a fan of quads whose inner edge sits at k0 along
+# each ray and outer edge at k1, with the vertex colours fading the darkness
+# across the gap.
+func _band(origin: Vector2, reach: PackedFloat32Array, k0: float,
+		k1: float) -> void:
+	var c0 := Color(DARK, _alpha(k0))
+	var c1 := Color(DARK, _alpha(k1))
+	var cols := PackedColorArray([c0, c0, c1, c1])
+	for i in SEGMENTS:
+		var j := (i + 1) % SEGMENTS
+		var a0 := TAU * i / SEGMENTS
+		var a1 := TAU * (i + 1) / SEGMENTS
+		var d0 := Vector2(cos(a0), sin(a0))
+		var d1 := Vector2(cos(a1), sin(a1))
+		draw_polygon(PackedVector2Array([
+			origin + d0 * reach[i] * k0,
+			origin + d1 * reach[j] * k0,
+			origin + d1 * reach[j] * k1,
+			origin + d0 * reach[i] * k1]), cols)
 
 
 # Fill everything beyond the beam with darkness, as a fan of quads.

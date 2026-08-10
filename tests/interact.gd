@@ -6,7 +6,8 @@ extends Node2D
 
 const PR := 14.0
 const CELL := 6.0
-const REACH := 78.0   # must match player.gd
+const REACH := 34.0   # must match player.gd
+const OPEN := 62.0    # must match Container2D.OPEN_REACH
 
 var FP
 var _walls: Array[Rect2] = []
@@ -28,12 +29,12 @@ func _ready() -> void:
 	var fails := 0
 	# Fumes all cleared, strong limbs still standing: you must be able to
 	# prompt on every strong limb in order to dissolve it.
-	var reach := _flood(false, [0, 1, 2])
+	var reach := _flood(false, [0, 1])
 	for i in Content.BRANCHES.size():
 		var b: Dictionary = Content.BRANCHES[i]
 		if not b["strong"]:
 			continue
-		var d := _nearest(reach, b["pos"])
+		var d := _nearest_limb(reach, b)
 		var ok := d <= REACH
 		print("%s strong limb %d at %s — closest you can stand: %.0f px (reach %d)"
 			% ["ok  " if ok else "FAIL", i, b["pos"], d, REACH])
@@ -41,10 +42,10 @@ func _ready() -> void:
 			fails += 1
 
 	# With the limbs gone, every container must be promptable too.
-	var open_reach := _flood(true, [0, 1, 2])
+	var open_reach := _flood(true, [0, 1])
 	for i in Content.CONTAINERS.size():
 		var d := _nearest(open_reach, Content.CONTAINERS[i]["pos"])
-		if d > REACH:
+		if d > OPEN:
 			print("FAIL container %d at %s — closest %.0f px"
 				% [i, Content.CONTAINERS[i]["pos"], d])
 			fails += 1
@@ -55,6 +56,23 @@ func _ready() -> void:
 
 	print("INTERACT: %s" % ("ALL PASS" if fails == 0 else "%d UNREACHABLE" % fails))
 	get_tree().quit()
+
+
+# A limb prompts from its nearest point, not its midpoint — measure it the
+# same way Branch.reach_point does, or a long limb reads as out of range.
+func _nearest_limb(reach: Dictionary, b: Dictionary) -> float:
+	var rot: float = deg_to_rad(b["deg"])
+	var best := 1e9
+	for c in reach:
+		var p: Vector2 = Vector2(c.x, c.y) * CELL
+		var l: Vector2 = (p - b["pos"]).rotated(-rot)
+		l.x = clampf(l.x, -b["len"] * 0.5, b["len"] * 0.5)
+		l.y = clampf(l.y, -b["thick"] * 0.5, b["thick"] * 0.5)
+		var on: Vector2 = b["pos"] + l.rotated(rot)
+		var d := p.distance_to(on)
+		if d < best:
+			best = d
+	return best
 
 
 func _nearest(reach: Dictionary, target: Vector2) -> float:

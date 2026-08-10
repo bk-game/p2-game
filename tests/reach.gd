@@ -5,6 +5,7 @@ extends Node2D
 
 const PR := 14.0   # player radius
 const CELL := 6.0
+const REACH := 34.0   # must match player.gd
 
 var FP
 var _walls: Array[Rect2] = []
@@ -28,14 +29,15 @@ func _ready() -> void:
 	fails += _stage("A start (bare hands)", false, [], [
 		"extinguisher", "log_1_2", "log_3", "log_5_6", "log_formula", "log_water",
 		"norust", "bleach", "exfluid", "water", "police_report"])
-	fails += _stage("B extinguisher clears the utility fume", false, [2], [
-		"<bench>", "axe", "family_photos"])
-	fails += _stage("C solution breaks strong limbs", true, [2], [
-		"gasmask", "death_certs", "marriage_photo", "letter_doctor"])
-	fails += _stage("D mask lets you into the fumes", true, [0, 1, 2], ["<body>"])
+	fails += _stage("B extinguisher clears the utility fume", false, [1], [
+		"<sink>", "axe", "family_photos"])
+	fails += _stage("C solution breaks strong limbs", true, [1], [
+		"death_certs", "marriage_photo", "letter_doctor"])
+	fails += _stage("D extinguisher clears the rest of the air", true, [0, 1],
+		["<body>"])
 
 	if OS.get_environment("DUMP") != "":
-		_dump(_flood(false, [2]))
+		_dump(_flood(false, [1]))
 	print("REACH: %s" % ("ALL PASS" if fails == 0 else "%d UNREACHABLE" % fails))
 	get_tree().quit()
 
@@ -44,7 +46,7 @@ func _stage(label: String, strong_ok: bool, cleared: Array, targets: Array) -> i
 	var reach := _flood(strong_ok, cleared)
 	var bad := 0
 	for t in targets:
-		var p: Vector2 = Content.BENCH if t == "<bench>" else \
+		var p: Vector2 = Content.SINK if t == "<sink>" else \
 			(Content.BODY_POS if t == "<body>" else Content.ITEMS[t]["pos"])
 		if not _near(reach, p):
 			print("FAIL  [%s] cannot reach %s at %s" % [label, t, p])
@@ -55,7 +57,7 @@ func _stage(label: String, strong_ok: bool, cleared: Array, targets: Array) -> i
 # A target counts as reachable if open floor exists within arm's length of it.
 func _near(reach: Dictionary, p: Vector2) -> bool:
 	for c in reach:
-		if (Vector2(c.x, c.y) * CELL).distance_to(p) < 74.0:
+		if (Vector2(c.x, c.y) * CELL).distance_to(p) < REACH:
 			return true
 	return false
 

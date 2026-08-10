@@ -11,6 +11,8 @@ const DIM    := Color("b3a992")
 const PANEL  := Color(0.10, 0.09, 0.08, 0.94)
 const EDGE   := Color("6d5a3e")
 const ACCENT := Color("e0b25c")
+const FOG    := Color(0.62, 0.82, 0.18)   # the green closing over your eyes
+const FOG_DK := Color(0.16, 0.26, 0.06)
 
 enum Mode {PLAY, READ, BAG, NOTES, REPORT}
 
@@ -23,7 +25,9 @@ var _prompt := ""
 var _cups := {"norust": 0.0, "bleach": 0.0, "exfluid": 0.0, "water": 0.0}
 var _sel := 0
 var _mix_msg := ""
+var _at_sink := false
 var _progress := 0.0
+var _fog := 0.0
 
 
 func _ready() -> void:
@@ -31,7 +35,7 @@ func _ready() -> void:
 	Game.toast.connect(_on_toast)
 	Game.inventory_changed.connect(func(): queue_redraw())
 	Game.notes_changed.connect(func(): queue_redraw())
-	Game.open_bench.connect(_open_bench)
+	Game.open_sink.connect(_open_sink)
 
 
 func blocking() -> bool:
@@ -63,8 +67,12 @@ func _on_toast(text: String) -> void:
 	queue_redraw()
 
 
-func _open_bench() -> void:
+# Opened at the sink, so the chemicals can actually be mixed. Opening the bag
+# with [I] anywhere else only lets you look through it.
+func _open_sink() -> void:
 	mode = Mode.BAG
+	_at_sink = true
+	_mix_msg = ""
 	queue_redraw()
 
 
@@ -73,6 +81,9 @@ func _process(delta: float) -> void:
 		_toast_t -= delta
 		if _toast_t <= 0.0:
 			_toast = ""
+		queue_redraw()
+	if not is_equal_approx(Game.fog_ratio(), _fog):
+		_fog = Game.fog_ratio()
 		queue_redraw()
 
 
@@ -102,6 +113,7 @@ func _unhandled_key_input(e: InputEvent) -> void:
 		Mode.PLAY:
 			if k == KEY_I:
 				mode = Mode.BAG
+				_at_sink = false
 				_sel = 0
 			elif k == KEY_C:
 				var lamp := get_tree().get_first_node_in_group("light")
@@ -119,8 +131,21 @@ func _unhandled_key_input(e: InputEvent) -> void:
 	queue_redraw()
 
 
+# The bag is shown in two parts: what goes in the mix, then everything else.
+# Selection runs down the panel as drawn, so it has to follow the same order.
+func _bag_order() -> Array:
+	var mixable := []
+	var rest := []
+	for id in Game.inventory:
+		if _cups.has(id):
+			mixable.append(id)
+		else:
+			rest.append(id)
+	return mixable + rest
+
+
 func _bag_key(k: int) -> void:
-	var bag := Game.inventory
+	var bag := _bag_order()
 	match k:
 		KEY_ESCAPE, KEY_Q, KEY_I:
 			mode = Mode.PLAY
@@ -139,6 +164,10 @@ func _bag_key(k: int) -> void:
 				_body = it["body"]
 				mode = Mode.READ
 		KEY_M:
+			if not _at_sink:
+				_mix_msg = "Not here. Joe mixed this in the bathroom sink — you " \
+					+ "need a basin and a tap."
+				return
 			_mix_msg = Game.mix(_cups)
 			if Game.flag("made_solution"):
 				for c in _cups:
@@ -150,14 +179,15 @@ func _draw() -> void:
 	var f := ThemeDB.fallback_font
 	var vp := size
 
+	if _fog > 0.0:
+		_draw_fog(vp)
+
 	# ── carrying summary; the full list lives in the bag panel ──────────
 	var st := ["%d carried  [I]" % Game.inventory.size()]
 	if Game.solution_charges > 0:
 		st.append("solution x%d" % Game.solution_charges)
 	if Game.has_item("extinguisher"):
 		st.append("extinguisher x%d" % Game.extinguisher_charges)
-	if Game.has_item("gasmask"):
-		st.append("mask on")
 	var line := "   ".join(st)
 	var bw: float = f.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(18)).x + _n(40)
 	var bar := Rect2(_n(20), vp.y - _n(70), bw, _n(46))
@@ -167,9 +197,11 @@ func _draw() -> void:
 
 	# ── key hints ───────────────────────────────────────────────────────
 	var hint := "[E] interact   [I] bag   [N] notebook   [C] lantern   [R] report"
-	var hw: float = f.get_string_size(hint, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(15)).x
-	draw_string(f, Vector2(vp.x - hw - _n(24), vp.y - _n(28)), hint,
-		HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(15), DIM)
+	var hw: float = f.get_string_size(hint, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(22)).x
+	var hr := Rect2(vp.x - hw - _n(60), vp.y - _n(70), hw + _n(40), _n(46))
+	_panel(hr)
+	draw_string(f, Vector2(hr.position.x + _n(20), hr.position.y + _n(31)), hint,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(22), INK)
 
 	# ── interaction prompt ──────────────────────────────────────────────
 	if _prompt != "" and mode == Mode.PLAY:
@@ -198,6 +230,24 @@ func _draw() -> void:
 		Mode.READ, Mode.REPORT: _draw_reader(f, vp)
 		Mode.NOTES: _draw_notes(f, vp)
 		Mode.BAG: _draw_bag(f, vp)
+
+
+# What breathing the green looks like from inside it: the whole view goes
+# green and the edges close in, deeper the longer you stand there.
+func _draw_fog(vp: Vector2) -> void:
+	var t: float = clampf(_fog, 0.0, 1.0)
+	draw_rect(Rect2(Vector2.ZERO, vp), Color(FOG, 0.45 * t))
+	var step: float = vp.y * 0.055
+	for i in 9:                       # edges closing in, darkest outermost
+		var f: float = 1.0 - float(i) / 9.0
+		var inset: float = i * step
+		draw_rect(Rect2(inset + step * 0.5, inset + step * 0.5,
+			vp.x - inset * 2.0 - step, vp.y - inset * 2.0 - step),
+			Color(FOG_DK, 0.16 * t * f * f), false, step)
+	# your own pulse, once it is really taking hold
+	if t > 0.5:
+		var beat: float = (t - 0.5) * 2.0
+		draw_rect(Rect2(Vector2.ZERO, vp), Color(FOG_DK, 0.22 * beat * beat))
 
 
 func _draw_reader(f: Font, vp: Vector2) -> void:
@@ -233,51 +283,104 @@ func _draw_notes(f: Font, vp: Vector2) -> void:
 
 func _draw_bag(f: Font, vp: Vector2) -> void:
 	draw_rect(Rect2(Vector2.ZERO, vp), Color(0, 0, 0, 0.55))
-	var r := _centre(vp, 980, 640)
+	var r := _centre(vp, 980, 700)
 	_panel(r)
-	_head(f, r, "BAG", "carrying %d" % Game.inventory.size())
+	_head(f, r, "BAG", "carrying %d%s" % [Game.inventory.size(),
+		"    at the bathroom sink" if _at_sink else ""])
 
-	if Game.inventory.is_empty():
-		draw_string(f, Vector2(r.position.x + _n(38), r.position.y + _n(126)),
-			"Empty.", HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(20), DIM)
-	var y: float = r.position.y + _n(122)
-	for i in Game.inventory.size():
-		var id: String = Game.inventory[i]
-		var it: Dictionary = Content.ITEMS[id]
-		if i == _sel:
-			draw_rect(Rect2(r.position.x + _n(28), y - _n(22), r.size.x - _n(56),
-				_n(34)), Color(1, 1, 1, 0.07))
-			draw_string(f, Vector2(r.position.x + _n(38), y), ">",
-				HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(20), ACCENT)
-		draw_rect(Rect2(r.position.x + _n(60), y - _n(14), _n(13), _n(18)),
-			Color(it["tint"]))
-		draw_string(f, Vector2(r.position.x + _n(84), y), it["name"],
-			HORIZONTAL_ALIGNMENT_LEFT, _n(460), _fs(19), INK)
+	var bag := _bag_order()
+	var mixable := 0
+	for id in bag:
 		if _cups.has(id):
-			draw_string(f, Vector2(r.end.x - _n(280), y), "%.1f cups" % _cups[id],
-				HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(19),
-				ACCENT if _cups[id] > 0.0 else DIM)
-			if i == _sel:
-				draw_string(f, Vector2(r.end.x - _n(150), y), "< pour >",
-					HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(17), DIM)
-		y += _n(34)
+			mixable += 1
 
+	var y: float = r.position.y + _n(118)
+	y = _bag_section(f, r, y, "GOES IN THE MIX", bag.slice(0, mixable), 0, false)
+	y = _bag_section(f, r, y, "EVERYTHING ELSE", bag.slice(mixable), mixable, true)
+
+	# ── what the selected thing is for, and the jar under it ────────────
+	draw_line(Vector2(r.position.x + _n(38), r.end.y - _n(150)),
+		Vector2(r.end.x - _n(38), r.end.y - _n(150)), EDGE, 2.0)
+	var how := _how_to_use(bag[_sel] if _sel < bag.size() else "")
+	if how != "":
+		draw_string(f, Vector2(r.position.x + _n(38), r.end.y - _n(120)),
+			"USE:  " + how, HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(76), _fs(18), INK)
 	var jar := []
 	for id in _cups:
 		if _cups[id] > 0.0:
 			jar.append("%.1f %s" % [_cups[id], Content.ITEMS[id]["name"]])
-	draw_line(Vector2(r.position.x + _n(38), r.end.y - _n(126)),
-		Vector2(r.end.x - _n(38), r.end.y - _n(126)), EDGE, 2.0)
-	draw_string(f, Vector2(r.position.x + _n(38), r.end.y - _n(94)),
-		"JAR:  " + (", ".join(jar) if jar.size() > 0 else "empty"),
+	draw_string(f, Vector2(r.position.x + _n(38), r.end.y - _n(90)),
+		"IN THE BASIN:  " + (", ".join(jar) if jar.size() > 0 else "empty"),
 		HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(76), _fs(19),
 		INK if jar.size() > 0 else DIM)
-	draw_string(f, Vector2(r.position.x + _n(38), r.end.y - _n(64)),
-		"up/down select    left/right pour a chemical    [M] mix    [E] read    [I] close",
+	draw_string(f, Vector2(r.position.x + _n(38), r.end.y - _n(60)),
+		_bag_controls(),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(16), DIM)
 	if _mix_msg != "":
-		draw_multiline_string(f, Vector2(r.position.x + _n(38), r.end.y - _n(36)),
+		draw_multiline_string(f, Vector2(r.position.x + _n(38), r.end.y - _n(32)),
 			_mix_msg, HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(76), _fs(17), 2, ACCENT)
+
+
+# One labelled part of the bag. The mix goes in a single column with its cup
+# controls; everything else is two columns, so a full bag still fits.
+func _bag_section(f: Font, r: Rect2, y: float, label: String, ids: Array,
+		first: int, two_col: bool) -> float:
+	draw_string(f, Vector2(r.position.x + _n(38), y), label,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(15), ACCENT)
+	y += _n(28)
+	if ids.is_empty():
+		draw_string(f, Vector2(r.position.x + _n(58), y), "nothing yet",
+			HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(17), DIM)
+		return y + _n(34)
+	var full: float = r.size.x - _n(76)
+	if not two_col:
+		for i in ids.size():
+			_bag_row(f, ids[i], first + i, r.position.x + _n(38), y + i * _n(32), full)
+		return y + ids.size() * _n(32) + _n(20)
+	var rows := int(ceil(ids.size() / 2.0))
+	for i in ids.size():
+		var col: int = i / rows
+		_bag_row(f, ids[i], first + i, r.position.x + _n(38) + col * full * 0.5,
+			y + (i % rows) * _n(28), full * 0.5)
+	return y + rows * _n(28) + _n(20)
+
+
+func _bag_row(f: Font, id: String, idx: int, x: float, y: float, w: float) -> void:
+	var it: Dictionary = Content.ITEMS[id]
+	if idx == _sel:
+		draw_rect(Rect2(x - _n(10), y - _n(20), w, _n(28)), Color(1, 1, 1, 0.07))
+		draw_string(f, Vector2(x, y), ">", HORIZONTAL_ALIGNMENT_LEFT, -1,
+			_fs(19), ACCENT)
+	draw_rect(Rect2(x + _n(22), y - _n(13), _n(12), _n(17)), Color(it["tint"]))
+	draw_string(f, Vector2(x + _n(44), y), it["name"], HORIZONTAL_ALIGNMENT_LEFT,
+		w - _n(170), _fs(18), INK)
+	if _cups.has(id):
+		draw_string(f, Vector2(x + w - _n(240), y), "%.1f cups" % _cups[id],
+			HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(18),
+			ACCENT if _cups[id] > 0.0 else DIM)
+		if idx == _sel:
+			draw_string(f, Vector2(x + w - _n(120), y), "< pour >",
+				HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(17), DIM)
+
+
+# The controls line says where mixing is possible, since [M] does nothing
+# unless the bag was opened at the sink.
+func _bag_controls() -> String:
+	return "up/down select    left/right pour a chemical    %s    [E] read    [I] close" \
+		% ("[M] mix" if _at_sink else "[M] mix — only at the bathroom sink")
+
+
+# What a thing is actually for. Carrying a fire extinguisher tells you
+# nothing about walking it up to the haze and pressing E.
+func _how_to_use(id: String) -> String:
+	if id == "":
+		return ""
+	var it: Dictionary = Content.ITEMS[id]
+	if it.get("use", "") != "":
+		return it["use"]
+	if _cups.has(id):
+		return "Left/right to measure out cups, then [M] to mix."
+	return "[E] to read it again."
 
 
 # ── panel furniture ──────────────────────────────────────────────────────

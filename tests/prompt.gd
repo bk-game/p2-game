@@ -35,9 +35,9 @@ func _ready() -> void:
 	for s in FP.SOLIDS:
 		_walls.append(s)
 
-	var for_strong := _flood(false, [0, 1, 2])   # limbs up, air clear
+	var for_strong := _flood(false, [0, 1])   # limbs up, air clear
 	var for_fumes := _flood(true, [])            # clouds still there
-	var for_rest := _flood(true, [0, 1, 2])      # everything opened up
+	var for_rest := _flood(true, [0, 1])      # everything opened up
 
 	for n in get_tree().get_nodes_in_group("act"):
 		if not is_instance_valid(n):
@@ -75,6 +75,12 @@ func _check(n: Node2D, fill: Dictionary, kind: String) -> void:
 		return a.distance_to(n.global_position) < b.distance_to(n.global_position))
 	for i in mini(spots.size(), 80):
 		_pl.global_position = spots[i]
+		# You have to be turned towards a thing to target it, and walking up
+		# to it is what turns you: face the point you would be touching.
+		var at: Vector2 = n.reach_point(spots[i]) if n.has_method("reach_point") \
+			else n.global_position
+		if spots[i].distance_to(at) > 0.01:
+			_pl.facing = (at - spots[i]).angle()
 		_pl._scan()
 		if _pl._target == n:
 			for o in hidden:

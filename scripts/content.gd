@@ -37,8 +37,11 @@ const ITEMS := {
 			+ "found the correct formula to weaken the tree. In case I forget it's: two "
 			+ "cups of NO RUST BUILDUP, one cup of BLEACH, and two and a half cups of the "
 			+ "stuff inside the FIRE EXTINGUISHER.\n\n"
+			+ "Mix it in the BATHROOM SINK — it needs a basin and a running tap, and "
+			+ "I am not doing this on the kitchen table again.\n\n"
 			+ "  [ the rest of this page has been torn away ]",
-		"note": "Formula: 2 no-rust, 1 bleach, 2.5 extinguisher fluid. Page is torn.",
+		"note": "Formula: 2 no-rust, 1 bleach, 2.5 extinguisher fluid. Mix it in the "
+			+ "bathroom sink. Page is torn.",
 		"grants": "knows_formula",
 	},
 	"log_water": {
@@ -146,20 +149,16 @@ const ITEMS := {
 		"body": "A felling axe, the handle worn smooth. The bit is chipped all along "
 			+ "its edge, like it has been swung into something far too hard, many times.",
 		"note": "Joe cut at the tree over and over. The axe edge is destroyed.",
+		"use": "Blunt past saving. Pale limbs still come apart by hand: hold [E].",
 	},
 	"extinguisher": {
 		"name": "Fire extinguisher", "kind": "tool", "glyph": "extinguisher",
 		"tint": "b13a2c", "pos": Vector2(1588, 862),
 		"body": "A dry-powder extinguisher, most of a charge left. Heavy enough to "
 			+ "clear a room of bad air, if you point it right.",
-		"note": "",
-	},
-	"gasmask": {
-		"name": "Gas mask", "kind": "tool", "glyph": "mask",
-		"tint": "4c5a4a", "pos": Vector2(150, 340),
-		"body": "An industrial respirator with fresh cartridges, hanging on a nail. "
-			+ "Joe knew exactly what the air in here was doing to him.",
-		"note": "He had a respirator hidden away. He knew the fumes were poison.",
+		"note": "The extinguisher blows a green cloud out of the air. Walk into "
+			+ "range of one and press [E].",
+		"use": "Stand at a green cloud and press [E] to blow it out of the air.",
 	},
 
 	# ── Chemicals ───────────────────────────────────────────────────────
@@ -190,8 +189,9 @@ const ITEMS := {
 	},
 }
 
-# Mixing bench (Joe's workbench in the utility room)
-const BENCH := Vector2(150, 522)
+# The bathroom sink. Mixing needs a basin and a tap, so it happens here and
+# nowhere else.
+const SINK := Vector2(990, 150)
 
 # Branches radiating from the tree. strong = needs the brittle solution.
 # {pos, len, thick, deg, strong}
@@ -239,7 +239,7 @@ const BRANCHES := [
 const CONTAINERS := [
 	{"pos": Vector2(376, 186), "items": ["norust"]},
 	{"pos": Vector2(392, 384), "items": ["water"]},
-	{"pos": Vector2(990, 166), "items": ["bleach"]},
+	{"pos": Vector2(1170, 118), "items": ["bleach"]},
 	{"pos": Vector2(1486, 692), "items": ["exfluid"]},
 	{"pos": Vector2(806, 504), "items": ["log_water"]},
 	{"pos": Vector2(1218, 528), "items": ["police_report"]},
@@ -254,14 +254,13 @@ const CONTAINERS := [
 	{"pos": Vector2(992, 822), "items": []},
 	{"pos": Vector2(262, 894), "items": []},
 	{"pos": Vector2(170, 852), "items": []},
-	{"pos": Vector2(1170, 118), "items": []},
 	{"pos": Vector2(1540, 700), "items": []},
 	{"pos": Vector2(214, 306), "items": []},
 ]
 
-# Toxic fume clouds. Entering without the mask forces you back to the door.
+# Toxic fume clouds. Walking into one puts you back on the doorstep, so a
+# cloud has to be blown out with the extinguisher before you can pass it.
 const FUMES := [
-	{"pos": Vector2(392, 866), "r": 122.0},
 	{"pos": Vector2(576, 900), "r": 104.0},
 	{"pos": Vector2(188, 700), "r": 100.0},
 ]
