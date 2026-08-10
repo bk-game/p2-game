@@ -490,8 +490,10 @@ class Person extends Node2D:
 	func bias() -> float:
 		return 40.0
 
+	# They sit behind the desk, so this is a conversation across it rather
+	# than one you have to walk round for.
 	func reach() -> float:
-		return 52.0
+		return 120.0
 
 	func prompt() -> String:
 		return "Talk to %s" % data["name"]

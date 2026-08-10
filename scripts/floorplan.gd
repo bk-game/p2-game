@@ -113,15 +113,13 @@ const SOLIDS: Array[Rect2] = [
 	Rect2(115, 890, 78, 88),    # firewood
 
 	# ── office ──────────────────────────────────────────────────────────
-	Rect2(-320, 240, 56, 250),  # the desk, running down the room by the wall
-	Rect2(-390, 262, 46, 46),   # chair, pulled up to it
-	Rect2(-390, 420, 46, 46),   # chair
+	Rect2(-380, 240, 56, 250),  # the desk, with the two of them behind it
+	Rect2(-306, 262, 46, 46),   # chair, back to the wall
+	Rect2(-306, 420, 46, 46),   # chair
 	Rect2(-300, 172, 34, 50),   # filing cabinets
 	Rect2(-540, 176, 32, 36),   # water cooler
-	Rect2(-420, 495, 36, 36),   # the plant nobody waters
 	Rect2(-543, 300, 62, 46),   # printer on its stand
-	Rect2(-543, 380, 52, 40),   # boxes that never got filed
-	Rect2(-500, 500, 26, 26),   # the coat stand
+	Rect2(-420, 495, 36, 36),   # the plant nobody waters
 ]
 
 var _pieces: Array[Rect2] = []
@@ -475,36 +473,39 @@ func _cushion(r: Rect2, c: Color) -> void:
 
 # ── The office ───────────────────────────────────────────────────────────
 func _office() -> void:
-	# the desk runs down the room against the far wall, the two of you pulled
-	# up to it on chairs facing back into the floor
-	var desk := Rect2(-320, 240, 56, 250)
+	# the desk runs down the room and the two of you sit behind it, backs to
+	# the wall, facing whoever comes off the lifts
+	var desk := Rect2(-380, 240, 56, 250)
 	_obj(desk, Mat.PORCELAIN, 3.0)
 	_stroke(desk.grow(-5.0), Mat.shade(Mat.PORC_SH, 0.94), 1.5, 2.0)
 	for y in [268.0, 426.0]:
-		_obj(Rect2(-296, y, 16, 40), Mat.IRON, 2.0)          # screen, edge on
-		_fill(Rect2(-300, y + 3, 4, 34), Mat.GLASS, 1.0)
-		_obj(Rect2(-318, y + 12, 14, 30), Mat.STEEL, 2.0)    # keyboard
-		draw_circle(Vector2(-310, y + 54), 5.0, Mat.STEEL_DK)
-	for c in [Vector2(-296, 252), Vector2(-296, 478)]:       # a mug each, cold
+		_obj(Rect2(-356, y, 16, 40), Mat.IRON, 2.0)          # screen, edge on
+		_fill(Rect2(-360, y + 3, 4, 34), Mat.GLASS, 1.0)
+		_obj(Rect2(-378, y + 12, 14, 30), Mat.STEEL, 2.0)    # keyboard
+	for c in [Vector2(-356, 252), Vector2(-356, 478)]:       # a mug each, cold
 		draw_circle(c, 7.0, Mat.PORCELAIN)
 		draw_circle(c, 5.0, Color("6b4a2c"))
-	for c in [Rect2(-390, 262, 46, 46), Rect2(-390, 420, 46, 46)]:
+	for c in [Rect2(-306, 262, 46, 46), Rect2(-306, 420, 46, 46)]:
 		_obj(c, Mat.PORCELAIN, 8.0)
 		_stroke(c.grow(-6.0), Mat.PORC_SH, 1.5, 6.0)
 
-	# filing cabinets in the corner, one drawer left open
+	# filing cabinet in the corner, one drawer left open
 	_obj(Rect2(-300, 172, 34, 50), Mat.STEEL, 2.0)
 	_stroke(Rect2(-296, 176, 26, 20), Mat.STEEL_DK, 1.5, 2.0)
 	draw_line(Vector2(-290, 186), Vector2(-276, 186), Mat.STEEL_DK, 2.5)
 	_fill(Rect2(-296, 200, 34, 18), Mat.shade(Mat.STEEL, 0.88), 2.0)
 	_fill(Rect2(-290, 204, 22, 10), Mat.LINEN, 1.0)
 
-	# water cooler, and the cone cups beside it
+	# water cooler
 	_obj(Rect2(-540, 176, 32, 36), Mat.STEEL, 3.0)
 	_fill(Rect2(-536, 180, 24, 20), Mat.GLASS, 3.0)
 	draw_circle(Vector2(-524, 206), 3.0, Mat.STEEL_DK)
-	for i in 3:
-		draw_circle(Vector2(-502.0 + i * 0.5, 182.0 + i * 3.0), 4.0, Mat.PORCELAIN)
+
+	# printer on its stand, with a tray of paper out
+	_obj(Rect2(-543, 300, 62, 46), Mat.IRON, 3.0)
+	_fill(Rect2(-537, 306, 50, 20), Mat.IRON_LT, 2.0)
+	_fill(Rect2(-533, 326, 42, 14), Mat.LINEN, 1.0)
+	draw_circle(Vector2(-490, 310), 2.5, Mat.EMBER)
 
 	# the plant nobody waters
 	_oval(Vector2(-402, 513), 18, 18, Mat.OAK_DK)
@@ -517,28 +518,6 @@ func _office() -> void:
 			Vector2(-402, 513) - d2.orthogonal() * 4.0]),
 			Mat.shade(Mat.LEAF, 0.85 + 0.3 * Mat.noise(i, 2.0)))
 	draw_circle(Vector2(-402, 513), 8.0, Mat.shade(Mat.OAK_DK, 1.2))
-
-	# printer on its stand, with a tray of paper out
-	_obj(Rect2(-543, 300, 62, 46), Mat.IRON, 3.0)
-	_fill(Rect2(-537, 306, 50, 20), Mat.IRON_LT, 2.0)
-	_fill(Rect2(-533, 326, 42, 14), Mat.LINEN, 1.0)
-	draw_circle(Vector2(-490, 310), 2.5, Mat.EMBER)
-
-	# boxes that never got filed
-	_obj(Rect2(-543, 380, 52, 40), Mat.OAK, 2.0)
-	draw_line(Vector2(-543, 400), Vector2(-491, 400), Mat.OAK_DK, 2.0)
-	_obj(Rect2(-537, 370, 40, 28), Mat.OAK, 2.0)
-	_fill(Rect2(-531, 376, 28, 8), Mat.LINEN_DK, 1.0)
-
-	# coat stand, one coat on it
-	draw_circle(Vector2(-487, 513), 13.0, Mat.IRON)
-	draw_circle(Vector2(-487, 513), 8.0, Mat.IRON_LT)
-	_oval(Vector2(-481, 519), 11, 13, Mat.FABRIC_DK)
-	_oval(Vector2(-493, 508), 8, 10, Mat.shade(Mat.FABRIC_DK, 1.2))
-
-	# bin, kicked slightly out of place
-	_oval(Vector2(-440, 350), 12, 12, Mat.STEEL_DK)
-	_oval(Vector2(-440, 350), 9, 9, Mat.IRON)
 
 	# clock and strip light on the north wall
 	draw_circle(Vector2(-470, 146), 14.0, Mat.PORCELAIN)

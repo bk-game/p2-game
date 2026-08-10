@@ -396,28 +396,28 @@ const ENTRANCE := Vector2(1462, 935)
 # says the next one every time you ask.
 const STAFF := [
 	{
-		"pos": Vector2(-367, 285), "name": "Renn", "tint": "8d9585",
+		"pos": Vector2(-283, 285), "name": "Renn", "tint": "8d9585",
 		"lines": [
-			"\"Wood, Joseph. Forty minutes out. You want the long coat, it is "
-				+ "cold in those.\"",
-			"\"Do not read all of it out there. You will be there all night and "
-				+ "they do not pay for the night.\"",
-			"\"Your number went up again, by the way. The pod ran twice last "
-				+ "month. I am not saying be careful. I am saying it adds up.\"",
-			"\"It is not the end, it is a queue. That is what they told me when "
-				+ "I started, and I have stopped finding it funny.\"",
+			"\"Morning. You got the Wood one? Take a coat, those places are "
+				+ "freezing.\"",
+			"\"Don't try and read it all out there. You'll be up half the night "
+				+ "and nights aren't paid.\"",
+			"\"Your number went up again, by the way. Pod ran twice last month. "
+				+ "It adds up, that's all I'm saying.\"",
+			"\"Better you than me. I did two cabins last year and I'm still not "
+				+ "right about it.\"",
 		],
 	},
 	{
-		"pos": Vector2(-367, 443), "name": "Oyelaran", "tint": "a97c4a",
+		"pos": Vector2(-283, 443), "name": "Oyelaran", "tint": "a97c4a",
 		"lines": [
-			"\"Morning. You look like the pod.\"",
-			"\"Whatever is growing in that one, do not bring it back in your "
-				+ "coat. We had a man do that. We do not have that man now.\"",
-			"\"Take the certificates if there are any. They pay double for "
-				+ "paper with a name on it. Sentiment is cheap, records are not.\"",
-			"\"When you are done, come back through the same door. They only "
-				+ "count you as returned if you use the door.\"",
+			"\"Morning. You look like you slept in the pod.\"",
+			"\"Whatever's growing out there, don't bring it back in your coat. "
+				+ "Someone did that. He's not here any more.\"",
+			"\"Take the certificates if there are any. Paper with a name on it "
+				+ "pays double.\"",
+			"\"Come back through the same door you went out of. They only mark "
+				+ "you returned if you use the door.\"",
 		],
 	},
 ]
