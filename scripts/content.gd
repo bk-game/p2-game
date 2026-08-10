@@ -278,8 +278,7 @@ const FIXED_NOTES := [
 			+ "on file.\n\n"
 			+ "Bring back the man and bring back the paper: who he was, who he "
 			+ "belonged to, what he lost. The office builds the rest from that. "
-			+ "Anything you carry out that says something about him is paid on.\n\n"
-			+ "Nobody has been in since he stopped filing. Take a light.",
+			+ "Anything you carry out that says something about him is paid on.",
 		"note": "The job: recover Joe Wood and whatever says who he was. Paid per "
 			+ "significant item.",
 		"grants": "read_job",

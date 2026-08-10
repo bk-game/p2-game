@@ -538,17 +538,17 @@ class Lift extends Node2D:
 
 	func act() -> void:
 		if kind == "boss":
-			Game.notice.emit("Lift — up", "EXECUTIVE FLOOR. NO CALL WITHOUT "
-				+ "APPOINTMENT.\n\nThe panel takes your thumb and gives it back. "
-				+ "You have been up there twice: once to be hired, once to be told "
-				+ "what the hiring had cost you.\n\nThere is no appointment on the "
-				+ "board for you. Finish the job first and there might be.")
+			Game.notice.emit("Lift — up", "The panel lights, reads itself out, and "
+				+ "does nothing else.\n\n"
+				+ "FLOOR\tEXECUTIVE\n"
+				+ "APPOINTMENT\tnone\n"
+				+ "OPEN JOBS\t1")
 			return
 		if not Game.flag("read_job"):
-			Game.notice.emit("Lift — down", "The car sits there with the doors "
-				+ "open and does nothing.\n\nIt will not run for you without a job "
-				+ "on it. Whatever is on the board by the door, you have not read "
-				+ "it yet, and neither has the lift.")
+			Game.notice.emit("Lift — down", "The panel lights. The doors stay "
+				+ "where they are.\n\n"
+				+ "FLOOR\tSTREET\n"
+				+ "JOB LOADED\tnone")
 			return
 		Game.travel(Content.ENTRANCE)
 
