@@ -24,7 +24,9 @@ func _ready() -> void:
 	for i in Content.CONTAINERS.size():
 		spots["<container %d>" % i] = Content.CONTAINERS[i]["pos"]
 	spots["<body>"] = Content.BODY_POS
-	spots["<spawn>"] = Content.ENTRANCE
+	spots["<spawn>"] = Content.OFFICE_START
+	spots["<doorstep>"] = Content.ENTRANCE
+	spots["<cabin door>"] = Content.CABIN_DOOR
 	for id in spots:
 		for b in blockers:
 			if b.grow(10.0).has_point(spots[id]):
@@ -45,13 +47,18 @@ func _ready() -> void:
 	fails += _expect("correct formula works",
 		Game.mix({"norust": 2.0, "bleach": 1.0, "exfluid": 2.5, "water": 0.0}).contains("amber"))
 	fails += _expect("three charges", Game.solution_charges == 3)
+	# the sink can be come back to: nothing but the doses is used up
+	fails += _expect("mixing again works",
+		Game.mix({"norust": 2.0, "bleach": 1.0, "exfluid": 2.5, "water": 0.0})
+			.contains("Another batch"))
+	fails += _expect("doses stack up", Game.solution_charges == 6)
 
 	# 3. scoring
-	fails += _expect("11 story items", Game.story_total() == 11)
+	fails += _expect("15 story items", Game.story_total() == 15)
 	for id in Content.ITEMS:
 		if not Game.inventory.has(id):
 			Game.inventory.append(id)
-	fails += _expect("full score", Game.story_found() == 11)
+	fails += _expect("full score", Game.story_found() == 15)
 	# 4. the report's body line has to follow the body
 	fails += _expect("body not recovered until you find him",
 		Game.report().contains("Body NOT recovered"))

@@ -1,13 +1,27 @@
 extends Node2D
 
-# The investigator carries a lantern, so the lit area is a circle around them.
-# It stops at the walls of the room they are in rather than shining through
-# them. [C] toggles it.
+# What you can see. Most rooms are lit and the lit area is a circle around
+# you, stopping at the walls of the room you are in rather than shining
+# through them. Two rooms are on the house wiring and are dark until their
+# switch is found: in those you see only as far as your own light reaches,
+# and once they are lit their light gets out through the doorway. [C] toggles
+# the whole thing.
 
 const SEGMENTS := 256
 const RADIUS   := 330.0                 # how far the lantern carries
 const FAR      := 3000.0
 const PAD      := 26.0                  # bleed past the room so walls read
+const STRANDED := 70.0                  # all the light you get somewhere unmapped
+const GLOW     := 78.0                  # what you can see by yourself, unlit
+
+# Rooms on the house wiring: pitch dark until their switch is found.
+# Everywhere else is lit as it always was.
+const SWITCHED := [2, 0]                 # bathroom, the room at the back
+
+# The openings, taken from the plan so there is one copy of where they are.
+const PLAN := preload("res://scripts/floorplan.gd")
+
+var _doorways: Array[Rect2] = []
 
 # The dark closes in over the outer part of the beam as a gradient rather
 # than in steps: rings of vertex-coloured quads carry the alpha from clear
@@ -26,16 +40,35 @@ const ROOMS := [
 	[Rect2(102, 452, 173, 526), Rect2(275, 637, 175, 341)],      # utility
 	[Rect2(487, 615, 1126, 363)],                                # living room
 	[Rect2(1380, 978, 180, 260)],                                # front step
+	[Rect2(-783, 157, 212, 181)],                                # lift, upstairs
+	[Rect2(-783, 368, 212, 181)],                                # lift, home
+	[Rect2(-549, 157, 289, 392)],                                # the office
 ]
 
 var enabled := true
 var _player: Node2D = null
-var _room := 5
+var _room := 9        # the office, where the day starts
 
 
 func _ready() -> void:
 	add_to_group("light")
 	global_position = Vector2.ZERO
+	for d in PLAN.DOORS:
+		_doorways.append(d["rect"] as Rect2)
+
+
+func _dark(room: int) -> bool:
+	return SWITCHED.has(room) and not Game.room_lit(room)
+
+
+# The openings into a room, for carrying its light out or your own in.
+func _mouths(room: int) -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	for d in _doorways:
+		for rect in ROOMS[room]:
+			if (rect as Rect2).grow(2.0).intersects(d):
+				out.append(d)
+	return out
 
 
 func toggle() -> void:
@@ -54,28 +87,81 @@ func _process(_d: float) -> void:
 		queue_redraw()
 
 
-func _room_at(p: Vector2) -> int:
+func _room_exact(p: Vector2) -> int:
 	for i in ROOMS.size():
 		for rect in ROOMS[i]:
 			if (rect as Rect2).has_point(p):
 				return i
-	return _room   # keep the last room while standing in a doorway
+	return -1
+
+
+func _room_at(p: Vector2) -> int:
+	var i := _room_exact(p)
+	return i if i != -1 else _room   # keep the last room in a doorway
+
+
+# The rooms the lantern fills. A doorway is thicker than the bleed, so for a
+# few pixels in the middle of one you are past the padded edge of the room
+# you came from and not yet inside the next: the beam then finds no wall to
+# stop at and lights the whole house through them. Standing in a doorway,
+# take every room the bleed reaches from here — you are in both at once.
+func _lit_rects(origin: Vector2) -> Array[Rect2]:
+	var lit: Array[Rect2] = []
+	for rect in ROOMS[_room]:
+		lit.append((rect as Rect2).grow(PAD))
+	if _room_exact(origin) != -1:
+		return lit                     # standing in a room proper
+	# In a doorway: the opening itself carries the light across the gap, so
+	# there is always something under you. The room on the far side comes in
+	# only if it is lit — standing in the frame of a dark room should show
+	# you no more of it than standing outside it does.
+	for d in _doorways:
+		if d.has_point(origin):
+			lit.append(d)
+	for i in ROOMS.size():
+		if i == _room or _dark(i):
+			continue
+		for rect in ROOMS[i]:
+			var g: Rect2 = (rect as Rect2).grow(PAD)
+			if g.has_point(origin):
+				lit.append(g)
+	return lit
+
+
+# A room with its light on is visible from outside it, but only through its
+# doorway: its floor goes in unpadded and its doorway bridges the gap to the
+# room you are in, so a ray can walk through the opening and no further. The
+# wall either side has nothing under it and stops the ray dead.
+func _spill(lit: Array[Rect2]) -> Array[Rect2]:
+	for i in SWITCHED:
+		if i == _room or _dark(i):
+			continue
+		for rect in ROOMS[i]:
+			lit.append(rect as Rect2)
+		lit.append_array(_mouths(i))
+	return lit
+
+
+# How far the lantern carries from here. Your own light is a pool at your
+# feet; the run of a room is only yours if the room is lit.
+func _carry() -> float:
+	return GLOW if _dark(_room) else RADIUS
 
 
 func _draw() -> void:
 	if not enabled or _player == null:
 		return
 	var origin: Vector2 = _player.global_position
-	var lit: Array[Rect2] = []
-	for rect in ROOMS[_room]:
-		lit.append((rect as Rect2).grow(PAD))
+	var lit := _spill(_lit_rects(origin))
+	var want := _carry()
 
-	# How far the light gets along each ray: full radius, cut short by walls.
+	# How far the light gets along each ray: as far as it carries, cut short
+	# by walls.
 	var reach := PackedFloat32Array()
 	reach.resize(SEGMENTS)
 	for i in SEGMENTS:
 		var a := TAU * i / SEGMENTS
-		reach[i] = _wall_limit(origin, Vector2(cos(a), sin(a)), RADIUS, lit)
+		reach[i] = _wall_limit(origin, Vector2(cos(a), sin(a)), want, lit)
 
 	for b in BANDS:
 		var k0: float = lerpf(K_IN, 1.0, float(b) / BANDS)
@@ -94,7 +180,8 @@ func _alpha(k: float) -> float:
 func _wall_limit(origin: Vector2, dir: Vector2, want: float,
 		lit: Array[Rect2]) -> float:
 	if _which(origin, lit) == -1:
-		return want          # caught in a doorway: do not black everything out
+		# Nowhere known: a pool at your feet rather than the run of the house.
+		return minf(want, STRANDED)
 	var t := 0.0
 	for _hop in 4:           # step across at most a few abutting rectangles
 		var i := _which(origin + dir * (t + 0.5), lit)

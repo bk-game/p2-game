@@ -53,6 +53,56 @@ func _ready() -> void:
 	sink.position = Content.SINK
 	sink.z_index = 40
 	add_child(sink)
+	if not Game.flag("bedroom_open"):
+		var lock := Lock.new()
+		lock.position = Content.LOCK_POS
+		lock.z_index = 40
+		add_child(lock)
+		lock.bolt = _bolt(Content.LOCK_DOOR)
+	for who in Content.STAFF:
+		var person := Person.new()
+		person.data = who
+		person.position = who["pos"]
+		person.z_index = 40
+		add_child(person)
+	for l in Content.LIFTS:
+		var lift := Lift.new()
+		lift.kind = l["kind"]
+		lift.position = l["pos"]
+		lift.z_index = 40
+		add_child(lift)
+	var home := Doorway.new()
+	home.position = Content.CABIN_DOOR
+	home.to = Content.OFFICE_START
+	home.label = "Back to the office"
+	home.needs_done = true
+	home.z_index = 40
+	add_child(home)
+	for sw in Content.SWITCHES:
+		var s2 := Switch.new()
+		s2.room = sw["room"]
+		s2.position = sw["pos"]
+		s2.z_index = 26
+		add_child(s2)
+	for w in Content.FIXED_NOTES:
+		var note := FixedNote.new()
+		note.data = w
+		note.position = w["pos"]
+		note.z_index = 26     # over the wall, under anything lying on the floor
+		add_child(note)
+
+
+# A door that is shut is as solid as the wall it sits in, until it is not.
+func _bolt(r: Rect2) -> StaticBody2D:
+	var body := StaticBody2D.new()
+	body.position = r.get_center()
+	var cs := CollisionShape2D.new()
+	var shape := RectangleShape2D.new()
+	shape.size = r.size
+	cs.shape = shape
+	body.add_child(cs)
+	add_child(body)
+	return body
 
 
 # ══ Pickup ═══════════════════════════════════════════════════════════════
@@ -132,6 +182,7 @@ class Branch extends StaticBody2D:
 	var thick := 30.0
 	var cut := 0.0          # seconds of sawing done so far
 	var seed_v := 0.0       # fixed per root, so its shape never shifts
+	var gate := false       # grown into a doorframe: softening is not enough
 	var _chop := 0.0
 
 	func bias() -> float:
@@ -143,6 +194,7 @@ class Branch extends StaticBody2D:
 		length = d["len"]
 		thick = d["thick"]
 		strong = d["strong"]
+		gate = d.get("gate", false)
 		seed_v = Mat.noise(d["pos"].x, d["pos"].y) * TAU
 
 	func _ready() -> void:
@@ -162,9 +214,18 @@ class Branch extends StaticBody2D:
 		return global_position + l.rotated(rotation)
 
 	func cuttable() -> bool:
-		return not strong or brittle
+		if strong and not brittle:
+			return false
+		# softened is only half of the one in the doorframe: the cuts have to
+		# be taken in the order the grain gives, or the blade binds
+		return not gate or Game.flag("gate_cut")
+
+	func _bound() -> bool:
+		return gate and brittle and not Game.flag("gate_cut")
 
 	func prompt() -> String:
+		if _bound():
+			return "Softened, but the grain in it will bind the blade"
 		if cuttable():
 			if cut > 0.0:
 				return "Cutting through... %d%%" % int(cut / CUT_TIME * 100.0)
@@ -198,6 +259,9 @@ class Branch extends StaticBody2D:
 			queue_redraw()
 
 	func act() -> void:
+		if _bound():
+			Game.open_cut.emit()
+			return
 		if cuttable():
 			return          # cutting is a hold, handled by the player
 		if Game.solution_charges > 0:
@@ -208,11 +272,10 @@ class Branch extends StaticBody2D:
 			queue_redraw()
 		else:
 			Sfx.play("chop", -14.0, 0.7)
-			Game.add_note("Dark hardened limbs will not cut. Joe weakened them with a "
-				+ "mixture: open the bag with [I], measure the chemicals, press [M].")
-			Game.toast.emit("Hardened heartwood — the blade bounces off. Joe softened "
-				+ "these with his mixture. Open your bag [I], measure out the chemicals, "
-				+ "then press [M] to mix. Pour a dose on this limb to make it brittle.")
+			Game.add_note("Dark hardened limbs will not cut. Joe had something he "
+				+ "mixed up that softened them.")
+			Game.toast.emit("Hardened heartwood — the blade bounces off it. Joe was "
+				+ "pouring something on these.")
 
 	# ── Shape ────────────────────────────────────────────────────────────
 	# A root is not a dowel: it wanders off the straight line, swells at the
@@ -270,6 +333,8 @@ class Branch extends StaticBody2D:
 		edge.append(edge[0])            # outline, or pale roots vanish into the
 		draw_polyline(edge, Mat.shade(base[0], 0.55), 2.0)   # wood floor
 
+		if gate:
+			_marks()
 		if brittle:
 			for i in 4:
 				var t: float = 0.2 + 0.2 * i
@@ -279,6 +344,23 @@ class Branch extends StaticBody2D:
 					Color(0.25, 0.22, 0.18, 0.8), 1.5)
 		if cut > 0.0:
 			_draw_cracks(cut / CUT_TIME)
+
+	# The three hearts you have to cut, drawn so the page has something to
+	# name: a pale ring, a black knot, a split.
+	func _marks() -> void:
+		var ring := _mid(0.24)
+		var h := _half(0.24)
+		draw_line(ring + Vector2(0, -h), ring + Vector2(0, h),
+			Color(0.90, 0.86, 0.72, 0.9), 5.0)
+		var knot := _mid(0.5)
+		draw_circle(knot, _half(0.5) * 0.55, Color(0.12, 0.09, 0.06, 0.95))
+		draw_circle(knot, _half(0.5) * 0.3, Color(0.30, 0.22, 0.14, 0.95))
+		var split := _mid(0.78)
+		var sh := _half(0.78)
+		for i in 3:
+			var f: float = -1.0 + i
+			draw_line(split + Vector2(f * 2.0, -sh + 2.0),
+				split + Vector2(-f * 2.0, sh - 2.0), Color(0.08, 0.06, 0.04, 0.9), 2.0)
 
 	# One fine root leaving the side of the run and forking once.
 	func _rootlet(t: float, side: float, base: Color) -> void:
@@ -395,6 +477,283 @@ class Fume extends Node2D:
 			var a0 := TAU * i / 16.0 + _t * 0.12
 			draw_arc(Vector2.ZERO, radius * 0.72, a0, a0 + TAU / 26.0, 5,
 				FUME_EDGE, 2.5)
+
+
+# ══ The two who share the floor with you ════════════════════════════════
+class Person extends Node2D:
+	var data := {}
+	var _said := 0
+
+	func _ready() -> void:
+		add_to_group("act")
+
+	func bias() -> float:
+		return 40.0
+
+	# They sit behind the desk, so this is a conversation across it rather
+	# than one you have to walk round for.
+	func reach() -> float:
+		return 120.0
+
+	func prompt() -> String:
+		return "Talk to %s" % data["name"]
+
+	# A few things each, in turn, so asking again gets you the next one
+	# rather than the same one.
+	func act() -> void:
+		var lines: Array = data["lines"]
+		Game.notice.emit(data["name"], lines[_said % lines.size()])
+		_said += 1
+
+	func _draw() -> void:
+		var tint := Color(data["tint"])
+		draw_circle(Vector2(2, 4), 17.0, Color(0, 0, 0, 0.18))
+		_oval(Vector2(0, 2), 16, 15, tint)                    # shoulders
+		_oval(Vector2(0, -3), 11, 11, Color("d9b48f"))        # head
+		_oval(Vector2(0, -7), 11, 7, Mat.shade(tint, 0.55))   # hair
+		draw_arc(Vector2(0, -3), 11.0, 0, TAU, 22, Mat.shade(tint, 0.5), 1.5)
+
+	func _oval(c: Vector2, rx: float, ry: float, col: Color) -> void:
+		var pts := PackedVector2Array()
+		for i in 24:
+			var a := TAU * i / 24.0
+			pts.append(c + Vector2(cos(a) * rx, sin(a) * ry))
+		draw_colored_polygon(pts, col)
+
+
+# ══ The lifts: the only way off the floor ════════════════════════════════
+class Lift extends Node2D:
+	var kind := "job"           # "job" goes down to the street, "boss" goes up
+	var _t := 0.0
+
+	func _ready() -> void:
+		add_to_group("act")
+
+	func bias() -> float:
+		return 40.0
+
+	func reach() -> float:
+		return 70.0             # the whole car, from anywhere in it
+
+	func prompt() -> String:
+		return "Take the lift up" if kind == "boss" else "Take the lift down"
+
+	func act() -> void:
+		if kind == "boss":
+			Game.notice.emit("Lift — up", "The panel lights, reads itself out, and "
+				+ "does nothing else.\n\n"
+				+ "FLOOR\tEXECUTIVE\n"
+				+ "APPOINTMENT\tnone\n"
+				+ "OPEN JOBS\t1")
+			return
+		if not Game.flag("read_job"):
+			Game.notice.emit("Lift — down", "The panel lights. The doors stay "
+				+ "where they are.\n\n"
+				+ "FLOOR\tSTREET\n"
+				+ "JOB LOADED\tnone")
+			return
+		Game.travel(Content.ENTRANCE)
+
+	func _process(delta: float) -> void:
+		_t += delta
+		queue_redraw()
+
+	func _draw() -> void:
+		var ready_now: bool = kind == "job" and Game.flag("read_job")
+		var col := Color(1, 0.95, 0.7, 0.34 if ready_now else 0.16)
+		if ready_now:
+			col.a = 0.26 + 0.12 * sin(_t * 2.2)
+		draw_arc(Vector2.ZERO, 46.0, 0, TAU, 34, col, 2.0)
+		# the arrow the car is pointing
+		var up: float = -1.0 if kind == "boss" else 1.0
+		var tip := Vector2(0, 16.0 * up)
+		draw_colored_polygon(PackedVector2Array([tip,
+			tip + Vector2(-11, -13.0 * up), tip + Vector2(11, -13.0 * up)]),
+			Color(1, 0.95, 0.7, 0.5 if ready_now else 0.25))
+
+
+# ══ Doorway: the way between the office and the job ══════════════════════
+class Doorway extends Node2D:
+	var to := Vector2.ZERO
+	var label := ""
+	var needs_done := false      # the way home, which only opens once you are
+
+	func _ready() -> void:
+		add_to_group("act")
+
+	func bias() -> float:
+		return 20.0
+
+	func reach() -> float:
+		return 52.0
+
+	func _shut() -> bool:
+		return needs_done and not Game.flag("can_leave")
+
+	func prompt() -> String:
+		return "Not done here yet" if _shut() else label
+
+	func act() -> void:
+		if _shut():
+			Game.toast.emit("Not yet. Him, and the paper that says who he was.")
+			return
+		Game.travel(to)
+
+	func _draw() -> void:
+		var pulse: float = 0.16 if _shut() else 0.34
+		draw_arc(Vector2.ZERO, 26.0, 0, TAU, 28, Color(1, 0.95, 0.7, pulse), 2.0)
+
+
+# ══ Light switch: the two rooms on the house wiring ══════════════════════
+class Switch extends Node2D:
+	var room := 0
+
+	func _ready() -> void:
+		add_to_group("act")
+
+	func bias() -> float:
+		return 30.0
+
+	func prompt() -> String:
+		return "Turn the light off" if Game.room_lit(room) else "Turn the light on"
+
+	func act() -> void:
+		Game.toggle_room_light(room)
+		queue_redraw()
+
+	func _draw() -> void:
+		var on := Game.room_lit(room)
+		draw_colored_polygon(Mat.rr(Rect2(-9, -12, 18, 24), 2.0),
+			Color(0, 0, 0, 0.2))
+		draw_colored_polygon(Mat.rr(Rect2(-10, -13, 18, 24), 2.0), Mat.PORCELAIN)
+		# the rocker: up when it is on, down when it is off
+		var r := Rect2(-6, -9, 10, 9) if on else Rect2(-6, 0, 10, 9)
+		draw_colored_polygon(Mat.rr(r, 1.5), Mat.shade(Mat.PORC_SH, 0.92 if on else 0.8))
+		draw_polyline(PackedVector2Array([Vector2(-10, -13), Vector2(8, -13),
+			Vector2(8, 11), Vector2(-10, 11), Vector2(-10, -13)]),
+			Mat.shade(Mat.PORC_SH, 0.65), 1.5)
+		if on:
+			draw_circle(Vector2(-1, -1), 15.0, Color(1, 0.95, 0.75, 0.10))
+
+
+# ══ Combination lock: the bedroom door ═══════════════════════════════════
+class Lock extends Node2D:
+	var bolt: StaticBody2D = null      # what actually holds the door shut
+	var _t := 0.0
+
+	func _ready() -> void:
+		add_to_group("act")
+		Game.lock_opened.connect(_open)
+
+	func bias() -> float:
+		return 45.0
+
+	# The dial is set in the door, with the doorway itself in the way, so it
+	# answers from a step back like a cupboard does.
+	func reach() -> float:
+		return 48.0
+
+	func prompt() -> String:
+		return "Locked — a four-digit dial"
+
+	func act() -> void:
+		Game.open_lock.emit()
+
+	func _open() -> void:
+		if bolt != null and is_instance_valid(bolt):
+			bolt.queue_free()
+		Sfx.play("open", -7.0)
+		Game.toast.emit("The dial gives, the bolt comes back, and their door swings in.")
+		queue_free()
+
+	func _process(delta: float) -> void:
+		_t += delta
+		queue_redraw()
+
+	func _draw() -> void:
+		# a brass dial on a bolted plate, set into the door
+		draw_colored_polygon(Mat.rr(Rect2(-17, -13, 34, 26), 4.0), Color("2f2a24"))
+		draw_circle(Vector2.ZERO, 10.0, Mat.BRASS)
+		draw_circle(Vector2.ZERO, 7.0, Mat.shade(Mat.BRASS, 0.72))
+		for i in 8:                       # numbers around the dial
+			var a := TAU * i / 8.0
+			draw_circle(Vector2(cos(a), sin(a)) * 8.5, 1.0, Color("f0e2b0"))
+		draw_line(Vector2.ZERO, Vector2(cos(-PI / 3.0), sin(-PI / 3.0)) * 7.0,
+			Color("2f2a24"), 2.0)         # the pointer
+		for c in [Vector2(-13, -9), Vector2(13, -9), Vector2(-13, 9), Vector2(13, 9)]:
+			draw_circle(c, 1.8, Mat.STEEL_DK)
+		var pulse: float = 0.3 + 0.14 * sin(_t * 2.2)
+		draw_arc(Vector2.ZERO, 24.0, 0, TAU, 26, Color(1, 0.95, 0.7, pulse), 2.0)
+
+
+# ══ Fixed note: read where it is, never taken ════════════════════════════
+class FixedNote extends Node2D:
+	var data := {}
+	var read := false
+
+	func _ready() -> void:
+		add_to_group("act")
+
+	func bias() -> float:
+		return 45.0
+
+	func prompt() -> String:
+		return data["prompt"]
+
+	# Nothing comes off the wall: this reads out and writes to the notebook,
+	# and never touches the inventory, so it cannot count as recovered.
+	func act() -> void:
+		read = true
+		Game.notice.emit(data["title"], data["body"])
+		if data.get("note", "") != "":
+			Game.add_note(data["note"])
+		if data.get("grants", "") != "":
+			Game.set_flag(data["grants"])
+		queue_redraw()
+
+	func _draw() -> void:
+		match data["surface"]:
+			"wall": _scratched()
+			"board": _pinned()
+			_: _on_paper()
+		if read:
+			return
+		draw_arc(Vector2.ZERO, 30.0, 0, TAU, 28, Color(1, 0.95, 0.7, 0.4), 2.0)
+
+	# gouged letters: short strokes cut into the boards, catching the light
+	func _scratched() -> void:
+		var pale := Color(0.86, 0.82, 0.68, 0.85)
+		var deep := Color(0.16, 0.11, 0.06, 0.8)
+		for row in 3:
+			var y: float = -7.0 + row * 7.0
+			var n := 7 - row
+			for i in n:
+				var x: float = -22.0 + i * 6.4 + Mat.noise(row * 3.0 + i, 1.3) * 2.0
+				var h: float = 2.4 + Mat.noise(i, row) * 2.2
+				draw_line(Vector2(x, y - h), Vector2(x + 1.5, y + h), deep, 2.0)
+				draw_line(Vector2(x - 0.8, y - h), Vector2(x + 0.7, y + h), pale, 1.0)
+
+	# a sheet pinned to the board, with the job on it
+	func _pinned() -> void:
+		draw_colored_polygon(Mat.rr(Rect2(-14, -10, 28, 20), 1.0), Color("f3ecdc"))
+		for i in 4:
+			draw_line(Vector2(-10, -5.0 + i * 3.4), Vector2(10, -5.0 + i * 3.4),
+				Color(0, 0, 0, 0.35), 1.0)
+		draw_circle(Vector2(0, -8), 2.0, Color("b13a2c"))
+
+	# a sheet left where it was put down, with its lines of writing showing
+	func _on_paper() -> void:
+		var r := Rect2(-15, -19, 30, 38)
+		draw_colored_polygon(Mat.rr(Rect2(r.position + Vector2(2, 3), r.size), 2.0),
+			Color(0, 0, 0, 0.18))
+		draw_colored_polygon(Mat.rr(r, 2.0), Color("eae4d6"))
+		var edge := Mat.rr(r, 2.0)
+		edge.append(edge[0])
+		draw_polyline(edge, Color("bdb49c"), 1.5)
+		for i in 6:
+			var y: float = r.position.y + 6.0 + i * 5.2
+			draw_line(Vector2(r.position.x + 4, y), Vector2(r.end.x - 4, y),
+				Color(0, 0, 0, 0.32), 1.0)
 
 
 # ══ Sink: the one place the chemicals can be mixed ═══════════════════════

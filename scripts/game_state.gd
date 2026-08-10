@@ -8,10 +8,17 @@ signal notice(title: String, body: String)
 signal toast(text: String)
 signal notes_changed
 signal open_sink
+signal open_lock
+signal open_cut
+signal lock_opened
 
 var inventory: Array[String] = []
 var notes: Array[String] = []
 var flags := {}
+
+# Which rooms have their light on, keyed by index into Light.ROOMS. Only the
+# rooms with a switch are in here; everywhere else is lit as it always was.
+var room_lights := {}
 
 var solution_charges := 0
 var extinguisher_charges := 3
@@ -60,6 +67,32 @@ func _choke_out() -> void:
 		+ "doorstep. You need clean air to go in there.")
 
 
+func room_lit(room: int) -> bool:
+	return room_lights.get(room, false)
+
+
+func toggle_room_light(room: int) -> void:
+	var on := not room_lit(room)
+	room_lights[room] = on
+	Sfx.play("open" if on else "empty", -12.0, 1.6)
+	toast.emit("The light comes on." if on else "The light goes out.")
+
+
+# The two places are the same world with a long way between them, so going
+# from one to the other is a step through a door and a hard cut.
+func travel(to: Vector2) -> void:
+	var p := get_tree().get_first_node_in_group("player")
+	if p != null:
+		p.global_position = to
+	fog = 0.0
+	Sfx.play("open", -8.0)
+	# the office floor is quiet; the music belongs to the job
+	if to == Content.OFFICE_START:
+		Music.stop()
+	else:
+		Music.play()
+
+
 func has_item(id: String) -> bool:
 	return inventory.has(id)
 
@@ -75,6 +108,7 @@ func add_item(id: String) -> void:
 		add_note(it["note"])
 	inventory_changed.emit()
 	notice.emit(it["name"], it["body"])
+	_check_done()
 
 
 func drop_item(id: String) -> void:
@@ -88,12 +122,71 @@ func add_note(text: String) -> void:
 		notes_changed.emit()
 
 
+# The three measures are written down in three different places, one of them
+# on a wall. Holding all three is what counts as knowing the formula.
+const FORMULA_PARTS := ["knows_dose_norust", "knows_dose_bleach", "knows_dose_exfluid"]
+
+
 func set_flag(f: String, v := true) -> void:
 	flags[f] = v
+	_check_formula()
+	_check_done()
+
+
+# What you were sent for: the body found, and the certificates in hand. Once
+# both are true there is nothing else you need and you can go back.
+func _check_done() -> void:
+	if flag("can_leave"):
+		return
+	if not flag("found_body") or not has_item("death_certs"):
+		return
+	set_flag("can_leave")
+	add_note("Body found and identified, certificates recovered. Nothing else "
+		+ "here is worth the trip back. Out the way you came in.")
+	notice.emit("That is the job", "You have what they sent you for: him, and the "
+		+ "paper that says who he was and who he lost.\n\nThere is nothing else in "
+		+ "this house that the office will pay for.\n\nThe way out is the door you "
+		+ "came in by.")
+
+
+func _check_formula() -> void:
+	if flag("knows_formula"):
+		return
+	for part in FORMULA_PARTS:
+		if not flag(part):
+			return
+	flags["knows_formula"] = true     # set directly: set_flag comes back here
+	add_note("Full formula: two cups no-rust, one cup bleach, two and a half cups "
+		+ "extinguisher fluid, no water.")
 
 
 func flag(f: String) -> bool:
 	return flags.get(f, false)
+
+
+# ── The lock on the bathroom door ────────────────────────────────────────
+# Four digits, and the only thing that opens it is the date Joe kept
+# everywhere. Returns whether the code was right.
+func try_code(code: String) -> bool:
+	if code != Content.LOCK_CODE:
+		Sfx.play("empty", -10.0)
+		return false
+	set_flag("bedroom_open")
+	add_note("The dial on their bedroom door takes Christopher's birthday, 15/10.")
+	lock_opened.emit()
+	return true
+
+
+# ── Cutting the limb in the doorframe ────────────────────────────────────
+# Three marks, taken in the order the grain gives. Returns whether it held.
+func try_cut(seq: String) -> bool:
+	if seq != Content.CUT_ORDER:
+		Sfx.play("chop", -12.0, 0.7)
+		return false
+	set_flag("gate_cut")
+	Sfx.play("crack", -8.0)
+	add_note("The limb in the doorframe gives up its cuts knot, split, pale ring.")
+	return true
 
 
 # ── Mixing ───────────────────────────────────────────────────────────────
@@ -120,14 +213,20 @@ func mix(cups: Dictionary) -> String:
 			return "The mixture curdles into a grey sludge and does nothing. " \
 				+ "The proportions must be wrong."
 
+	var again := flag("made_solution")
 	solution_charges += 3
 	Sfx.play("mix_ok", -5.0)
 	set_flag("made_solution")
 	add_note("Two no-rust, one bleach, two and a half extinguisher fluid, no water — "
-		+ "this is what weakens the tree.")
+		+ "this is what weakens the tree. The bottles hold enough to make it again "
+		+ "at the sink whenever the doses run out.")
+	# Nothing is used up but the doses, so the sink can be come back to.
+	if again:
+		return "Another batch, the same thin amber. Three more doses — %d in hand." \
+			% solution_charges
 	return "The water in the basin clears to a thin amber liquid that smells like " \
-		+ "a swimming pool. " \
-		+ "Three doses. Pour it on a dark limb to make it brittle."
+		+ "a swimming pool. Three doses. Pour it on a dark limb to make it brittle. " \
+		+ "There is enough in the bottles to mix this again when they run out."
 
 
 # ── Scoring ──────────────────────────────────────────────────────────────

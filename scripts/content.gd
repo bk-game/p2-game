@@ -34,15 +34,44 @@ const ITEMS := {
 		"name": "Logbook (page 4, torn)", "kind": "doc", "glyph": "paper",
 		"tint": "bfae84", "pos": Vector2(824, 214), "story": true,
 		"body": "18/9 — I've been experimenting with different chemicals, I think I've "
-			+ "found the correct formula to weaken the tree. In case I forget it's: two "
-			+ "cups of NO RUST BUILDUP, one cup of BLEACH, and two and a half cups of the "
-			+ "stuff inside the FIRE EXTINGUISHER.\n\n"
-			+ "Mix it in the BATHROOM SINK — it needs a basin and a running tap, and "
-			+ "I am not doing this on the kitchen table again.\n\n"
+			+ "found the correct formula to weaken the tree. It takes three things: NO "
+			+ "RUST BUILDUP, BLEACH, and the stuff inside the FIRE EXTINGUISHER.\n\n"
+			+ "TWO CUPS of the no rust. The other two measures are further down the "
+			+ "page, and the last one I gave up on paper and put somewhere I could not "
+			+ "lose it.\n\n"
+			+ "It wants a basin and a tap running, so not in here. I am not doing "
+			+ "this on the kitchen table again.\n\n"
 			+ "  [ the rest of this page has been torn away ]",
-		"note": "Formula: 2 no-rust, 1 bleach, 2.5 extinguisher fluid. Mix it in the "
-			+ "bathroom sink. Page is torn.",
-		"grants": "knows_formula",
+		"note": "The mix is no-rust, bleach and extinguisher fluid. Two cups of "
+			+ "no-rust. Joe made it up somewhere with a basin and a tap, not the "
+			+ "kitchen. The other two measures are written down elsewhere.",
+		"grants": "knows_dose_norust",
+	},
+	"log_dregs": {
+		"name": "Logbook (page 4, lower half)", "kind": "doc", "glyph": "scrap",
+		"tint": "bfae84", "pos": Vector2(1014, 722), "story": true,
+		"body": "The bottom half of the torn page, folded twice.\n\n"
+			+ "...and ONE CUP of the BLEACH. No more than that — at two it goes cloudy "
+			+ "and does nothing at all.\n\n"
+			+ "The third measure is the one I kept getting wrong, so it is not on "
+			+ "paper any more. I put it through the wall of the room where I first "
+			+ "tried this, and I am not going over it again.",
+		"note": "One cup of bleach in the mix, no more. The third measure Joe cut "
+			+ "into a wall somewhere, in the room where he first tried mixing.",
+		"grants": "knows_dose_bleach",
+	},
+	"log_cut": {
+		"name": "Logbook (page 5)", "kind": "doc", "glyph": "paper",
+		"tint": "c8b78d", "pos": Vector2(700, 186), "story": true,
+		"body": "17/9 — The one growing through the doorframe will not come apart "
+			+ "like the others even softened. There are three hearts in it and they "
+			+ "let go in an order. Take them wrong and the last cut binds, the blade "
+			+ "sticks, and it closes over by morning.\n\n"
+			+ "The knot first. Then the split. The pale ring last, and only last — "
+			+ "that is the one holding the weight.",
+		"note": "A limb grown into a doorframe has three hearts. Cut the knot, then "
+			+ "the split, then the pale ring last.",
+		"grants": "knows_cut_order",
 	},
 	"log_water": {
 		"name": "Torn scrap", "kind": "doc", "glyph": "scrap",
@@ -97,34 +126,30 @@ const ITEMS := {
 	"death_certs": {
 		"name": "Death certificates", "kind": "doc", "glyph": "paper",
 		"tint": "e6e2d2", "pos": Vector2(146, 158), "story": true,
-		"body": "Two certificates, kept flat and clean in a folder.\n\n"
-			+ "Name: Christopher Wood 
-			\nPlace of Death: North Cayus Emergency Room
-			\nUsual Residence: 1053 Meadow Lane. 
-			\nCity: North Cayus
-			\nFull Name of Hospital Institution: North Cayus Emergency Room
-			\nAddress: 0001 Emergency Lane
-			\nDate of Birth: 15/10/2042
-			\nBirthplace: South Cayus
-			\nCause of Death: Collapsed lungs and severed arteries
-			\nName of Cemetery or Crematory: North Cayus Crematorium
-			\nDate: 26/9/2071
-			\nDoctor / Examiner: Dr. Neal
-			\nDate: 25/9/2071" 
-			+ "Name: Eleanor Wood
-			\nPlace of Death: North Cayus Emergency Room
-			\nUsual Residence: 1053 Meadow Lane. 
-			\nCity: North Cayus
-			\nFull Name of Hospital Institution: North Cayus Emergency Room
-			\nAddress: 0001 Emergency Lane
-			\nDate of Birth: 03/05/2061
-			\nBirthplace: North Cayus
-			\nCause of Death: Severed arteries and a severe concussion
-			\nName of Cemetery or Crematory: North Cayus Crematorium
-			\nDate: 26/9/2071
-			\nDoctor / Examiner: Dr. Neal
-			\nDate: 25/9/2071",
-		"note": "He kept their death certificates down here, filed and flattened.",
+		"body": "Two of them, kept flat and clean in a folder, in the order they "
+			+ "were filed.\n"
+			+ "\n"
+			+ "STATE OF NORTH CAYUS — CERTIFICATE OF DEATH        No. 4471-C\n"
+			+ "\n"
+			+ "NAME\tChristopher Wood\n"
+			+ "BORN\t15 October 2042, South Cayus\n"
+			+ "DIED\t25 September 2071, North Cayus Emergency Room\n"
+			+ "CAUSE\tCollapsed lungs and severed arteries, sustained as a "
+			+ "pedestrian in a motor vehicle collision\n"
+			+ "CERTIFIED\tA. Neal MD, 26 September 2071\n"
+			+ "\n"
+			+ "STATE OF NORTH CAYUS — CERTIFICATE OF DEATH        No. 4472-C\n"
+			+ "\n"
+			+ "NAME\tEleanor Wood\n"
+			+ "BORN\t3 May 2061, North Cayus\n"
+			+ "DIED\t25 September 2071, North Cayus Emergency Room\n"
+			+ "CAUSE\tSevered arteries and a severe concussion, sustained as a "
+			+ "passenger in a motor vehicle collision\n"
+			+ "CERTIFIED\tA. Neal MD, 26 September 2071\n"
+			+ "\n"
+			+ "Both filed the day after. Both signed by the same hand.",
+		"note": "He kept their death certificates down here, filed and flattened. "
+			+ "Christopher born 15 October 2042, Eleanor 3 May 2061.",
 	},
 	"marriage_photo": {
 		"name": "Marriage photo", "kind": "doc", "glyph": "photo",
@@ -134,9 +159,30 @@ const ITEMS := {
 			+ "mean that.'",
 		"note": "Joe and Christopher were married. He kept the photo where no one could see it.",
 	},
+	"card_christopher": {
+		"name": "Birthday card, unsent", "kind": "doc", "glyph": "letter",
+		"tint": "d8cfc0", "pos": Vector2(1540, 700), "story": true,
+		"body": "A card with a boat on the front, written in and never sent.\n\n"
+			+ "\"Chris — 15/10 again. Twenty-nine years of me getting you the wrong "
+			+ "thing. I have kept the date on everything in this house because it is "
+			+ "the only four numbers I will never lose.\n\nAll my love, always. J.\"",
+		"note": "Christopher's birthday is 15/10. Joe used the date on things around "
+			+ "the house because he could not lose it.",
+		"grants": "knows_chris_birthday",
+	},
+	"card_eleanor": {
+		"name": "Child's birthday card", "kind": "doc", "glyph": "photo",
+		"tint": "e8c9d4", "pos": Vector2(1306, 306), "story": true,
+		"body": "Card stock folded by a child, a cake drawn on it in wax crayon with "
+			+ "ten candles counted out carefully.\n\n"
+			+ "\"TO ELEANOR. 3/5. LOVE DAD AND DAD.\"\n\n"
+			+ "Inside, in an adult hand: \"Ten. How.\"",
+		"note": "Eleanor's birthday is 3/5. She turned ten.",
+		"grants": "knows_eleanor_birthday",
+	},
 	"bunny": {
 		"name": "Stuffed bunny", "kind": "doc", "glyph": "toy",
-		"tint": "d9b9c4", "pos": Vector2(310, 880), "story": true,
+		"tint": "d9b9c4", "pos": Vector2(172, 352), "story": true,
 		"body": "An old stuffed rabbit, worn thin at the ears from handling. A fabric tag "
 			+ "stitched to one foot reads ELEANOR.\n\nJoe's hands are closed around it.",
 		"note": "He died holding his daughter's rabbit.",
@@ -193,11 +239,86 @@ const ITEMS := {
 # nowhere else.
 const SINK := Vector2(990, 150)
 
+# ── Light switches ───────────────────────────────────────────────────────
+# Two rooms are on the house wiring and are pitch dark until you find the
+# switch by the door. "room" indexes into Light.ROOMS.
+const SWITCHES := [
+	{"pos": Vector2(1045, 174), "room": 2},   # bathroom
+	{"pos": Vector2(196, 407), "room": 0},    # the room at the back
+]
+
+# ── The limb across the door under the tree ──────────────────────────────
+# It has grown into the frame and has three hearts in it. Softening it is not
+# enough: the cuts have to be taken in the order the grain will give, or the
+# last one binds the blade and the whole thing closes up again. The marks are
+# what you see on it; Joe worked the order out and wrote it down.
+const CUT_MARKS := ["the pale ring", "the black knot", "the split"]
+const CUT_ORDER := "231"
+
+# ── The lock on the bedroom ──────────────────────────────────────────────
+# Their room, and the way through to the bathroom beyond it. Joe put the date
+# on everything in the house because it was four numbers he could not lose:
+# Christopher's birthday, 15/10. The card in the living room carries it, and
+# so do the death certificates, once you can get to them.
+const LOCK_CODE := "1510"
+const LOCK_POS := Vector2(1307, 596)
+const LOCK_DOOR := Rect2(1272, 578, 70, 37)
+
+# ── Notes fixed in place ─────────────────────────────────────────────────
+# Writing that belongs to the house rather than to you: read it where it is,
+# it never comes into the bag, and it never counts towards what you
+# recovered. "surface" picks how it is drawn — gouged into a wall, or a sheet
+# left on a piece of furniture.
+const FIXED_NOTES := [
+	{
+		"pos": Vector2(-340, 178), "surface": "board",
+		"prompt": "Read the job on the board",
+		"title": "The job",
+		"body": "RECOVERY — WOOD, JOSEPH. Cabin, forty minutes out, no next of kin "
+			+ "on file.\n\n"
+			+ "Bring back the man and bring back the paper: who he was, who he "
+			+ "belonged to, what he lost. The office builds the rest from that. "
+			+ "Anything you carry out that says something about him is paid on.",
+		"note": "The job: recover Joe Wood and whatever says who he was. Paid per "
+			+ "significant item.",
+		"grants": "read_job",
+	},
+	{
+		"pos": Vector2(760, 682), "surface": "desk",
+		"prompt": "Read the note on the desk",
+		"title": "Note on the desk",
+		"body": "Joe's hand, hurried, held down by a mug ring.\n\n"
+			+ "\"Two ways out of this room and I only ever use the one. The other you "
+			+ "would have to know was there — it has taken that end of the room and I "
+			+ "walk straight past it.\n\n"
+			+ "Everything I have left is on the far side of it.\"",
+		"note": "There is another way out of the living room, and the tree has taken "
+			+ "that end of it. What Joe had left is through there.",
+		"grants": "knows_back_door",
+	},
+	{
+		"pos": Vector2(540, 598), "surface": "wall",
+		"prompt": "Read what is cut into the wall",
+		"title": "Cut into the kitchen wall",
+		"body": "Low down on the boards by the table, deep, with something sharper "
+			+ "than a knife. The letters are gone over twice.\n\n"
+			+ "TWO AND A HALF CUPS OF THE EXTINGUISHER STUFF.\n\n"
+			+ "Under it, smaller: \"STOP GUESSING. FOUR BATCHES WASTED.\"",
+		"note": "Cut into the kitchen wall: two and a half cups of extinguisher fluid.",
+		"grants": "knows_dose_exfluid",
+	},
+]
+
 # Branches radiating from the tree. strong = needs the brittle solution.
 # {pos, len, thick, deg, strong}
 const BRANCHES := [
 	# ── gates: only these need the brittle solution ──────────────────────
 	{"pos": Vector2(242, 460), "len": 110, "thick": 40, "deg": 90,  "strong": true},
+	{"pos": Vector2(468, 745), "len": 110, "thick": 34, "deg": 90,  "strong": true,
+		"gate": true},
+	{"pos": Vector2(360, 770), "len": 150, "thick": 30, "deg": 24,  "strong": true},
+	{"pos": Vector2(188, 620), "len": 130, "thick": 28, "deg": 96,  "strong": true},
+	{"pos": Vector2(180, 200), "len": 140, "thick": 30, "deg": 40,  "strong": true},
 	{"pos": Vector2(408, 890), "len": 170, "thick": 32, "deg": 20,  "strong": true},
 	{"pos": Vector2(318, 946), "len": 150, "thick": 30, "deg": 108, "strong": true},
 	{"pos": Vector2(806, 858), "len": 180, "thick": 32, "deg": 74,  "strong": true},
@@ -246,15 +367,15 @@ const CONTAINERS := [
 	{"pos": Vector2(150, 516), "items": ["axe"]},
 	{"pos": Vector2(500, 186), "items": []},
 	{"pos": Vector2(610, 186), "items": []},
-	{"pos": Vector2(700, 186), "items": []},
+	{"pos": Vector2(700, 186), "items": ["log_cut"]},
 	{"pos": Vector2(408, 462), "items": []},
 	{"pos": Vector2(1120, 506), "items": []},
-	{"pos": Vector2(1306, 306), "items": []},
-	{"pos": Vector2(1014, 722), "items": []},
+	{"pos": Vector2(1306, 306), "items": ["card_eleanor"]},
+	{"pos": Vector2(1014, 722), "items": ["log_dregs"]},
 	{"pos": Vector2(992, 822), "items": []},
 	{"pos": Vector2(262, 894), "items": []},
 	{"pos": Vector2(170, 852), "items": []},
-	{"pos": Vector2(1540, 700), "items": []},
+	{"pos": Vector2(1540, 700), "items": ["card_christopher"]},
 	{"pos": Vector2(214, 306), "items": []},
 ]
 
@@ -262,8 +383,57 @@ const CONTAINERS := [
 # cloud has to be blown out with the extinguisher before you can pass it.
 const FUMES := [
 	{"pos": Vector2(576, 900), "r": 104.0},
-	{"pos": Vector2(188, 700), "r": 100.0},
+	# over the hidden door and the hardened limb across it, so the way in to
+	# the room at the back is hidden in the green as well as blocked
+	{"pos": Vector2(230, 455), "r": 95.0},
 ]
 
-const BODY_POS := Vector2(310, 880)
+# The hidden room at the back, behind the panelling the photos covered.
+const BODY_POS := Vector2(172, 352)
 const ENTRANCE := Vector2(1462, 935)
+
+# The two who share the floor with you. Each has a few things to say and
+# says the next one every time you ask.
+const STAFF := [
+	{
+		"pos": Vector2(-283, 285), "name": "Renn", "tint": "8d9585",
+		"lines": [
+			"\"Morning. You got the Wood one? Take a coat, those places are "
+				+ "freezing.\"",
+			"\"Don't try and read it all out there. You'll be up half the night "
+				+ "and nights aren't paid.\"",
+			"\"They docked me for the van again. Check what they're taking off "
+				+ "you before you sign anything.\"",
+			"\"Better you than me. I did two cabins last year and I'm still not "
+				+ "right about it.\"",
+		],
+	},
+	{
+		"pos": Vector2(-283, 443), "name": "Oyelaran", "tint": "a97c4a",
+		"lines": [
+			"\"Morning. You look like you slept in the stairwell.\"",
+			"\"Whatever's growing out there, don't bring it back in your coat. "
+				+ "Someone did that. He's not here any more.\"",
+			"\"Take the certificates if there are any. Paper with a name on it "
+				+ "pays double.\"",
+			"\"Come back through the same door you went out of. They only mark "
+				+ "you returned if you use the door.\"",
+		],
+	},
+]
+
+# ── The office ───────────────────────────────────────────────────────────
+# Where the day starts and where it has to end. DESK is where you come back
+# to; the door out of the office puts you on the cabin's doorstep and the
+# cabin's front door brings you back here.
+const OFFICE_START := Vector2(-440, 360)   # on the floor by the desk
+const CABIN_DOOR := Vector2(1462, 952)      # the front door, from inside
+
+# The two lifts are the only way off this floor. The top one goes up to the
+# boss and will not take you until the job on the board is done; the bottom
+# one goes down to the street and will not take you until you have read what
+# the job is.
+const LIFTS := [
+	{"pos": Vector2(-677, 247), "kind": "boss"},
+	{"pos": Vector2(-677, 458), "kind": "job"},
+]

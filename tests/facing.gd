@@ -3,7 +3,9 @@ extends Node2D
 # You have to be turned towards a thing to work on it, with one exception:
 # something you are all but standing on is always in reach.
 
-const LIMB := Vector2(1462, 872)   # the barricade limb across the front door
+# A limb out in the middle of the living room, clear of anything else that
+# answers to E — the barricade by the front door has the way home beside it.
+const LIMB := Vector2(1180, 660)
 
 
 func _ready() -> void:
@@ -20,23 +22,23 @@ func _ready() -> void:
 			limb = n
 	fails += _expect("found the barricade limb", limb != null)
 
-	# Standing below it, out of touching range but well inside reach.
-	pl.global_position = LIMB + Vector2(0, 33)
-	pl.facing = -PI / 2.0                     # looking up, at the limb
+	# Standing beside it, out of touching range but well inside reach.
+	pl.global_position = LIMB + Vector2(33, 0)
+	pl.facing = PI                            # looking west, at the limb
 	pl._scan()
 	fails += _expect("turned towards the limb, it is the target", pl._target == limb)
 
-	pl.facing = PI / 2.0                      # looking down, away from it
+	pl.facing = 0.0                           # looking east, away from it
 	pl._scan()
 	fails += _expect("turned away, nothing is targeted", pl._target == null)
 
-	pl.facing = 0.0                           # side on, outside the cone
+	pl.facing = PI / 2.0                      # side on, outside the cone
 	pl._scan()
 	fails += _expect("side on, nothing is targeted", pl._target == null)
 
 	# Out of range altogether, however you are turned.
-	pl.global_position = LIMB + Vector2(0, 90)
-	pl.facing = -PI / 2.0
+	pl.global_position = LIMB + Vector2(90, 0)
+	pl.facing = PI
 	pl._scan()
 	fails += _expect("too far to reach", pl._target == null)
 

@@ -15,6 +15,8 @@ func _ready() -> void:
 	for w in FP.WALLS:
 		var parts: Array = [w]
 		for d in FP.DOORS:
+			if d.get("shut", false):
+				continue      # never walked through, so it is still wall
 			var nxt: Array = []
 			for p in parts:
 				nxt.append_array(_sub(p, d["rect"]))
@@ -26,15 +28,36 @@ func _ready() -> void:
 
 	var fails := 0
 	# stage: which branch strengths are passable, which fumes are cleared
+	# every measure of the formula has to be readable before you can mix, so
+	# all three pieces belong in the first stage
 	fails += _stage("A start (bare hands)", false, [], [
 		"extinguisher", "log_1_2", "log_3", "log_5_6", "log_formula", "log_water",
-		"norust", "bleach", "exfluid", "water", "police_report"])
+		"log_dregs", "log_cut", "norust", "bleach", "exfluid", "water",
+		"police_report", "card_christopher", "card_eleanor"])
 	fails += _stage("B extinguisher clears the utility fume", false, [1], [
-		"<sink>", "axe", "family_photos"])
+		"<sink>", "letter_doctor"])
 	fails += _stage("C solution breaks strong limbs", true, [1], [
-		"death_certs", "marriage_photo", "letter_doctor"])
+		"axe", "family_photos", "death_certs", "marriage_photo"])
 	fails += _stage("D extinguisher clears the rest of the air", true, [0, 1],
 		["<body>"])
+
+	# writing fixed to the house is part of the formula, so it has to be
+	# readable bare-handed, before anything has been cleared or cut
+	var bare := _flood(false, [])
+	for i in Content.FIXED_NOTES.size():
+		var np: Vector2 = Content.FIXED_NOTES[i]["pos"]
+		if not _near(bare, np):
+			print("FAIL  [A start] cannot read the note fixed at %s" % np)
+			fails += 1
+
+	# the dial has to be workable from outside: whatever gives you the code
+	# cannot be shut behind the door it opens
+	_walls.append(Content.LOCK_DOOR)          # the bolt, while it is still shut
+	var shut := _flood(false, [])
+	if not _near(shut, Content.ITEMS["card_christopher"]["pos"]):
+		print("FAIL  the code for the locked door is behind the locked door")
+		fails += 1
+	_walls.erase(Content.LOCK_DOOR)
 
 	if OS.get_environment("DUMP") != "":
 		_dump(_flood(false, [1]))
@@ -63,10 +86,14 @@ func _near(reach: Dictionary, p: Vector2) -> bool:
 
 
 func _flood(strong_ok: bool, cleared: Array) -> Dictionary:
+	# two places with no path between them: seed the flood in both, so the
+	# writing fixed to the office walls counts as reachable as well
 	var seen := {}
-	var start := Vector2i(Content.ENTRANCE / CELL)
-	var q: Array[Vector2i] = [start]
-	seen[start] = true
+	var q: Array[Vector2i] = []
+	for at in [Content.ENTRANCE, Content.OFFICE_START]:
+		var start := Vector2i(at / CELL)
+		seen[start] = true
+		q.append(start)
 	while not q.is_empty():
 		var c: Vector2i = q.pop_back()
 		for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
@@ -74,7 +101,7 @@ func _flood(strong_ok: bool, cleared: Array) -> Dictionary:
 			if seen.has(n):
 				continue
 			var w := Vector2(n.x, n.y) * CELL
-			if w.x < 40 or w.x > 1680 or w.y < 40 or w.y > 1040:
+			if w.x < -900 or w.x > 1680 or w.y < 40 or w.y > 1240:
 				continue
 			if _blocked(w, strong_ok, cleared):
 				continue

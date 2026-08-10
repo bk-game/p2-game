@@ -25,7 +25,13 @@ func _ready() -> void:
 
 	_player.stream = stream
 	_player.finished.connect(_on_finished)
-	_player.play()
+
+
+# The office is quiet — no music over the top of a floor with people on it.
+# It starts when you get out to the job and stops when you come back.
+func play() -> void:
+	if _player and not _player.playing:
+		_player.play()
 
 
 func _on_finished() -> void:
