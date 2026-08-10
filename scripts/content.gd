@@ -396,7 +396,7 @@ const ENTRANCE := Vector2(1462, 935)
 # says the next one every time you ask.
 const STAFF := [
 	{
-		"pos": Vector2(-410, 342), "name": "Renn", "tint": "8d9585",
+		"pos": Vector2(-367, 285), "name": "Renn", "tint": "8d9585",
 		"lines": [
 			"\"Wood, Joseph. Forty minutes out. You want the long coat, it is "
 				+ "cold in those.\"",
@@ -409,7 +409,7 @@ const STAFF := [
 		],
 	},
 	{
-		"pos": Vector2(-338, 342), "name": "Oyelaran", "tint": "a97c4a",
+		"pos": Vector2(-367, 443), "name": "Oyelaran", "tint": "a97c4a",
 		"lines": [
 			"\"Morning. You look like the pod.\"",
 			"\"Whatever is growing in that one, do not bring it back in your "
@@ -426,7 +426,7 @@ const STAFF := [
 # Where the day starts and where it has to end. DESK is where you come back
 # to; the door out of the office puts you on the cabin's doorstep and the
 # cabin's front door brings you back here.
-const OFFICE_START := Vector2(-360, 400)
+const OFFICE_START := Vector2(-440, 360)   # on the floor by the desk
 const CABIN_DOOR := Vector2(1462, 952)      # the front door, from inside
 
 # The two lifts are the only way off this floor. The top one goes up to the
