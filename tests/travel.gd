@@ -57,17 +57,42 @@ func _ready() -> void:
 	fails += _expect("and says what is missing first",
 		door.prompt().contains("docket"))
 
-	# the docket off the board, the lamp out of the store, the key off him
+	# the docket off the board and the lamp out of the store
 	Game.add_item("docket")
 	_dismiss(hud)
 	Game.add_item("lamp")
 	_dismiss(hud)
-	fails += _expect("the key is not lying about", not Game.has_item("van_key"))
+	fails += _expect("the door is ready for a key", door.prompt() == "Out to the yard")
+
+	# no key on you: the door says so rather than opening
+	door.act()
+	_dismiss(hud)
+	fails += _expect("no key, no van",
+		pl.global_position.distance_to(Content.OFFICE_START) < 1.0)
+
+	# the card comes off Oyelaran, and it is a card, not the answer
 	oyelaran.act()
 	_dismiss(hud)
-	fails += _expect("he hands the key over once the job is yours",
-		Game.has_item("van_key"))
-	fails += _expect("and the door is ready", door.prompt() == "Out to the yard")
+	fails += _expect("he hands over the bay card", Game.has_item("key_card"))
+	fails += _expect("which leaves two bays rubbed out",
+		Content.ITEMS["key_card"]["body"].contains("rubbed through"))
+
+	# one key off the press at a time
+	Game.take_key(0)
+	fails += _expect("a key comes off the hook", Game.held_key() == "key_yellow")
+	Game.take_key(1)
+	fails += _expect("taking another puts the first one back",
+		Game.held_key() == "key_green" and not Game.has_item("key_yellow"))
+
+	# wrong tag, right barrel: nothing turns
+	fails += _expect("the wrong tag does not turn",
+		not Game.try_barrel(Content.VAN_BARREL))
+	# right tag, wrong barrel: still nothing
+	Game.take_key(2)
+	fails += _expect("the bay 2 key is the blue one", Game.held_key() == Content.VAN_KEY)
+	fails += _expect("a seized barrel does not turn", not Game.try_barrel(0))
+	fails += _expect("nor the middle one", not Game.try_barrel(1))
+	fails += _expect("the bottom one does", Game.try_barrel(Content.VAN_BARREL))
 
 	door.act()
 	fails += _expect("the lift down starts the drive out", hud.mode == 7)

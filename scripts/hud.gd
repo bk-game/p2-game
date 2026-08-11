@@ -21,7 +21,7 @@ const RULE   := Color("b19c74")
 const FOG    := Color(0.62, 0.82, 0.18)   # the green closing over your eyes
 const FOG_DK := Color(0.16, 0.26, 0.06)
 
-enum Mode {PLAY, READ, BAG, NOTES, REPORT, LOCK, CUT, RIDE}
+enum Mode {PLAY, READ, BAG, NOTES, REPORT, LOCK, CUT, RIDE, CHOICE}
 
 var mode: int = Mode.PLAY
 var _title := ""
@@ -41,6 +41,7 @@ var _queued: Array = []
 var _read_t := 0.0
 var _ride_t := 0.0
 var _ride_out := true
+var _choice := {}
 
 
 func _ready() -> void:
@@ -52,6 +53,7 @@ func _ready() -> void:
 	Game.open_lock.connect(_open_lock)
 	Game.open_cut.connect(_open_cut)
 	Game.ride.connect(_on_ride)
+	Game.open_choice.connect(_open_choice)
 
 
 func blocking() -> bool:
@@ -109,6 +111,14 @@ func _open_cut() -> void:
 	mode = Mode.CUT
 	_code = ""
 	_lock_msg = ""
+	queue_redraw()
+
+
+# Pick one of a short list: which key off the press, which barrel to try it
+# in. The same panel does both, since both are one press of a number.
+func _open_choice(data: Dictionary) -> void:
+	_choice = data
+	mode = Mode.CHOICE
 	queue_redraw()
 
 
@@ -179,6 +189,8 @@ func _unhandled_key_input(e: InputEvent) -> void:
 		Mode.RIDE:
 			if k in [KEY_E, KEY_ESCAPE, KEY_ENTER, KEY_SPACE]:
 				_ride_t = RIDE_T          # skip to the end of the drive
+		Mode.CHOICE:
+			_choice_key(k)
 		Mode.PLAY:
 			if k == KEY_I:
 				mode = Mode.BAG
@@ -198,6 +210,26 @@ func _unhandled_key_input(e: InputEvent) -> void:
 				return
 	get_viewport().set_input_as_handled()
 	queue_redraw()
+
+
+func _choice_key(k: int) -> void:
+	if k in [KEY_ESCAPE, KEY_Q, KEY_I, KEY_E]:
+		mode = Mode.PLAY
+		return
+	var pick := -1
+	if k >= KEY_1 and k <= KEY_9:
+		pick = k - KEY_1
+	elif k >= KEY_KP_1 and k <= KEY_KP_9:
+		pick = k - KEY_KP_1
+	var opts: Array = _choice.get("options", [])
+	if pick < 0 or pick >= opts.size():
+		return
+	if _choice.get("kind", "") == "key":
+		Game.take_key(pick)
+		mode = Mode.PLAY
+	elif Game.try_barrel(pick):
+		mode = Mode.PLAY
+		Game.begin_ride(Content.ENTRANCE, true)
 
 
 # Which of the three marks to take, and in what order. Same entry as the
@@ -364,6 +396,7 @@ func _draw() -> void:
 		Mode.LOCK: _draw_lock(f, vp)
 		Mode.CUT: _draw_cut(f, vp)
 		Mode.RIDE: _draw_ride(f, vp)
+		Mode.CHOICE: _draw_choice(f, vp)
 
 
 func _draw_lock(f: Font, vp: Vector2) -> void:
@@ -416,6 +449,34 @@ func _draw_cut(f: Font, vp: Vector2) -> void:
 		draw_string(f, Vector2(r.position.x + _n(38), r.end.y - _n(64)), _lock_msg,
 			HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(76), _fs(17), INK)
 	_foot(f, r, "1-3 in order    backspace    [E] cut    [I] step back")
+
+
+func _draw_choice(f: Font, vp: Vector2) -> void:
+	draw_rect(Rect2(Vector2.ZERO, vp), Color(0, 0, 0, 0.55))
+	var opts: Array = _choice.get("options", [])
+	var r := _centre(vp, 640, 268.0 + opts.size() * 42.0)
+	_panel(r)
+	_head(f, r, _choice.get("title", ""), "")
+	draw_multiline_string(f, Vector2(r.position.x + _n(38), r.position.y + _n(122)),
+		_choice.get("blurb", ""), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(76),
+		_fs(17), -1, DIM)
+	for i in opts.size():
+		var y: float = r.position.y + _n(188) + i * _n(42)
+		var cap := Rect2(r.position.x + _n(38), y - _n(22), _n(30), _n(30))
+		draw_rect(cap, Color(1, 1, 1, 0.07))
+		draw_rect(cap, EDGE, false, 2.0)
+		draw_string(f, Vector2(cap.position.x + _n(10), cap.end.y - _n(9)),
+			str(i + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(17), ACCENT)
+		# the tag itself, in its colour, when this is the press
+		var tint := INK
+		if _choice.get("kind", "") == "key":
+			tint = Color(Content.ITEMS[Content.KEYS[i]["id"]]["tint"])
+			draw_rect(Rect2(cap.end.x + _n(14), y - _n(16), _n(18), _n(18)), tint)
+		var at: float = cap.end.x + (_n(42) if _choice.get("kind", "") == "key"
+			else _n(14))
+		draw_string(f, Vector2(at, y), opts[i], HORIZONTAL_ALIGNMENT_LEFT, -1,
+			_fs(19), INK)
+	_foot(f, r, "1-%d to choose    [E] step back" % opts.size())
 
 
 # ── The drive ────────────────────────────────────────────────────────────

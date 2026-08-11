@@ -11,6 +11,7 @@ signal open_sink
 signal open_lock
 signal open_cut
 signal ride(outbound: bool)
+signal open_choice(data: Dictionary)
 signal lock_opened
 
 var inventory: Array[String] = []
@@ -116,6 +117,45 @@ func finish_level() -> void:
 		+ "PAID\t$%d\n\n" % (found * 250)
 		+ "Filed. What is left of him is somebody else's afternoon.\n\n"
 		+ "[R] has the whole report.")
+
+
+# ── The key press ────────────────────────────────────────────────────────
+# One key off the hooks at a time: taking another puts the last one back.
+func held_key() -> String:
+	for k in Content.KEYS:
+		if has_item(k["id"]):
+			return k["id"]
+	return ""
+
+
+func take_key(which: int) -> void:
+	var id: String = Content.KEYS[which]["id"]
+	var had := held_key()
+	if had == id:
+		toast.emit("That one is already on you.")
+		return
+	if had != "":
+		inventory.erase(had)
+	inventory.append(id)
+	inventory_changed.emit()
+	Sfx.play("pickup", -8.0)
+	toast.emit("%s off the hook.%s" % [Content.ITEMS[id]["name"],
+		"" if had == "" else " %s back on it." % Content.ITEMS[had]["name"]])
+
+
+# Right key, right barrel, or it does not turn.
+func try_barrel(which: int) -> bool:
+	if held_key() != Content.VAN_KEY:
+		Sfx.play("empty", -10.0)
+		toast.emit("The key goes in and stops. Wrong tag for this van.")
+		return false
+	if which != Content.VAN_BARREL:
+		Sfx.play("empty", -10.0)
+		toast.emit("It will not turn. That barrel has not turned in years.")
+		return false
+	Sfx.play("open", -7.0)
+	set_flag("signed_out")
+	return true
 
 
 func has_item(id: String) -> bool:

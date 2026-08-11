@@ -223,19 +223,49 @@ const ITEMS := {
 		"body": "The docket the board printed when you took the job.\n\n"
 			+ "REF\t4471-C\n"
 			+ "SUBJECT\tWood, Joseph\n"
+			+ "VAN\tbay 2\n"
 			+ "SIGNED OUT\tyou\n\n"
 			+ "No van goes out without one of these on the seat.",
-		"note": "",
+		"note": "The docket puts you in the van in bay 2.",
 		"use": "Proof the job is yours. It rides on the seat.",
 	},
-	"van_key": {
-		"name": "Van key", "kind": "tool", "glyph": "axe",
-		"tint": "9aa1a7", "pos": Vector2(-300, 360),
-		"body": "One key, one plastic tag, the number rubbed off it. Oyelaran "
-			+ "keeps them in a drawer on his side of the desk and hands them out "
-			+ "one at a time, which is not policy but is what happens.",
-		"note": "",
-		"use": "For the van in the yard. The fire door is the way to it.",
+	"key_yellow": {
+		"name": "Key, yellow tag", "kind": "tool", "glyph": "key",
+		"tint": "c9a227", "pos": Vector2(-300, 360),
+		"body": "A worn key on a yellow plastic tag. Nothing else on it.",
+		"note": "", "use": "One of the four off the press. It goes in a barrel.",
+	},
+	"key_green": {
+		"name": "Key, green tag", "kind": "tool", "glyph": "key",
+		"tint": "4c7a3a", "pos": Vector2(-300, 360),
+		"body": "A worn key on a green plastic tag. Nothing else on it.",
+		"note": "", "use": "One of the four off the press. It goes in a barrel.",
+	},
+	"key_blue": {
+		"name": "Key, blue tag", "kind": "tool", "glyph": "key",
+		"tint": "3a5f8a", "pos": Vector2(-300, 360),
+		"body": "A worn key on a blue plastic tag. Nothing else on it.",
+		"note": "", "use": "One of the four off the press. It goes in a barrel.",
+	},
+	"key_red": {
+		"name": "Key, red tag", "kind": "tool", "glyph": "key",
+		"tint": "b13a2c", "pos": Vector2(-300, 360),
+		"body": "A worn key on a red plastic tag. Nothing else on it.",
+		"note": "", "use": "One of the four off the press. It goes in a barrel.",
+	},
+	"key_card": {
+		"name": "Bay card", "kind": "doc", "glyph": "paper",
+		"tint": "d8cfc0", "pos": Vector2(-300, 400),
+		"body": "A card off the back of the key press, soft at the corners from "
+			+ "being handled.\n\n"
+			+ "BAY 1\tyellow\n"
+			+ "BAY 2\t[rubbed through to the card]\n"
+			+ "BAY 3\t[rubbed through to the card]\n"
+			+ "BAY 4\tred\n\n"
+			+ "Somebody has written along the bottom: THESE DO NOT CHANGE, STOP "
+			+ "ASKING.",
+		"note": "Bay 1 is the yellow tag and bay 4 is the red one. The cards for "
+			+ "bays 2 and 3 are rubbed out — one of them is green, one is blue.",
 	},
 
 	# ── Chemicals ───────────────────────────────────────────────────────
@@ -302,6 +332,17 @@ const LOCK_DOOR := Rect2(1272, 578, 70, 37)
 # left on a piece of furniture.
 const FIXED_NOTES := [
 	{
+		"pos": Vector2(-316, 544), "surface": "panel",
+		"prompt": "Read the sign screwed to the door",
+		"title": "Sign on the fire door",
+		"body": "A steel plate screwed on under the push bar, painted over twice "
+			+ "and read anyway.\n\n"
+			+ "TOP AND MIDDLE BARRELS SEIZED.\n"
+			+ "BOTTOM ONE ONLY.\n\n"
+			+ "Under it, in marker: \"since 68\".",
+		"note": "Only the bottom barrel of the fire door still turns.",
+	},
+	{
 		"pos": Vector2(-340, 178), "surface": "board",
 		"prompt": "Read the job on the board",
 		"title": "The job",
@@ -313,9 +354,9 @@ const FIXED_NOTES := [
 			+ "NOTHING LEAVES THIS FLOOR WITHOUT:\n"
 			+ "\tthe docket, off this board\n"
 			+ "\ta lamp, out of the store\n"
-			+ "\tthe van key, off whoever is holding them",
+			+ "\ta van key, off the press by the door",
 		"note": "The job: recover Joe Wood and whatever says who he was. Sign out "
-			+ "with the docket, a lamp from the store, and the van key.",
+			+ "with the docket, a lamp from the store, and a van key off the press.",
 		"grants": "read_job",
 	},
 	{
@@ -439,6 +480,8 @@ const STAFF := [
 				+ "and nights aren't paid.\"",
 			"\"They docked me for the van again. Check what they're taking off "
 				+ "you before you sign anything.\"",
+			"\"Green's been sat in bay 3 since the summer with a flat. Nobody's "
+				+ "moving it, so don't take that one.\"",
 			"\"Better you than me. I did two cabins last year and I'm still not "
 				+ "right about it.\"",
 		],
@@ -446,11 +489,11 @@ const STAFF := [
 	{
 		"pos": Vector2(-283, 443), "name": "Oyelaran", "tint": "a97c4a",
 		"gives": {
-			"item": "van_key", "needs": "read_job",
-			"line": "\"Wood, is it. Hold on.\" He goes through the drawer on his "
-				+ "side of the desk, twice, and comes up with a key on a plastic "
-				+ "tag.\n\n\"Bring it back on the tag. Last one came back in a "
-				+ "coat pocket three weeks later.\"",
+			"item": "key_card", "needs": "read_job",
+			"line": "\"Wood, is it. Then you want a van.\" He goes through the "
+				+ "drawer on his side of the desk and comes up with a card off the "
+				+ "back of the key press.\n\n\"Two of them have rubbed off. Ask "
+				+ "Renn, he knows what is sat out there.\"",
 		},
 		"lines": [
 			"\"Morning. You look like you slept in the stairwell.\"",
@@ -482,4 +525,20 @@ const LIFTS := [
 # The fire door at the bottom of the office. Everything you need to sign out
 # with has to be on you before it opens.
 const OFFICE_EXIT := Vector2(-376, 540)
-const KIT := ["docket", "lamp", "van_key"]
+const KIT := ["docket", "lamp"]
+
+# ── The key press ────────────────────────────────────────────────────────
+# Four keys on hooks, tagged by colour, one signed out at a time. Which one
+# opens the van in your bay is worked out from three things on this floor:
+# the bay off the docket, the card Oyelaran keeps, and what Renn knows about
+# what is off the road. Which barrel it goes in is on the sign by the door.
+const KEY_PRESS := Vector2(-544, 350)
+const KEYS := [
+	{"id": "key_yellow", "tag": "yellow"},
+	{"id": "key_green",  "tag": "green"},
+	{"id": "key_blue",   "tag": "blue"},
+	{"id": "key_red",    "tag": "red"},
+]
+const VAN_KEY := "key_blue"     # bay 2, once the card and Renn are put together
+const BARRELS := ["the top barrel", "the middle barrel", "the bottom barrel"]
+const VAN_BARREL := 2           # the bottom one; the other two are seized

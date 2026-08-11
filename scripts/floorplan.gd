@@ -567,14 +567,20 @@ func _office() -> void:
 	_fill(Rect2(-571, 440, 22, 60), Mat.WOOD, 1.0)          # the cupboard door
 	draw_circle(Vector2(-556, 470), 3.0, Mat.BRASS)
 
-	# the fire door out to the yard, at the bottom of the room
+	# the fire door out to the yard, with three barrels down its edge
 	var out := Rect2(-420, 549, 88, 37)
 	_fill(out, Mat.STEEL, 1.0)
 	_stroke(out, Mat.STEEL_DK, 2.0)
-	draw_line(Vector2(-412, 560), Vector2(-340, 560), Mat.STEEL_DK, 4.0)  # push bar
-	draw_circle(Vector2(-376, 543), 4.0, Mat.EMBER)
+	draw_line(Vector2(-412, 566), Vector2(-340, 566), Mat.STEEL_DK, 4.0)  # push bar
+	for i in 3:
+		var bx: float = -406.0 + i * 30.0
+		draw_circle(Vector2(bx, 555), 5.0, Mat.BRASS)
+		draw_circle(Vector2(bx, 555), 2.5, Mat.shade(Mat.BRASS, 0.55))
 	_fill(Rect2(-402, 528, 52, 14), Color("1f6b2f"), 2.0)                 # EXIT sign
 	draw_line(Vector2(-394, 535), Vector2(-360, 535), Color("d9f2dd"), 3.0)
+
+	# the key press on the lobby wall
+	_fill(Rect2(-549, 330, 8, 40), Mat.OAK_DK, 1.0)
 
 
 # ── Kitchen ──────────────────────────────────────────────────────────────
