@@ -47,8 +47,12 @@ func _ready() -> void:
 	fails += _expect("reading the board is what starts the day",
 		Game.flag("read_job"))
 	down.act()
-	fails += _expect("the lift down puts you on the doorstep",
+	fails += _expect("the lift down starts the drive out", hud.mode == 7)
+	fails += _expect("and the world has already moved under it",
 		pl.global_position.distance_to(Content.ENTRANCE) < 1.0)
+	hud._unhandled_key_input(_key(KEY_E))          # skip the drive
+	await _settle(hud)
+	fails += _expect("the drive hands you back", hud.mode == 0)
 
 	home.act()
 	_dismiss(hud)
@@ -70,11 +74,26 @@ func _ready() -> void:
 		Game.notes[Game.notes.size() - 1].contains("way you came in"))
 
 	home.act()
-	fails += _expect("and now the front door takes you home",
+	fails += _expect("the front door starts the drive back", hud.mode == 7)
+	fails += _expect("and puts you back at your desk",
 		pl.global_position.distance_to(Content.OFFICE_START) < 1.0)
+	hud._unhandled_key_input(_key(KEY_E))
+	await _settle(hud)
+	fails += _expect("getting back finishes the level", Game.flag("level_done"))
+	fails += _expect("and says so", hud.mode == 1 and hud._title == "Level complete")
+	fails += _expect("with what you brought in it",
+		hud._body.contains("RECOVERED") and hud._body.contains("PAID"))
 
 	print("TRAVEL: %s" % ("ALL PASS" if fails == 0 else "%d FAILURES" % fails))
 	get_tree().quit()
+
+# Let the drive run itself out.
+func _settle(hud) -> void:
+	for i in 30:
+		if hud.mode != 7:
+			return
+		await get_tree().process_frame
+
 
 # Clear the reader and anything waiting behind it.
 func _dismiss(hud) -> void:

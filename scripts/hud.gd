@@ -21,7 +21,7 @@ const RULE   := Color("b19c74")
 const FOG    := Color(0.62, 0.82, 0.18)   # the green closing over your eyes
 const FOG_DK := Color(0.16, 0.26, 0.06)
 
-enum Mode {PLAY, READ, BAG, NOTES, REPORT, LOCK, CUT}
+enum Mode {PLAY, READ, BAG, NOTES, REPORT, LOCK, CUT, RIDE}
 
 var mode: int = Mode.PLAY
 var _title := ""
@@ -39,6 +39,8 @@ var _code := ""
 var _lock_msg := ""
 var _queued: Array = []
 var _read_t := 0.0
+var _ride_t := 0.0
+var _ride_out := true
 
 
 func _ready() -> void:
@@ -49,6 +51,7 @@ func _ready() -> void:
 	Game.open_sink.connect(_open_sink)
 	Game.open_lock.connect(_open_lock)
 	Game.open_cut.connect(_open_cut)
+	Game.ride.connect(_on_ride)
 
 
 func blocking() -> bool:
@@ -109,7 +112,23 @@ func _open_cut() -> void:
 	queue_redraw()
 
 
+# The drive out to the job and back. The world has already moved under it;
+# this is the curtain over the cut.
+func _on_ride(outbound: bool) -> void:
+	mode = Mode.RIDE
+	_ride_t = 0.0
+	_ride_out = outbound
+	queue_redraw()
+
+
 func _process(delta: float) -> void:
+	if mode == Mode.RIDE:
+		_ride_t += delta
+		if _ride_t >= RIDE_T:
+			mode = Mode.PLAY
+			if not _ride_out:
+				Game.finish_level()
+		queue_redraw()
 	if _toast_t > 0.0:
 		_toast_t -= delta
 		if _toast_t <= 0.0:
@@ -157,6 +176,9 @@ func _unhandled_key_input(e: InputEvent) -> void:
 			_lock_key(k)
 		Mode.CUT:
 			_cut_key(k)
+		Mode.RIDE:
+			if k in [KEY_E, KEY_ESCAPE, KEY_ENTER, KEY_SPACE]:
+				_ride_t = RIDE_T          # skip to the end of the drive
 		Mode.PLAY:
 			if k == KEY_I:
 				mode = Mode.BAG
@@ -341,6 +363,7 @@ func _draw() -> void:
 		Mode.BAG: _draw_inventory(f, vp)
 		Mode.LOCK: _draw_lock(f, vp)
 		Mode.CUT: _draw_cut(f, vp)
+		Mode.RIDE: _draw_ride(f, vp)
 
 
 func _draw_lock(f: Font, vp: Vector2) -> void:
@@ -393,6 +416,81 @@ func _draw_cut(f: Font, vp: Vector2) -> void:
 		draw_string(f, Vector2(r.position.x + _n(38), r.end.y - _n(64)), _lock_msg,
 			HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(76), _fs(17), INK)
 	_foot(f, r, "1-3 in order    backspace    [E] cut    [I] step back")
+
+
+# ── The drive ────────────────────────────────────────────────────────────
+const RIDE_T    := 4.2     # how long the journey takes
+const RIDE_FADE := 0.6     # black at each end of it, over the cut
+const RIDE_SPD  := 720.0   # how fast the road goes by
+
+
+# Seen from above, like everything else: a road going up the screen, the car
+# holding the middle of it, and the woods coming past on both sides.
+func _draw_ride(f: Font, vp: Vector2) -> void:
+	var t := _ride_t
+	var scroll := t * RIDE_SPD
+	draw_rect(Rect2(Vector2.ZERO, vp), Color("0d1410"))
+
+	# the road and its verges
+	var rw: float = vp.x * 0.24
+	var road := Rect2(vp.x * 0.5 - rw * 0.5, 0.0, rw, vp.y)
+	draw_rect(Rect2(road.position.x - _n(14), 0.0, rw + _n(28), vp.y), Color("2a2b24"))
+	draw_rect(road, Color("32323a"))
+	var dash := _n(52)
+	var gap := _n(44)
+	var y: float = fposmod(scroll, dash + gap) - dash
+	while y < vp.y:
+		draw_rect(Rect2(vp.x * 0.5 - _n(3), y, _n(6), dash), Color("cbbf86"))
+		y += dash + gap
+
+	# the woods, on both sides, deterministic so nothing pops about
+	for i in 46:
+		var n1 := Mat.noise(i * 3.7, 1.3)
+		var n2 := Mat.noise(i * 5.1, 7.7)
+		var side: float = -1.0 if i % 2 == 0 else 1.0
+		var x: float = vp.x * 0.5 + side * (rw * 0.62 + n1 * vp.x * 0.46)
+		var span: float = vp.y * 1.4
+		var ty: float = fposmod(n2 * span + scroll * (0.92 + n1 * 0.2), span) - vp.y * 0.2
+		var rr: float = _n(24) + n1 * _n(30)
+		draw_circle(Vector2(x, ty), rr, Color("14240f"))
+		draw_circle(Vector2(x - rr * 0.22, ty - rr * 0.22), rr * 0.72, Color("1e3417"))
+		draw_circle(Vector2(x, ty), rr * 0.2, Color("2c2118"))
+
+	# the car, holding the middle, headlights thrown up the road
+	var cx: float = vp.x * 0.5 + sin(t * 1.7) * _n(6)
+	var cy: float = vp.y * 0.62
+	draw_colored_polygon(PackedVector2Array([
+		Vector2(cx - _n(20), cy - _n(40)), Vector2(cx - _n(120), cy - _n(430)),
+		Vector2(cx + _n(120), cy - _n(430)), Vector2(cx + _n(20), cy - _n(40))]),
+		Color(1, 0.95, 0.78, 0.07))
+	var body := Rect2(cx - _n(34), cy - _n(62), _n(68), _n(124))
+	draw_colored_polygon(Mat.rr(Rect2(body.position + Vector2(_n(5), _n(7)),
+		body.size), _n(16)), Color(0, 0, 0, 0.45))
+	draw_colored_polygon(Mat.rr(body, _n(16)), Color("2e3a4a"))
+	draw_colored_polygon(Mat.rr(Rect2(cx - _n(27), cy - _n(34), _n(54), _n(40)),
+		_n(8)), Color("18202b"))                      # windscreen and roof
+	draw_colored_polygon(Mat.rr(Rect2(cx - _n(24), cy + _n(14), _n(48), _n(26)),
+		_n(6)), Color("222c39"))
+	for s2 in [-1.0, 1.0]:
+		draw_circle(Vector2(cx + s2 * _n(22), cy - _n(54)), _n(6),
+			Color(1, 0.96, 0.82, 0.95))               # headlights
+		draw_circle(Vector2(cx + s2 * _n(22), cy + _n(54)), _n(5),
+			Color(0.75, 0.16, 0.12, 0.9))             # tail lights
+
+	# a line about the drive, and the way out of it
+	var says := "Forty minutes out." if _ride_out else "Forty minutes back."
+	if t > RIDE_T * 0.55:
+		says = "The trees close in." if _ride_out else "The lights of the yard."
+	var w: float = f.get_string_size(says, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(22)).x
+	draw_string(f, Vector2(vp.x * 0.5 - w * 0.5, vp.y - _n(96)), says,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(22), INK)
+	draw_string(f, Vector2(vp.x - _n(150), vp.y - _n(40)), "[E] skip",
+		HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(16), DIM)
+
+	# black over the cut at each end
+	var into: float = 1.0 - clampf(t / RIDE_FADE, 0.0, 1.0)
+	var outof: float = clampf((t - (RIDE_T - RIDE_FADE)) / RIDE_FADE, 0.0, 1.0)
+	draw_rect(Rect2(Vector2.ZERO, vp), Color(0, 0, 0, maxf(into, outof)))
 
 
 # What breathing the green looks like from inside it: the whole view goes
