@@ -143,15 +143,15 @@ func take_key(which: int) -> void:
 		"" if had == "" else " %s back on it." % Content.ITEMS[had]["name"]])
 
 
-# Right key, right barrel, or it does not turn.
-func try_barrel(which: int) -> bool:
+# Right key, turned in the right thing, or it does not go.
+func try_lock(which: int) -> bool:
 	if held_key() != Content.VAN_KEY:
 		Sfx.play("empty", -10.0)
-		toast.emit("The key goes in and stops. Wrong tag for this van.")
+		toast.emit("The key goes in as far as the shoulder and stops. Wrong tag.")
 		return false
-	if which != Content.VAN_BARREL:
+	if which != Content.VAN_LOCK:
 		Sfx.play("empty", -10.0)
-		toast.emit("It will not turn. That barrel has not turned in years.")
+		toast.emit("It turns a quarter and stops. That one seized years ago.")
 		return false
 	Sfx.play("open", -7.0)
 	set_flag("signed_out")

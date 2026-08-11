@@ -567,15 +567,19 @@ func _office() -> void:
 	_fill(Rect2(-571, 440, 22, 60), Mat.WOOD, 1.0)          # the cupboard door
 	draw_circle(Vector2(-556, 470), 3.0, Mat.BRASS)
 
-	# the fire door out to the yard, with three barrels down its edge
+	# the fire door out to the yard: a handle with a latch in it, a deadbolt
+	# over that, and a padlock through the push bar
 	var out := Rect2(-420, 549, 88, 37)
 	_fill(out, Mat.STEEL, 1.0)
 	_stroke(out, Mat.STEEL_DK, 2.0)
-	draw_line(Vector2(-412, 566), Vector2(-340, 566), Mat.STEEL_DK, 4.0)  # push bar
-	for i in 3:
-		var bx: float = -406.0 + i * 30.0
-		draw_circle(Vector2(bx, 555), 5.0, Mat.BRASS)
-		draw_circle(Vector2(bx, 555), 2.5, Mat.shade(Mat.BRASS, 0.55))
+	draw_line(Vector2(-414, 568), Vector2(-338, 568), Mat.STEEL_DK, 5.0)  # push bar
+	_fill(Rect2(-360, 556, 18, 8), Mat.STEEL_DK, 2.0)                     # handle
+	draw_circle(Vector2(-351, 560), 2.2, Mat.BRASS)                       # its latch
+	_fill(Rect2(-368, 552, 10, 5), Mat.shade(Mat.STEEL, 0.7), 1.0)        # deadbolt
+	draw_circle(Vector2(-363, 554), 1.8, Mat.BRASS)
+	draw_circle(Vector2(-396, 568), 5.0, Mat.IRON)                        # padlock
+	draw_circle(Vector2(-396, 568), 2.4, Mat.BRASS)
+	draw_arc(Vector2(-396, 564), 4.0, PI, TAU, 12, Mat.STEEL_DK, 2.0)
 	_fill(Rect2(-402, 528, 52, 14), Color("1f6b2f"), 2.0)                 # EXIT sign
 	draw_line(Vector2(-394, 535), Vector2(-360, 535), Color("d9f2dd"), 3.0)
 

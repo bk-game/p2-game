@@ -675,10 +675,11 @@ class ExitDoor extends Node2D:
 			Game.begin_ride(Content.ENTRANCE, true)
 			return
 		Game.open_choice.emit({
-			"title": "Fire door", "kind": "barrel",
-			"blurb": "Three barrels down the edge of it, and the %s in your hand."
+			"title": "Fire door", "kind": "lock",
+			"blurb": "A latch in the handle, a deadbolt over it, and a padlock "
+				+ "through the push bar. You have the %s."
 				% Content.ITEMS[Game.held_key()]["name"].to_lower(),
-			"options": Content.BARRELS,
+			"options": Content.LOCKS,
 		})
 
 	func _process(delta: float) -> void:

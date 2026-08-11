@@ -233,25 +233,25 @@ const ITEMS := {
 		"name": "Key, yellow tag", "kind": "tool", "glyph": "key",
 		"tint": "c9a227", "pos": Vector2(-300, 360),
 		"body": "A worn key on a yellow plastic tag. Nothing else on it.",
-		"note": "", "use": "One of the four off the press. It goes in a barrel.",
+		"note": "", "use": "One of the four off the press. Something on the door takes it.",
 	},
 	"key_green": {
 		"name": "Key, green tag", "kind": "tool", "glyph": "key",
 		"tint": "4c7a3a", "pos": Vector2(-300, 360),
 		"body": "A worn key on a green plastic tag. Nothing else on it.",
-		"note": "", "use": "One of the four off the press. It goes in a barrel.",
+		"note": "", "use": "One of the four off the press. Something on the door takes it.",
 	},
 	"key_blue": {
 		"name": "Key, blue tag", "kind": "tool", "glyph": "key",
 		"tint": "3a5f8a", "pos": Vector2(-300, 360),
 		"body": "A worn key on a blue plastic tag. Nothing else on it.",
-		"note": "", "use": "One of the four off the press. It goes in a barrel.",
+		"note": "", "use": "One of the four off the press. Something on the door takes it.",
 	},
 	"key_red": {
 		"name": "Key, red tag", "kind": "tool", "glyph": "key",
 		"tint": "b13a2c", "pos": Vector2(-300, 360),
 		"body": "A worn key on a red plastic tag. Nothing else on it.",
-		"note": "", "use": "One of the four off the press. It goes in a barrel.",
+		"note": "", "use": "One of the four off the press. Something on the door takes it.",
 	},
 
 	# ── Chemicals ───────────────────────────────────────────────────────
@@ -334,12 +334,13 @@ const FIXED_NOTES := [
 		"pos": Vector2(-316, 544), "surface": "panel",
 		"prompt": "Read the sign screwed to the door",
 		"title": "Sign on the fire door",
-		"body": "A steel plate screwed on under the push bar, painted over twice "
+		"body": "A steel plate screwed on beside the handle, painted over twice "
 			+ "and read anyway.\n\n"
-			+ "TOP AND MIDDLE BARRELS SEIZED.\n"
-			+ "BOTTOM ONE ONLY.\n\n"
+			+ "LATCH AND DEADBOLT SEIZED.\n"
+			+ "PADLOCK ONLY.\n\n"
 			+ "Under it, in marker: \"since 68\".",
-		"note": "Only the bottom barrel of the fire door still turns.",
+		"note": "The latch and deadbolt on the fire door are seized. The padlock "
+			+ "on the push bar is the one that turns.",
 	},
 	{
 		"pos": Vector2(-340, 178), "surface": "board",
@@ -491,8 +492,8 @@ const STAFF := [
 			"\"Morning. You look like you slept in the stairwell.\"",
 			"\"Whatever's growing out there, don't bring it back in your coat. "
 				+ "Someone did that. He's not here any more.\"",
-			"\"Bottom barrel on that door. The other two have not turned since "
-				+ "before I started.\"",
+			"\"It's the padlock on that door, on the bar. The latch and the "
+				+ "deadbolt have not turned since before I started.\"",
 			"\"Take the certificates if there are any. Paper with a name on it "
 				+ "pays double.\"",
 			"\"Come back through the same door you went out of. They only mark "
@@ -524,8 +525,8 @@ const KIT := ["docket", "lamp"]
 # ── The key press ────────────────────────────────────────────────────────
 # Four keys on hooks, tagged by colour, one signed out at a time. Which one
 # opens the van in your bay is worked out from three things on this floor:
-# the bay off the docket, the card Oyelaran keeps, and what Renn knows about
-# what is off the road. Which barrel it goes in is on the sign by the door.
+# the bay off the docket and the card on the press. Which of the three things
+# on the door it turns in is on the sign screwed to it.
 const KEY_PRESS := Vector2(-544, 350)
 const KEYS := [
 	{"id": "key_yellow", "tag": "yellow"},
@@ -534,5 +535,9 @@ const KEYS := [
 	{"id": "key_red",    "tag": "red"},
 ]
 const VAN_KEY := "key_blue"     # bay 2, once the card and Renn are put together
-const BARRELS := ["the top barrel", "the middle barrel", "the bottom barrel"]
-const VAN_BARREL := 2           # the bottom one; the other two are seized
+const LOCKS := [
+	"the latch in the handle",
+	"the deadbolt above it",
+	"the padlock on the push bar",
+]
+const VAN_LOCK := 2             # the padlock; the other two seized years ago

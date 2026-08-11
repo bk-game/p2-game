@@ -76,7 +76,7 @@ func _ready() -> void:
 		oyelaran.act()
 		said += hud._body
 		_dismiss(hud)
-	fails += _expect("somebody tells you which barrel", said.contains("Bottom barrel"))
+	fails += _expect("somebody tells you which lock", said.contains("padlock"))
 	var card := ""
 	for n in Content.FIXED_NOTES:
 		if n["title"] == "Card on the key press":
@@ -91,15 +91,15 @@ func _ready() -> void:
 	fails += _expect("taking another puts the first one back",
 		Game.held_key() == "key_green" and not Game.has_item("key_yellow"))
 
-	# wrong tag, right barrel: nothing turns
+	# wrong tag, right lock: nothing turns
 	fails += _expect("the wrong tag does not turn",
-		not Game.try_barrel(Content.VAN_BARREL))
-	# right tag, wrong barrel: still nothing
+		not Game.try_lock(Content.VAN_LOCK))
+	# right tag, wrong lock: still nothing
 	Game.take_key(2)
 	fails += _expect("the bay 2 key is the blue one", Game.held_key() == Content.VAN_KEY)
-	fails += _expect("a seized barrel does not turn", not Game.try_barrel(0))
-	fails += _expect("nor the middle one", not Game.try_barrel(1))
-	fails += _expect("the bottom one does", Game.try_barrel(Content.VAN_BARREL))
+	fails += _expect("the seized latch does not turn", not Game.try_lock(0))
+	fails += _expect("nor the deadbolt", not Game.try_lock(1))
+	fails += _expect("the padlock does", Game.try_lock(Content.VAN_LOCK))
 
 	door.act()
 	fails += _expect("the lift down starts the drive out", hud.mode == 7)

@@ -114,7 +114,7 @@ func _open_cut() -> void:
 	queue_redraw()
 
 
-# Pick one of a short list: which key off the press, which barrel to try it
+# Pick one of a short list: which key off the press, which lock to turn it
 # in. The same panel does both, since both are one press of a number.
 func _open_choice(data: Dictionary) -> void:
 	_choice = data
@@ -227,7 +227,7 @@ func _choice_key(k: int) -> void:
 	if _choice.get("kind", "") == "key":
 		Game.take_key(pick)
 		mode = Mode.PLAY
-	elif Game.try_barrel(pick):
+	elif Game.try_lock(pick):
 		mode = Mode.PLAY
 		Game.begin_ride(Content.ENTRANCE, true)
 
@@ -476,7 +476,9 @@ func _draw_choice(f: Font, vp: Vector2) -> void:
 			else _n(14))
 		draw_string(f, Vector2(at, y), opts[i], HORIZONTAL_ALIGNMENT_LEFT, -1,
 			_fs(19), INK)
-	_foot(f, r, "1-%d to choose    [E] step back" % opts.size())
+	var how := "1-%d to take one" if _choice.get("kind", "") == "key" \
+		else "1-%d to turn it there"
+	_foot(f, r, (how % opts.size()) + "    [E] step back")
 
 
 # ── The drive ────────────────────────────────────────────────────────────
