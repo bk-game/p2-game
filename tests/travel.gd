@@ -17,36 +17,59 @@ func _ready() -> void:
 		pl.global_position.distance_to(Content.OFFICE_START) < 1.0)
 
 	var boss = null
-	var down = null
+	var door = null
 	var home = null
+	var oyelaran = null
 	for n in get_tree().get_nodes_in_group("act"):
 		if n.get("kind") == "boss":
 			boss = n
-		elif n.get("kind") == "job":
-			down = n
+		elif n.has_method("prompt") and n.prompt().begins_with("Out to the yard"):
+			door = n
 		elif n.get("label") == "Back to the office":
 			home = n
-	fails += _expect("two lifts and a way back",
-		boss != null and down != null and home != null)
+		elif n.get("data") != null and n.data.get("name", "") == "Oyelaran":
+			oyelaran = n
+	fails += _expect("a lift, a door out, a way back and somebody with the keys",
+		boss != null and door != null and home != null and oyelaran != null)
 
 	boss.act()
 	_dismiss(hud)
 	fails += _expect("the boss will not see you yet",
 		pl.global_position.distance_to(Content.OFFICE_START) < 1.0)
 
-	down.act()
+	door.act()
 	_dismiss(hud)
-	fails += _expect("and the lift down will not run unread",
+	fails += _expect("and the door will not open with no job",
 		pl.global_position.distance_to(Content.OFFICE_START) < 1.0)
 
-	# read the job off the board and it will
+	# read the job off the board: it names what you sign out with
 	for n in get_tree().get_nodes_in_group("act"):
 		if n.has_method("prompt") and n.prompt() == "Read the job on the board":
 			n.act()
 	_dismiss(hud)
 	fails += _expect("reading the board is what starts the day",
 		Game.flag("read_job"))
-	down.act()
+
+	door.act()
+	_dismiss(hud)
+	fails += _expect("the door still wants the kit",
+		pl.global_position.distance_to(Content.OFFICE_START) < 1.0)
+	fails += _expect("and says what is missing first",
+		door.prompt().contains("docket"))
+
+	# the docket off the board, the lamp out of the store, the key off him
+	Game.add_item("docket")
+	_dismiss(hud)
+	Game.add_item("lamp")
+	_dismiss(hud)
+	fails += _expect("the key is not lying about", not Game.has_item("van_key"))
+	oyelaran.act()
+	_dismiss(hud)
+	fails += _expect("he hands the key over once the job is yours",
+		Game.has_item("van_key"))
+	fails += _expect("and the door is ready", door.prompt() == "Out to the yard")
+
+	door.act()
 	fails += _expect("the lift down starts the drive out", hud.mode == 7)
 	fails += _expect("and the world has already moved under it",
 		pl.global_position.distance_to(Content.ENTRANCE) < 1.0)

@@ -207,6 +207,37 @@ const ITEMS := {
 		"use": "Stand at a green cloud and press [E] to blow it out of the air.",
 	},
 
+	# ── The kit you take out with you ───────────────────────────────────
+	"lamp": {
+		"name": "Hand lamp", "kind": "tool", "glyph": "extinguisher",
+		"tint": "d8c98a", "pos": Vector2(-720, 450),
+		"body": "A square hand lamp off the shelf in the store, heavy, with a "
+			+ "strap. It throws about as far as you would want to walk before "
+			+ "looking behind you.",
+		"note": "",
+		"use": "It is what you are seeing by. [C] puts it out.",
+	},
+	"docket": {
+		"name": "Job docket", "kind": "doc", "glyph": "paper",
+		"tint": "e6e2d2", "pos": Vector2(-500, 364),
+		"body": "The docket the board printed when you took the job.\n\n"
+			+ "REF\t4471-C\n"
+			+ "SUBJECT\tWood, Joseph\n"
+			+ "SIGNED OUT\tyou\n\n"
+			+ "No van goes out without one of these on the seat.",
+		"note": "",
+		"use": "Proof the job is yours. It rides on the seat.",
+	},
+	"van_key": {
+		"name": "Van key", "kind": "tool", "glyph": "axe",
+		"tint": "9aa1a7", "pos": Vector2(-300, 360),
+		"body": "One key, one plastic tag, the number rubbed off it. Oyelaran "
+			+ "keeps them in a drawer on his side of the desk and hands them out "
+			+ "one at a time, which is not policy but is what happens.",
+		"note": "",
+		"use": "For the van in the yard. The fire door is the way to it.",
+	},
+
 	# ── Chemicals ───────────────────────────────────────────────────────
 	"norust": {
 		"name": "No Rust Buildup", "kind": "chem", "glyph": "bottle",
@@ -278,9 +309,13 @@ const FIXED_NOTES := [
 			+ "on file.\n\n"
 			+ "Bring back the man and bring back the paper: who he was, who he "
 			+ "belonged to, what he lost. The office builds the rest from that. "
-			+ "Anything you carry out that says something about him is paid on.",
-		"note": "The job: recover Joe Wood and whatever says who he was. Paid per "
-			+ "significant item.",
+			+ "Anything you carry out that says something about him is paid on.\n\n"
+			+ "NOTHING LEAVES THIS FLOOR WITHOUT:\n"
+			+ "\tthe docket, off this board\n"
+			+ "\ta lamp, out of the store\n"
+			+ "\tthe van key, off whoever is holding them",
+		"note": "The job: recover Joe Wood and whatever says who he was. Sign out "
+			+ "with the docket, a lamp from the store, and the van key.",
 		"grants": "read_job",
 	},
 	{
@@ -410,6 +445,13 @@ const STAFF := [
 	},
 	{
 		"pos": Vector2(-283, 443), "name": "Oyelaran", "tint": "a97c4a",
+		"gives": {
+			"item": "van_key", "needs": "read_job",
+			"line": "\"Wood, is it. Hold on.\" He goes through the drawer on his "
+				+ "side of the desk, twice, and comes up with a key on a plastic "
+				+ "tag.\n\n\"Bring it back on the tag. Last one came back in a "
+				+ "coat pocket three weeks later.\"",
+		},
 		"lines": [
 			"\"Morning. You look like you slept in the stairwell.\"",
 			"\"Whatever's growing out there, don't bring it back in your coat. "
@@ -435,5 +477,9 @@ const CABIN_DOOR := Vector2(1462, 952)      # the front door, from inside
 # the job is.
 const LIFTS := [
 	{"pos": Vector2(-677, 247), "kind": "boss"},
-	{"pos": Vector2(-677, 458), "kind": "job"},
 ]
+
+# The fire door at the bottom of the office. Everything you need to sign out
+# with has to be on you before it opens.
+const OFFICE_EXIT := Vector2(-376, 540)
+const KIT := ["docket", "lamp", "van_key"]

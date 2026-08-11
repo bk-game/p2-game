@@ -41,7 +41,7 @@ const ROOMS := [
 	[Rect2(487, 615, 1126, 363)],                                # living room
 	[Rect2(1380, 978, 180, 260)],                                # front step
 	[Rect2(-783, 157, 212, 181)],                                # lift, upstairs
-	[Rect2(-783, 368, 212, 181)],                                # lift, home
+	[Rect2(-783, 368, 212, 181)],                                # store cupboard
 	[Rect2(-549, 157, 289, 392)],                                # the office
 ]
 

@@ -55,7 +55,11 @@ const DOORS := [
 	{"rect": Rect2(-571, 230, 22, 60), "hinge": Vector2.ZERO,     "r": 0.0,
 		"a0": 0.0,     "a1": 0.0,  "leaf": 0.0, "ext": false},     # lift, upstairs
 	{"rect": Rect2(-571, 440, 22, 60), "hinge": Vector2.ZERO,     "r": 0.0,
-		"a0": 0.0,     "a1": 0.0,  "leaf": 0.0, "ext": false},     # lift, home
+		"a0": 0.0,     "a1": 0.0,  "leaf": 0.0, "ext": false},     # store cupboard
+	# The way out to the job. Shut: you leave through it by using it, not by
+	# walking through the wall, so it is not cut out of the wall.
+	{"rect": Rect2(-420, 549, 88, 37), "hinge": Vector2(-332, 549), "r": 88.0,
+		"a0": PI, "a1": PI * 1.5, "leaf": PI, "ext": true, "shut": true},
 ]
 
 const WINDOWS: Array[Rect2] = [
@@ -78,7 +82,7 @@ const FLOORS := [
 	{"r": Rect2(102, 94, 173, 321), "p": "stone"},
 	# ── office ──────────────────────────────────────────────────────────
 	{"r": Rect2(-783, 157, 212, 181), "p": "ceramic"},   # lift, upstairs
-	{"r": Rect2(-783, 368, 212, 181), "p": "ceramic"},   # lift, home
+	{"r": Rect2(-783, 368, 212, 181), "p": "stone"},     # store cupboard
 	{"r": Rect2(-549, 157, 289, 392), "p": "carpet"},    # the floor you work on
 ]
 
@@ -119,7 +123,9 @@ const SOLIDS: Array[Rect2] = [
 	Rect2(-300, 172, 34, 50),   # filing cabinets
 	Rect2(-540, 176, 32, 36),   # water cooler
 	Rect2(-543, 300, 62, 46),   # printer on its stand
-	Rect2(-420, 495, 36, 36),   # the plant nobody waters
+	Rect2(-296, 490, 36, 36),   # the plant nobody waters
+	Rect2(-777, 386, 36, 150),  # store: shelving down the wall
+	Rect2(-700, 500, 60, 40),   # store: crates
 ]
 
 var _pieces: Array[Rect2] = []
@@ -508,16 +514,16 @@ func _office() -> void:
 	draw_circle(Vector2(-490, 310), 2.5, Mat.EMBER)
 
 	# the plant nobody waters
-	_oval(Vector2(-402, 513), 18, 18, Mat.OAK_DK)
+	_oval(Vector2(-278, 508), 18, 18, Mat.OAK_DK)
 	for i in 7:
 		var a := TAU * i / 7.0 + 0.3
 		var d2 := Vector2(cos(a), sin(a))
 		draw_colored_polygon(PackedVector2Array([
-			Vector2(-402, 513) + d2.orthogonal() * 4.0,
-			Vector2(-402, 513) + d2 * 26.0,
-			Vector2(-402, 513) - d2.orthogonal() * 4.0]),
+			Vector2(-278, 508) + d2.orthogonal() * 4.0,
+			Vector2(-278, 508) + d2 * 26.0,
+			Vector2(-278, 508) - d2.orthogonal() * 4.0]),
 			Mat.shade(Mat.LEAF, 0.85 + 0.3 * Mat.noise(i, 2.0)))
-	draw_circle(Vector2(-402, 513), 8.0, Mat.shade(Mat.OAK_DK, 1.2))
+	draw_circle(Vector2(-278, 508), 8.0, Mat.shade(Mat.OAK_DK, 1.2))
 
 	# clock and strip light on the north wall
 	draw_circle(Vector2(-470, 146), 14.0, Mat.PORCELAIN)
@@ -532,19 +538,43 @@ func _office() -> void:
 	_fill(Rect2(-394, 162, 44, 12), Mat.LINEN, 1.0)
 	_fill(Rect2(-344, 162, 58, 12), Mat.LINEN_DK, 1.0)
 
-	# the lift cars: steel floors, a seam where the doors part, a call panel
-	for lift in [Rect2(-783, 157, 212, 181), Rect2(-783, 368, 212, 181)]:
-		_fill(lift.grow(-6.0), Mat.shade(Mat.STEEL, 0.94), 2.0)
-		_stroke(lift.grow(-6.0), Mat.STEEL_DK, 2.0, 2.0)
-		for i in 5:
-			var x2: float = lift.position.x + 20.0 + i * 42.0
-			draw_line(Vector2(x2, lift.position.y + 10),
-				Vector2(x2, lift.end.y - 10), Mat.shade(Mat.STEEL, 0.86), 1.5)
-	for y in [230.0, 440.0]:
-		_fill(Rect2(-571, y, 22, 60), Mat.STEEL, 1.0)
-		draw_line(Vector2(-560, y + 4), Vector2(-560, y + 56), Mat.STEEL_DK, 2.5)
-		_fill(Rect2(-547, y + 22, 6, 16), Mat.IRON, 1.0)
-		draw_circle(Vector2(-544, y + 30), 2.0, Mat.EMBER)
+	# the lift car: a steel floor and a seam where the doors part
+	var car := Rect2(-783, 157, 212, 181)
+	_fill(car.grow(-6.0), Mat.shade(Mat.STEEL, 0.94), 2.0)
+	_stroke(car.grow(-6.0), Mat.STEEL_DK, 2.0, 2.0)
+	for i in 5:
+		var x2: float = car.position.x + 20.0 + i * 42.0
+		draw_line(Vector2(x2, car.position.y + 10),
+			Vector2(x2, car.end.y - 10), Mat.shade(Mat.STEEL, 0.86), 1.5)
+	_fill(Rect2(-571, 230, 22, 60), Mat.STEEL, 1.0)
+	draw_line(Vector2(-560, 234), Vector2(-560, 286), Mat.STEEL_DK, 2.5)
+	_fill(Rect2(-547, 252, 6, 16), Mat.IRON, 1.0)
+	draw_circle(Vector2(-544, 260), 2.0, Mat.EMBER)
+
+	# the store cupboard: shelving down the wall, crates, a bare bulb
+	var shelf := Rect2(-777, 386, 36, 150)
+	_obj(shelf, Mat.OAK_DK, 2.0)
+	for i in 4:
+		var sy: float = 392.0 + i * 36.0
+		draw_line(Vector2(-775, sy), Vector2(-743, sy), Mat.shade(Mat.OAK_DK, 1.3), 2.0)
+		_fill(Rect2(-772.0 + fposmod(i * 7.0, 9.0), sy + 6.0, 14, 20),
+			Mat.LINEN_DK if i % 2 == 0 else Mat.STEEL, 1.0)
+	_obj(Rect2(-700, 500, 60, 40), Mat.OAK, 2.0)
+	draw_line(Vector2(-700, 520), Vector2(-640, 520), Mat.OAK_DK, 2.0)
+	_fill(Rect2(-694, 490, 42, 26), Mat.OAK, 2.0)
+	draw_circle(Vector2(-660, 420), 9.0, Color("f2f2e6"))
+	draw_arc(Vector2(-660, 420), 9.0, 0, TAU, 16, Mat.STEEL_DK, 1.5)
+	_fill(Rect2(-571, 440, 22, 60), Mat.WOOD, 1.0)          # the cupboard door
+	draw_circle(Vector2(-556, 470), 3.0, Mat.BRASS)
+
+	# the fire door out to the yard, at the bottom of the room
+	var out := Rect2(-420, 549, 88, 37)
+	_fill(out, Mat.STEEL, 1.0)
+	_stroke(out, Mat.STEEL_DK, 2.0)
+	draw_line(Vector2(-412, 560), Vector2(-340, 560), Mat.STEEL_DK, 4.0)  # push bar
+	draw_circle(Vector2(-376, 543), 4.0, Mat.EMBER)
+	_fill(Rect2(-402, 528, 52, 14), Color("1f6b2f"), 2.0)                 # EXIT sign
+	draw_line(Vector2(-394, 535), Vector2(-360, 535), Color("d9f2dd"), 3.0)
 
 
 # ── Kitchen ──────────────────────────────────────────────────────────────

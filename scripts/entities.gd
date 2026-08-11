@@ -21,9 +21,13 @@ func _ready() -> void:
 	for c in Content.CONTAINERS:
 		for id in c["items"]:
 			stowed[id] = true
+	for who in Content.STAFF:
+		var gives: Dictionary = who.get("gives", {})
+		if not gives.is_empty():
+			stowed[gives["item"]] = true      # in somebody's drawer, not on the floor
 	for id in Content.ITEMS:
 		if id == "bunny" or stowed.has(id):
-			continue  # in Joe's hands, or shut inside a cabinet
+			continue  # in Joe's hands, in a drawer, or shut inside a cabinet
 		var p := Pickup.new()
 		p.id = id
 		p.position = Content.ITEMS[id]["pos"]
@@ -71,6 +75,10 @@ func _ready() -> void:
 		lift.position = l["pos"]
 		lift.z_index = 40
 		add_child(lift)
+	var out_door := ExitDoor.new()
+	out_door.position = Content.OFFICE_EXIT
+	out_door.z_index = 40
+	add_child(out_door)
 	var home := Doorway.new()
 	home.position = Content.CABIN_DOOR
 	home.to = Content.OFFICE_START
@@ -499,8 +507,16 @@ class Person extends Node2D:
 		return "Talk to %s" % data["name"]
 
 	# A few things each, in turn, so asking again gets you the next one
-	# rather than the same one.
+	# rather than the same one. If they are holding something you need and
+	# you have earned it, that comes first.
 	func act() -> void:
+		var gives: Dictionary = data.get("gives", {})
+		if not gives.is_empty() and Game.flag(gives["needs"]) \
+				and not Game.has_item(gives["item"]):
+			Game.notice.emit(data["name"], gives["line"])
+			Game.add_item(gives["item"])
+			Sfx.play("pickup", -8.0)
+			return
 		var lines: Array = data["lines"]
 		Game.notice.emit(data["name"], lines[_said % lines.size()])
 		_said += 1
@@ -536,21 +552,77 @@ class Lift extends Node2D:
 		return 70.0             # the whole car, from anywhere in it
 
 	func prompt() -> String:
-		return "Take the lift up" if kind == "boss" else "Take the lift down"
+		return "Take the lift up"
 
 	func act() -> void:
-		if kind == "boss":
+		if not Game.flag("level_done"):
 			Game.notice.emit("Lift — up", "The panel lights, reads itself out, and "
 				+ "does nothing else.\n\n"
 				+ "FLOOR\tEXECUTIVE\n"
 				+ "APPOINTMENT\tnone\n"
 				+ "OPEN JOBS\t1")
 			return
+		Game.notice.emit("Upstairs", "The car goes up on its own this time.\n\n"
+			+ "He does not get up. He reads the docket, and the count off the "
+			+ "bottom of it, and says the number back to you like it settles "
+			+ "something.\n\n\"Wood. Fine. There is another one in the morning.\"\n\n"
+			+ "The carpet up here is the same carpet.")
+
+	func _process(delta: float) -> void:
+		_t += delta
+		queue_redraw()
+
+	func _draw() -> void:
+		var ready_now: bool = Game.flag("level_done")
+		var col := Color(1, 0.95, 0.7, 0.34 if ready_now else 0.16)
+		if ready_now:
+			col.a = 0.26 + 0.12 * sin(_t * 2.2)
+		draw_arc(Vector2.ZERO, 46.0, 0, TAU, 34, col, 2.0)
+		# the arrow the car is pointing
+		var up := -1.0
+		var tip := Vector2(0, 16.0 * up)
+		draw_colored_polygon(PackedVector2Array([tip,
+			tip + Vector2(-11, -13.0 * up), tip + Vector2(11, -13.0 * up)]),
+			Color(1, 0.95, 0.7, 0.5 if ready_now else 0.25))
+
+
+# ══ The fire door out to the yard ════════════════════════════════════════
+class ExitDoor extends Node2D:
+	var _t := 0.0
+
+	func _ready() -> void:
+		add_to_group("act")
+
+	func bias() -> float:
+		return 30.0
+
+	func reach() -> float:
+		return 56.0
+
+	# What you are still missing, in the order the board lists it.
+	func _short() -> Array:
+		var out := []
+		for id in Content.KIT:
+			if not Game.has_item(id):
+				out.append(Content.ITEMS[id]["name"].to_lower())
+		return out
+
+	func prompt() -> String:
 		if not Game.flag("read_job"):
-			Game.notice.emit("Lift — down", "The panel lights. The doors stay "
-				+ "where they are.\n\n"
-				+ "FLOOR\tSTREET\n"
-				+ "JOB LOADED\tnone")
+			return "Out to the yard — no job to go to yet"
+		var short := _short()
+		if short.is_empty():
+			return "Out to the yard"
+		return "Out to the yard — no %s" % short[0]
+
+	func act() -> void:
+		if not Game.flag("read_job"):
+			Game.toast.emit("Nothing to go out for. The board by the door has "
+				+ "what is open.")
+			return
+		var short := _short()
+		if not short.is_empty():
+			Game.toast.emit("Not without the %s." % " or the ".join(short))
 			return
 		Game.begin_ride(Content.ENTRANCE, true)
 
@@ -559,17 +631,11 @@ class Lift extends Node2D:
 		queue_redraw()
 
 	func _draw() -> void:
-		var ready_now: bool = kind == "job" and Game.flag("read_job")
-		var col := Color(1, 0.95, 0.7, 0.34 if ready_now else 0.16)
+		var ready_now: bool = Game.flag("read_job") and _short().is_empty()
+		var col := Color(1, 0.95, 0.7, 0.16)
 		if ready_now:
 			col.a = 0.26 + 0.12 * sin(_t * 2.2)
-		draw_arc(Vector2.ZERO, 46.0, 0, TAU, 34, col, 2.0)
-		# the arrow the car is pointing
-		var up: float = -1.0 if kind == "boss" else 1.0
-		var tip := Vector2(0, 16.0 * up)
-		draw_colored_polygon(PackedVector2Array([tip,
-			tip + Vector2(-11, -13.0 * up), tip + Vector2(11, -13.0 * up)]),
-			Color(1, 0.95, 0.7, 0.5 if ready_now else 0.25))
+		draw_arc(Vector2.ZERO, 30.0, 0, TAU, 28, col, 2.0)
 
 
 # ══ Doorway: the way between the office and the job ══════════════════════
