@@ -253,20 +253,6 @@ const ITEMS := {
 		"body": "A worn key on a red plastic tag. Nothing else on it.",
 		"note": "", "use": "One of the four off the press. It goes in a barrel.",
 	},
-	"key_card": {
-		"name": "Bay card", "kind": "doc", "glyph": "paper",
-		"tint": "d8cfc0", "pos": Vector2(-300, 400),
-		"body": "A card off the back of the key press, soft at the corners from "
-			+ "being handled.\n\n"
-			+ "BAY 1\tyellow\n"
-			+ "BAY 2\t[rubbed through to the card]\n"
-			+ "BAY 3\t[rubbed through to the card]\n"
-			+ "BAY 4\tred\n\n"
-			+ "Somebody has written along the bottom: THESE DO NOT CHANGE, STOP "
-			+ "ASKING.",
-		"note": "Bay 1 is the yellow tag and bay 4 is the red one. The cards for "
-			+ "bays 2 and 3 are rubbed out — one of them is green, one is blue.",
-	},
 
 	# ── Chemicals ───────────────────────────────────────────────────────
 	"norust": {
@@ -331,6 +317,19 @@ const LOCK_DOOR := Rect2(1272, 578, 70, 37)
 # recovered. "surface" picks how it is drawn — gouged into a wall, or a sheet
 # left on a piece of furniture.
 const FIXED_NOTES := [
+	{
+		"pos": Vector2(-544, 386), "surface": "panel",
+		"prompt": "Read the card on the key press",
+		"title": "Card on the key press",
+		"body": "A card screwed to the press under the hooks, soft at the corners "
+			+ "from being handled.\n\n"
+			+ "BAY 1\tyellow\n"
+			+ "BAY 2\tblue\n"
+			+ "BAY 3\tgreen\n"
+			+ "BAY 4\tred\n\n"
+			+ "Along the bottom, in marker: THESE DO NOT CHANGE, STOP ASKING.",
+		"note": "The key press: bay 1 yellow, bay 2 blue, bay 3 green, bay 4 red.",
+	},
 	{
 		"pos": Vector2(-316, 544), "surface": "panel",
 		"prompt": "Read the sign screwed to the door",
@@ -480,25 +479,20 @@ const STAFF := [
 				+ "and nights aren't paid.\"",
 			"\"They docked me for the van again. Check what they're taking off "
 				+ "you before you sign anything.\"",
-			"\"Green's been sat in bay 3 since the summer with a flat. Nobody's "
-				+ "moving it, so don't take that one.\"",
+			"\"Bay two, that'll be the blue tag. It has been the blue tag since "
+				+ "before either of us.\"",
 			"\"Better you than me. I did two cabins last year and I'm still not "
 				+ "right about it.\"",
 		],
 	},
 	{
 		"pos": Vector2(-283, 443), "name": "Oyelaran", "tint": "a97c4a",
-		"gives": {
-			"item": "key_card", "needs": "read_job",
-			"line": "\"Wood, is it. Then you want a van.\" He goes through the "
-				+ "drawer on his side of the desk and comes up with a card off the "
-				+ "back of the key press.\n\n\"Two of them have rubbed off. Ask "
-				+ "Renn, he knows what is sat out there.\"",
-		},
 		"lines": [
 			"\"Morning. You look like you slept in the stairwell.\"",
 			"\"Whatever's growing out there, don't bring it back in your coat. "
 				+ "Someone did that. He's not here any more.\"",
+			"\"Bottom barrel on that door. The other two have not turned since "
+				+ "before I started.\"",
 			"\"Take the certificates if there are any. Paper with a name on it "
 				+ "pays double.\"",
 			"\"Come back through the same door you went out of. They only mark "

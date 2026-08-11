@@ -70,12 +70,19 @@ func _ready() -> void:
 	fails += _expect("no key, no van",
 		pl.global_position.distance_to(Content.OFFICE_START) < 1.0)
 
-	# the card comes off Oyelaran, and it is a card, not the answer
-	oyelaran.act()
-	_dismiss(hud)
-	fails += _expect("he hands over the bay card", Game.has_item("key_card"))
-	fails += _expect("which leaves two bays rubbed out",
-		Content.ITEMS["key_card"]["body"].contains("rubbed through"))
+	# the answers are on the wall and in what people say, both ways round
+	var said := ""
+	for i in 8:
+		oyelaran.act()
+		said += hud._body
+		_dismiss(hud)
+	fails += _expect("somebody tells you which barrel", said.contains("Bottom barrel"))
+	var card := ""
+	for n in Content.FIXED_NOTES:
+		if n["title"] == "Card on the key press":
+			card = n["body"]
+	fails += _expect("and the card on the press has the bays on it",
+		card.contains("BAY 2") and card.contains("blue"))
 
 	# one key off the press at a time
 	Game.take_key(0)

@@ -21,10 +21,6 @@ func _ready() -> void:
 	for c in Content.CONTAINERS:
 		for id in c["items"]:
 			stowed[id] = true
-	for who in Content.STAFF:
-		var gives: Dictionary = who.get("gives", {})
-		if not gives.is_empty():
-			stowed[gives["item"]] = true      # in somebody's drawer, not on the floor
 	for k in Content.KEYS:
 		stowed[k["id"]] = true                # on a hook on the press
 	for id in Content.ITEMS:
@@ -518,16 +514,9 @@ class Person extends Node2D:
 		return "Talk to %s" % data["name"]
 
 	# A few things each, in turn, so asking again gets you the next one
-	# rather than the same one. If they are holding something you need and
-	# you have earned it, that comes first.
+	# rather than the same one. Two of them are the answers to the keys, for
+	# anyone who would rather ask than read.
 	func act() -> void:
-		var gives: Dictionary = data.get("gives", {})
-		if not gives.is_empty() and Game.flag(gives["needs"]) \
-				and not Game.has_item(gives["item"]):
-			Game.notice.emit(data["name"], gives["line"])
-			Game.add_item(gives["item"])
-			Sfx.play("pickup", -8.0)
-			return
 		var lines: Array = data["lines"]
 		Game.notice.emit(data["name"], lines[_said % lines.size()])
 		_said += 1
