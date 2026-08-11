@@ -10,6 +10,7 @@ signal notes_changed
 signal open_sink
 signal open_lock
 signal open_cut
+signal ride(outbound: bool)
 signal lock_opened
 
 var inventory: Array[String] = []
@@ -91,6 +92,30 @@ func travel(to: Vector2) -> void:
 		Music.stop()
 	else:
 		Music.play()
+
+
+# Going out to the job or coming back from it is a drive, not a step: the
+# world is moved under the curtain and the journey plays over the top.
+func begin_ride(to: Vector2, outbound: bool) -> void:
+	travel(to)
+	ride.emit(outbound)
+
+
+# Back on the floor with the job closed behind you.
+func finish_level() -> void:
+	if flag("level_done"):
+		return
+	set_flag("level_done")
+	var found := story_found()
+	Sfx.play("open", -6.0)
+	notice.emit("Level complete", "You come out of the lift onto your own floor "
+		+ "with the job closed behind you.\n\n"
+		+ "SUBJECT\tWood, Joseph\n"
+		+ "BODY\t%s\n" % ("recovered" if flag("found_body") else "not recovered")
+		+ "RECOVERED\t%d of %d significant items\n" % [found, story_total()]
+		+ "PAID\t$%d\n\n" % (found * 250)
+		+ "Filed. What is left of him is somebody else's afternoon.\n\n"
+		+ "[R] has the whole report.")
 
 
 func has_item(id: String) -> bool:

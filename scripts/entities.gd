@@ -552,7 +552,7 @@ class Lift extends Node2D:
 				+ "FLOOR\tSTREET\n"
 				+ "JOB LOADED\tnone")
 			return
-		Game.travel(Content.ENTRANCE)
+		Game.begin_ride(Content.ENTRANCE, true)
 
 	func _process(delta: float) -> void:
 		_t += delta
@@ -597,7 +597,7 @@ class Doorway extends Node2D:
 		if _shut():
 			Game.toast.emit("Not yet. Him, and the paper that says who he was.")
 			return
-		Game.travel(to)
+		Game.begin_ride(to, false)
 
 	func _draw() -> void:
 		var pulse: float = 0.16 if _shut() else 0.34
