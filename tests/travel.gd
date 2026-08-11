@@ -17,36 +17,91 @@ func _ready() -> void:
 		pl.global_position.distance_to(Content.OFFICE_START) < 1.0)
 
 	var boss = null
-	var down = null
+	var door = null
 	var home = null
+	var oyelaran = null
 	for n in get_tree().get_nodes_in_group("act"):
 		if n.get("kind") == "boss":
 			boss = n
-		elif n.get("kind") == "job":
-			down = n
+		elif n.has_method("prompt") and n.prompt().begins_with("Out to the yard"):
+			door = n
 		elif n.get("label") == "Back to the office":
 			home = n
-	fails += _expect("two lifts and a way back",
-		boss != null and down != null and home != null)
+		elif n.get("data") != null and n.data.get("name", "") == "Oyelaran":
+			oyelaran = n
+	fails += _expect("a lift, a door out, a way back and somebody with the keys",
+		boss != null and door != null and home != null and oyelaran != null)
 
 	boss.act()
 	_dismiss(hud)
 	fails += _expect("the boss will not see you yet",
 		pl.global_position.distance_to(Content.OFFICE_START) < 1.0)
 
-	down.act()
+	door.act()
 	_dismiss(hud)
-	fails += _expect("and the lift down will not run unread",
+	fails += _expect("and the door will not open with no job",
 		pl.global_position.distance_to(Content.OFFICE_START) < 1.0)
 
-	# read the job off the board and it will
+	# read the job off the board: it names what you sign out with
 	for n in get_tree().get_nodes_in_group("act"):
 		if n.has_method("prompt") and n.prompt() == "Read the job on the board":
 			n.act()
 	_dismiss(hud)
 	fails += _expect("reading the board is what starts the day",
 		Game.flag("read_job"))
-	down.act()
+
+	door.act()
+	_dismiss(hud)
+	fails += _expect("the door still wants the kit",
+		pl.global_position.distance_to(Content.OFFICE_START) < 1.0)
+	fails += _expect("and says what is missing first",
+		door.prompt().contains("docket"))
+
+	# the docket off the board and the lamp out of the store
+	Game.add_item("docket")
+	_dismiss(hud)
+	Game.add_item("lamp")
+	_dismiss(hud)
+	fails += _expect("the door is ready for a key", door.prompt() == "Out to the yard")
+
+	# no key on you: the door says so rather than opening
+	door.act()
+	_dismiss(hud)
+	fails += _expect("no key, no van",
+		pl.global_position.distance_to(Content.OFFICE_START) < 1.0)
+
+	# the answers are on the wall and in what people say, both ways round
+	var said := ""
+	for i in 8:
+		oyelaran.act()
+		said += hud._body
+		_dismiss(hud)
+	fails += _expect("somebody tells you which lock", said.contains("padlock"))
+	var card := ""
+	for n in Content.FIXED_NOTES:
+		if n["title"] == "Card on the key press":
+			card = n["body"]
+	fails += _expect("and the card on the press has the bays on it",
+		card.contains("BAY 2") and card.contains("blue"))
+
+	# one key off the press at a time
+	Game.take_key(0)
+	fails += _expect("a key comes off the hook", Game.held_key() == "key_yellow")
+	Game.take_key(1)
+	fails += _expect("taking another puts the first one back",
+		Game.held_key() == "key_green" and not Game.has_item("key_yellow"))
+
+	# wrong tag, right lock: nothing turns
+	fails += _expect("the wrong tag does not turn",
+		not Game.try_lock(Content.VAN_LOCK))
+	# right tag, wrong lock: still nothing
+	Game.take_key(2)
+	fails += _expect("the bay 2 key is the blue one", Game.held_key() == Content.VAN_KEY)
+	fails += _expect("the seized latch does not turn", not Game.try_lock(0))
+	fails += _expect("nor the deadbolt", not Game.try_lock(1))
+	fails += _expect("the padlock does", Game.try_lock(Content.VAN_LOCK))
+
+	door.act()
 	fails += _expect("the lift down starts the drive out", hud.mode == 7)
 	fails += _expect("and the world has already moved under it",
 		pl.global_position.distance_to(Content.ENTRANCE) < 1.0)

@@ -207,6 +207,53 @@ const ITEMS := {
 		"use": "Stand at a green cloud and press [E] to blow it out of the air.",
 	},
 
+	# ── The kit you take out with you ───────────────────────────────────
+	"lamp": {
+		"name": "Hand lamp", "kind": "tool", "glyph": "extinguisher",
+		"tint": "d8c98a", "pos": Vector2(-720, 450),
+		"body": "A square hand lamp off the shelf in the store, heavy, with a "
+			+ "strap. It throws about as far as you would want to walk before "
+			+ "looking behind you.",
+		"note": "",
+		"use": "It is what you are seeing by. [C] puts it out.",
+	},
+	"docket": {
+		"name": "Job docket", "kind": "doc", "glyph": "paper",
+		"tint": "e6e2d2", "pos": Vector2(-500, 364),
+		"body": "The docket the board printed when you took the job.\n\n"
+			+ "REF\t4471-C\n"
+			+ "SUBJECT\tWood, Joseph\n"
+			+ "VAN\tbay 2\n"
+			+ "SIGNED OUT\tyou\n\n"
+			+ "No van goes out without one of these on the seat.",
+		"note": "The docket puts you in the van in bay 2.",
+		"use": "Proof the job is yours. It rides on the seat.",
+	},
+	"key_yellow": {
+		"name": "Key, yellow tag", "kind": "tool", "glyph": "key",
+		"tint": "c9a227", "pos": Vector2(-300, 360),
+		"body": "A worn key on a yellow plastic tag. Nothing else on it.",
+		"note": "", "use": "One of the four off the press. Something on the door takes it.",
+	},
+	"key_green": {
+		"name": "Key, green tag", "kind": "tool", "glyph": "key",
+		"tint": "4c7a3a", "pos": Vector2(-300, 360),
+		"body": "A worn key on a green plastic tag. Nothing else on it.",
+		"note": "", "use": "One of the four off the press. Something on the door takes it.",
+	},
+	"key_blue": {
+		"name": "Key, blue tag", "kind": "tool", "glyph": "key",
+		"tint": "3a5f8a", "pos": Vector2(-300, 360),
+		"body": "A worn key on a blue plastic tag. Nothing else on it.",
+		"note": "", "use": "One of the four off the press. Something on the door takes it.",
+	},
+	"key_red": {
+		"name": "Key, red tag", "kind": "tool", "glyph": "key",
+		"tint": "b13a2c", "pos": Vector2(-300, 360),
+		"body": "A worn key on a red plastic tag. Nothing else on it.",
+		"note": "", "use": "One of the four off the press. Something on the door takes it.",
+	},
+
 	# ── Chemicals ───────────────────────────────────────────────────────
 	"norust": {
 		"name": "No Rust Buildup", "kind": "chem", "glyph": "bottle",
@@ -271,6 +318,31 @@ const LOCK_DOOR := Rect2(1272, 578, 70, 37)
 # left on a piece of furniture.
 const FIXED_NOTES := [
 	{
+		"pos": Vector2(-544, 386), "surface": "panel",
+		"prompt": "Read the card on the key press",
+		"title": "Card on the key press",
+		"body": "A card screwed to the press under the hooks, soft at the corners "
+			+ "from being handled.\n\n"
+			+ "BAY 1\tyellow\n"
+			+ "BAY 2\tblue\n"
+			+ "BAY 3\tgreen\n"
+			+ "BAY 4\tred\n\n"
+			+ "Along the bottom, in marker: THESE DO NOT CHANGE, STOP ASKING.",
+		"note": "The key press: bay 1 yellow, bay 2 blue, bay 3 green, bay 4 red.",
+	},
+	{
+		"pos": Vector2(-316, 544), "surface": "panel",
+		"prompt": "Read the sign screwed to the door",
+		"title": "Sign on the fire door",
+		"body": "A steel plate screwed on beside the handle, painted over twice "
+			+ "and read anyway.\n\n"
+			+ "LATCH AND DEADBOLT SEIZED.\n"
+			+ "PADLOCK ONLY.\n\n"
+			+ "Under it, in marker: \"since 68\".",
+		"note": "The latch and deadbolt on the fire door are seized. The padlock "
+			+ "on the push bar is the one that turns.",
+	},
+	{
 		"pos": Vector2(-340, 178), "surface": "board",
 		"prompt": "Read the job on the board",
 		"title": "The job",
@@ -278,9 +350,13 @@ const FIXED_NOTES := [
 			+ "on file.\n\n"
 			+ "Bring back the man and bring back the paper: who he was, who he "
 			+ "belonged to, what he lost. The office builds the rest from that. "
-			+ "Anything you carry out that says something about him is paid on.",
-		"note": "The job: recover Joe Wood and whatever says who he was. Paid per "
-			+ "significant item.",
+			+ "Anything you carry out that says something about him is paid on.\n\n"
+			+ "NOTHING LEAVES THIS FLOOR WITHOUT:\n"
+			+ "\tthe docket, off this board\n"
+			+ "\ta lamp, out of the store\n"
+			+ "\ta van key, off the press by the door",
+		"note": "The job: recover Joe Wood and whatever says who he was. Sign out "
+			+ "with the docket, a lamp from the store, and a van key off the press.",
 		"grants": "read_job",
 	},
 	{
@@ -404,6 +480,8 @@ const STAFF := [
 				+ "and nights aren't paid.\"",
 			"\"They docked me for the van again. Check what they're taking off "
 				+ "you before you sign anything.\"",
+			"\"Bay two, that'll be the blue tag. It has been the blue tag since "
+				+ "before either of us.\"",
 			"\"Better you than me. I did two cabins last year and I'm still not "
 				+ "right about it.\"",
 		],
@@ -414,6 +492,8 @@ const STAFF := [
 			"\"Morning. You look like you slept in the stairwell.\"",
 			"\"Whatever's growing out there, don't bring it back in your coat. "
 				+ "Someone did that. He's not here any more.\"",
+			"\"It's the padlock on that door, on the bar. The latch and the "
+				+ "deadbolt have not turned since before I started.\"",
 			"\"Take the certificates if there are any. Paper with a name on it "
 				+ "pays double.\"",
 			"\"Come back through the same door you went out of. They only mark "
@@ -435,5 +515,29 @@ const CABIN_DOOR := Vector2(1462, 952)      # the front door, from inside
 # the job is.
 const LIFTS := [
 	{"pos": Vector2(-677, 247), "kind": "boss"},
-	{"pos": Vector2(-677, 458), "kind": "job"},
 ]
+
+# The fire door at the bottom of the office. Everything you need to sign out
+# with has to be on you before it opens.
+const OFFICE_EXIT := Vector2(-376, 540)
+const KIT := ["docket", "lamp"]
+
+# ── The key press ────────────────────────────────────────────────────────
+# Four keys on hooks, tagged by colour, one signed out at a time. Which one
+# opens the van in your bay is worked out from three things on this floor:
+# the bay off the docket and the card on the press. Which of the three things
+# on the door it turns in is on the sign screwed to it.
+const KEY_PRESS := Vector2(-544, 350)
+const KEYS := [
+	{"id": "key_yellow", "tag": "yellow"},
+	{"id": "key_green",  "tag": "green"},
+	{"id": "key_blue",   "tag": "blue"},
+	{"id": "key_red",    "tag": "red"},
+]
+const VAN_KEY := "key_blue"     # bay 2, once the card and Renn are put together
+const LOCKS := [
+	"the latch in the handle",
+	"the deadbolt above it",
+	"the padlock on the push bar",
+]
+const VAN_LOCK := 2             # the padlock; the other two seized years ago

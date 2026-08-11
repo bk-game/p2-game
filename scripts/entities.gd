@@ -21,9 +21,11 @@ func _ready() -> void:
 	for c in Content.CONTAINERS:
 		for id in c["items"]:
 			stowed[id] = true
+	for k in Content.KEYS:
+		stowed[k["id"]] = true                # on a hook on the press
 	for id in Content.ITEMS:
 		if id == "bunny" or stowed.has(id):
-			continue  # in Joe's hands, or shut inside a cabinet
+			continue  # in Joe's hands, in a drawer, or shut inside a cabinet
 		var p := Pickup.new()
 		p.id = id
 		p.position = Content.ITEMS[id]["pos"]
@@ -71,6 +73,14 @@ func _ready() -> void:
 		lift.position = l["pos"]
 		lift.z_index = 40
 		add_child(lift)
+	var press := KeyPress.new()
+	press.position = Content.KEY_PRESS
+	press.z_index = 26
+	add_child(press)
+	var out_door := ExitDoor.new()
+	out_door.position = Content.OFFICE_EXIT
+	out_door.z_index = 40
+	add_child(out_door)
 	var home := Doorway.new()
 	home.position = Content.CABIN_DOOR
 	home.to = Content.OFFICE_START
@@ -154,6 +164,11 @@ class Pickup extends Node2D:
 			"extinguisher":
 				_shape(Rect2(-9, -12, 18, 28), tint, 6.0)
 				_shape(Rect2(-4, -19, 8, 8), Color("2c2c31"), 2.0)
+			"key":
+				_shape(Rect2(-9, -16, 18, 14), tint, 3.0)      # the tag
+				draw_line(Vector2(0, -2), Vector2(0, 16), Color("9aa1a7"), 4.0)
+				draw_line(Vector2(0, 10), Vector2(6, 10), Color("9aa1a7"), 3.0)
+				draw_line(Vector2(0, 16), Vector2(5, 16), Color("9aa1a7"), 3.0)
 		draw_arc(Vector2.ZERO, 21.0, 0, TAU, 28, Color(1, 0.95, 0.7, 0.5), 2.0)
 
 	func _shape(r: Rect2, c: Color, rad: float) -> void:
@@ -499,7 +514,8 @@ class Person extends Node2D:
 		return "Talk to %s" % data["name"]
 
 	# A few things each, in turn, so asking again gets you the next one
-	# rather than the same one.
+	# rather than the same one. Two of them are the answers to the keys, for
+	# anyone who would rather ask than read.
 	func act() -> void:
 		var lines: Array = data["lines"]
 		Game.notice.emit(data["name"], lines[_said % lines.size()])
@@ -536,40 +552,147 @@ class Lift extends Node2D:
 		return 70.0             # the whole car, from anywhere in it
 
 	func prompt() -> String:
-		return "Take the lift up" if kind == "boss" else "Take the lift down"
+		return "Take the lift up"
 
 	func act() -> void:
-		if kind == "boss":
+		if not Game.flag("level_done"):
 			Game.notice.emit("Lift — up", "The panel lights, reads itself out, and "
 				+ "does nothing else.\n\n"
 				+ "FLOOR\tEXECUTIVE\n"
 				+ "APPOINTMENT\tnone\n"
 				+ "OPEN JOBS\t1")
 			return
-		if not Game.flag("read_job"):
-			Game.notice.emit("Lift — down", "The panel lights. The doors stay "
-				+ "where they are.\n\n"
-				+ "FLOOR\tSTREET\n"
-				+ "JOB LOADED\tnone")
-			return
-		Game.begin_ride(Content.ENTRANCE, true)
+		Game.notice.emit("Upstairs", "The car goes up on its own this time.\n\n"
+			+ "He does not get up. He reads the docket, and the count off the "
+			+ "bottom of it, and says the number back to you like it settles "
+			+ "something.\n\n\"Wood. Fine. There is another one in the morning.\"\n\n"
+			+ "The carpet up here is the same carpet.")
 
 	func _process(delta: float) -> void:
 		_t += delta
 		queue_redraw()
 
 	func _draw() -> void:
-		var ready_now: bool = kind == "job" and Game.flag("read_job")
+		var ready_now: bool = Game.flag("level_done")
 		var col := Color(1, 0.95, 0.7, 0.34 if ready_now else 0.16)
 		if ready_now:
 			col.a = 0.26 + 0.12 * sin(_t * 2.2)
 		draw_arc(Vector2.ZERO, 46.0, 0, TAU, 34, col, 2.0)
 		# the arrow the car is pointing
-		var up: float = -1.0 if kind == "boss" else 1.0
+		var up := -1.0
 		var tip := Vector2(0, 16.0 * up)
 		draw_colored_polygon(PackedVector2Array([tip,
 			tip + Vector2(-11, -13.0 * up), tip + Vector2(11, -13.0 * up)]),
 			Color(1, 0.95, 0.7, 0.5 if ready_now else 0.25))
+
+
+# ══ The key press: four hooks, one key off it at a time ══════════════════
+class KeyPress extends Node2D:
+	func _ready() -> void:
+		add_to_group("act")
+
+	func bias() -> float:
+		return 35.0
+
+	func reach() -> float:
+		return 48.0
+
+	func prompt() -> String:
+		var held := Game.held_key()
+		if held == "":
+			return "Take a key off the press"
+		return "Swap the key (%s)" % Content.ITEMS[held]["name"].to_lower()
+
+	func act() -> void:
+		var opts := []
+		for k in Content.KEYS:
+			opts.append("%s tag" % k["tag"])
+		Game.open_choice.emit({
+			"title": "Key press", "kind": "key",
+			"blurb": "Four hooks, four tags. One goes out at a time and the "
+				+ "board wants it back on the tag.",
+			"options": opts,
+		})
+
+	func _draw() -> void:
+		draw_colored_polygon(Mat.rr(Rect2(-16, -20, 32, 40), 2.0), Mat.OAK_DK)
+		draw_colored_polygon(Mat.rr(Rect2(-13, -17, 26, 34), 1.0),
+			Mat.shade(Mat.OAK_DK, 1.25))
+		var held := Game.held_key()
+		for i in Content.KEYS.size():
+			var y: float = -12.0 + i * 8.0
+			var on: bool = Content.KEYS[i]["id"] != held
+			var col := Color(Content.ITEMS[Content.KEYS[i]["id"]]["tint"])
+			draw_line(Vector2(-9, y), Vector2(9, y), Mat.shade(Mat.OAK_DK, 0.7), 1.0)
+			if on:
+				draw_circle(Vector2(-4, y + 2), 2.6, col)
+				draw_line(Vector2(-4, y + 2), Vector2(4, y + 3),
+					Mat.shade(Mat.STEEL, 0.9), 1.5)
+
+
+# ══ The fire door out to the yard ════════════════════════════════════════
+class ExitDoor extends Node2D:
+	var _t := 0.0
+
+	func _ready() -> void:
+		add_to_group("act")
+
+	func bias() -> float:
+		return 30.0
+
+	func reach() -> float:
+		return 56.0
+
+	# What you are still missing, in the order the board lists it.
+	func _short() -> Array:
+		var out := []
+		for id in Content.KIT:
+			if not Game.has_item(id):
+				out.append(Content.ITEMS[id]["name"].to_lower())
+		return out
+
+	func prompt() -> String:
+		if not Game.flag("read_job"):
+			return "Out to the yard — no job to go to yet"
+		var short := _short()
+		if short.is_empty():
+			return "Out to the yard"
+		return "Out to the yard — no %s" % short[0]
+
+	func act() -> void:
+		if not Game.flag("read_job"):
+			Game.toast.emit("Nothing to go out for. The board by the door has "
+				+ "what is open.")
+			return
+		var short := _short()
+		if not short.is_empty():
+			Game.toast.emit("Not without the %s." % " or the ".join(short))
+			return
+		if Game.held_key() == "":
+			Game.toast.emit("No key on you. They are on the press by the door.")
+			return
+		if Game.flag("signed_out"):
+			Game.begin_ride(Content.ENTRANCE, true)
+			return
+		Game.open_choice.emit({
+			"title": "Fire door", "kind": "lock",
+			"blurb": "A latch in the handle, a deadbolt over it, and a padlock "
+				+ "through the push bar. You have the %s."
+				% Content.ITEMS[Game.held_key()]["name"].to_lower(),
+			"options": Content.LOCKS,
+		})
+
+	func _process(delta: float) -> void:
+		_t += delta
+		queue_redraw()
+
+	func _draw() -> void:
+		var ready_now: bool = Game.flag("read_job") and _short().is_empty() \
+			and Game.held_key() != ""
+		var col := Color(1, 0.95, 0.7, 0.16)
+		if ready_now:
+			col.a = 0.26 + 0.12 * sin(_t * 2.2)
+		draw_arc(Vector2.ZERO, 30.0, 0, TAU, 28, col, 2.0)
 
 
 # ══ Doorway: the way between the office and the job ══════════════════════
