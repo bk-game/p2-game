@@ -486,8 +486,11 @@ class Fume extends Node2D:
 			return
 		# Standing in it only starts the clock; Game counts it down and puts
 		# you on the doorstep if you are still in here when it runs out.
-		if p.global_position.distance_to(global_position) < radius * 0.72:
+		var d: float = p.global_position.distance_to(global_position)
+		if d < radius * 0.72:
 			Game.fog_touch()
+		elif d < radius * 1.15:
+			Game.think("gas")      # close enough to smell it, not yet in it
 
 	func _draw() -> void:
 		# drifting puffs, thickest in the middle and thinning outwards, so it

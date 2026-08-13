@@ -14,7 +14,7 @@ const OPENING := [
 	"You are a new member of Investigation Station.",
 	"Their morals may be questionable, but they pay well.",
 	"You are tasked with learning about the recently deceased.",
-	"The more you learn, the higher your pay.",
+	"The more you learn the higher your pay.",
 	"Get enough money, pay off your debt.",
 ]
 
@@ -24,47 +24,49 @@ const OPENING := [
 const TREE_POS := Vector2(555, 812)
 const THOUGHTS := {
 	"arrive": [
-		{"say": "It smells like a forest in here. Did Joe leave his windows open?"},
+		{"say": "It smells like a forest here. Did Joe leave his windows open?"},
 	],
 	"tree": [
 		{"say": "This must be one of New Tree Co.'s creations."},
-		{"say": "What has the world come to? The trees are fighting back now."},
+		{"say": "What has the world come to? The trees are even fighting back now."},
 	],
 	"gas": [
 		{"say": "This smells weird."},
 		{"say": "I have a bad feeling about this."},
 	],
 	"gas_out": [
-		{"say": "I feel light headed now."},
+		{"say": "I feel light headed now"},
 	],
 	"clue": [
-		{"say": "Interesting."},
-		{"say": "This will help."},
+		{"say": "Interesting"},
+		{"say": "This will help"},
 	],
 	"bleach": [
-		{"say": "He must have been loaded. I have not seen someone have this in "
+		{"say": "He must've been loaded. I haven't seen someone have this in "
 			+ "years."},
 		{"say": "How did this become so expensive?"},
 	],
 	"norust": [
-		{"say": "Like a wise man once said: I am more of a No Rust Buildup guy "
-			+ "myself."},
+		{"say": "Like a wise man once said, \"I'm more of a No Rust Buildup guy "
+			+ "myself.\""},
 		{"say": "How old is this? It smells terrible. Can cleaners expire?"},
-		{"say": "This is a relic. Even when it was being sold it cost a fortune."},
+		{"say": "This is a relic! Even when it was being sold it cost a fortune."},
 	],
 	"exfluid": [
-		{"say": "I am not really sure what this will do. But it might help.",
+		{"say": "I'm not really sure what this'll do. But it might help.",
 			"not": "knows_formula"},
-		{"say": "Great. I needed this.", "needs": "knows_formula"},
+		{"say": "Great! I needed this.", "needs": "knows_formula"},
 	],
 	"body": [
-		{"say": "Poor guy. Died too soon."},
-		{"say": "Ewww. Is that a tree growing out of him?"},
-		{"say": "This has got to be enough to finally shut New Tree Co. down."},
+		{"say": "Poor guy, died too soon."},
+		{"say": "Ewwww, is that a tree growing out of him?"},
+		{"say": "This has got to be enough evidence to finally shut New Tree Co. "
+			+ "down."},
 	],
 	"bunny": [
 		{"say": "Who is Eleanor?", "hasnt": "death_certs"},
-		{"say": "Poor Joe. He has had his share of loss.", "has": "death_certs"},
+		{"say": "Poor Joe, he's experienced his fair share of loss.",
+			"has": "death_certs"},
 	],
 }
 
