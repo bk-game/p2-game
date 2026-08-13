@@ -548,21 +548,22 @@ func _draw_lock(f: Font, vp: Vector2) -> void:
 
 func _draw_cut(f: Font, vp: Vector2) -> void:
 	draw_rect(Rect2(Vector2.ZERO, vp), Color(0, 0, 0, 0.55))
-	var r := _centre(vp, 640, 380)
+	var r := _centre(vp, 640, 410)
 	_panel(r)
 	_head(f, r, "THE GRAIN", "four hearts in it")
-	draw_string(f, Vector2(r.position.x + _n(38), r.position.y + _n(124)),
+	# wrapped, not cut off at the edge of the panel: draw_string truncates
+	draw_multiline_string(f, Vector2(r.position.x + _n(38), r.position.y + _n(120)),
 		"Take them in the order the grain will give. Take them wrong and the "
 		+ "blade sticks fast.",
-		HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(76), _fs(17), DIM)
+		HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(76), _fs(17), -1, DIM)
 	for i in Content.CUT_MARKS.size():
-		draw_string(f, Vector2(r.position.x + _n(38), r.position.y + _n(160) + i * _n(28)),
+		draw_string(f, Vector2(r.position.x + _n(38), r.position.y + _n(186) + i * _n(28)),
 			"%d   %s" % [i + 1, Content.CUT_MARKS[i]],
 			HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(19), INK)
 	var slot: float = _n(50)
 	var x0: float = r.get_center().x + _n(24)
 	for i in Content.CUT_MARKS.size():
-		var box := Rect2(x0 + i * (slot + _n(10)), r.position.y + _n(168), slot, _n(66))
+		var box := Rect2(x0 + i * (slot + _n(10)), r.position.y + _n(194), slot, _n(66))
 		draw_rect(box, Color(0, 0, 0, 0.45))
 		draw_rect(box, EDGE, false, 2.0)
 		if i < _code.length():
