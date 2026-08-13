@@ -113,6 +113,7 @@ func _unhandled_key_input(e: InputEvent) -> void:
 			and (e as InputEventKey).keycode == KEY_E:
 		if is_instance_valid(_target):
 			_target.act()
+			Game.acted.emit()
 			_scan()
 		get_viewport().set_input_as_handled()
 

@@ -21,7 +21,7 @@ const RULE   := Color("b19c74")
 const FOG    := Color(0.62, 0.82, 0.18)   # the green closing over your eyes
 const FOG_DK := Color(0.16, 0.26, 0.06)
 
-enum Mode {PLAY, READ, BAG, NOTES, REPORT, LOCK, CUT, RIDE, CHOICE, OVER}
+enum Mode {PLAY, READ, BAG, NOTES, REPORT, LOCK, CUT, RIDE, CHOICE, OVER, TITLE}
 
 var mode: int = Mode.PLAY
 var _title := ""
@@ -44,6 +44,29 @@ var _ride_out := true
 var _choice := {}
 var _over_t := 0.0
 
+# ── Getting started ──────────────────────────────────────────────────────
+# The first minute teaches itself: each step names one thing and waits until
+# you have done it, rather than a wall of text before the game starts.
+const STEPS := [
+	{"say": "Walk", "keys": "W A S D  or the arrow keys",
+		"how": "Get the feel of the floor."},
+	{"say": "Use what you are near", "keys": "E",
+		"how": "Anything you can use wears a ring. You have to be facing it."},
+	{"say": "Take something", "keys": "E",
+		"how": "Some of what you find comes with you."},
+	{"say": "See what you are carrying", "keys": "I",
+		"how": "The same key puts it away."},
+	{"say": "Read what you have worked out", "keys": "N",
+		"how": "Anything worth remembering writes itself down."},
+]
+
+var _step := -1          # -1 before the title card is dismissed
+var _step_t := 0.0
+var _walked := 0.0
+var _was_at := Vector2.ZERO
+var _acted := false
+var _title_t := 0.0
+
 
 func _ready() -> void:
 	Game.notice.connect(_on_notice)
@@ -56,6 +79,8 @@ func _ready() -> void:
 	Game.ride.connect(_on_ride)
 	Game.open_choice.connect(_open_choice)
 	Game.level_over.connect(_on_level_over)
+	Game.acted.connect(func(): _acted = true)
+	mode = Mode.TITLE
 
 
 func blocking() -> bool:
@@ -142,6 +167,11 @@ func _on_ride(outbound: bool) -> void:
 
 
 func _process(delta: float) -> void:
+	if mode == Mode.TITLE:
+		_title_t += delta
+		queue_redraw()
+	if _step >= 0 and _step < STEPS.size():
+		_teaching(delta)
 	if mode == Mode.OVER:
 		_over_t += delta
 		queue_redraw()
@@ -164,6 +194,30 @@ func _process(delta: float) -> void:
 	if not is_equal_approx(Game.fog_ratio(), _fog):
 		_fog = Game.fog_ratio()
 		queue_redraw()
+
+
+# Watch for the thing the current step asked for, and move on when it lands.
+func _teaching(delta: float) -> void:
+	_step_t += delta
+	var p := get_tree().get_first_node_in_group("player")
+	if p == null:
+		return
+	if _was_at != Vector2.ZERO:
+		_walked += p.global_position.distance_to(_was_at)
+	_was_at = p.global_position
+	var got := false
+	match _step:
+		0: got = _walked > 150.0
+		1: got = _acted
+		2: got = Game.inventory.size() > 0
+		3: got = mode == Mode.BAG
+		4: got = mode == Mode.NOTES
+	if got and _step_t > 0.4:
+		_step += 1
+		_step_t = 0.0
+		if _step < STEPS.size():
+			Sfx.play("pickup", -16.0, 1.5)
+	queue_redraw()
 
 
 # ── sizing helpers ───────────────────────────────────────────────────────
@@ -199,13 +253,19 @@ func _unhandled_key_input(e: InputEvent) -> void:
 			_lock_key(k)
 		Mode.CUT:
 			_cut_key(k)
+		Mode.TITLE:
+			mode = Mode.PLAY
+			_step = 0
+			_was_at = Vector2.ZERO
 		Mode.RIDE:
 			if k in [KEY_E, KEY_ESCAPE, KEY_ENTER, KEY_SPACE]:
 				_ride_t = RIDE_T          # skip to the end of the drive
 		Mode.CHOICE:
 			_choice_key(k)
 		Mode.PLAY:
-			if k == KEY_I:
+			if k == KEY_ESCAPE and _step >= 0 and _step < STEPS.size():
+				_step = STEPS.size()      # done with being told
+			elif k == KEY_I:
 				mode = Mode.BAG
 				_at_sink = false
 				_sel = 0
@@ -389,9 +449,15 @@ func _draw() -> void:
 				track.size.y)), ACCENT)
 			draw_rect(track, EDGE, false, 2.0)
 
+	# ── the tutorial, while there is any of it left ─────────────────────
+	var taught: bool = _step >= 0 and _step < STEPS.size()
+	if taught and mode == Mode.PLAY:
+		_draw_teaching(f, vp)
+
 	# ── toast ───────────────────────────────────────────────────────────
 	if _toast != "":
-		var tr := Rect2(vp.x * 0.5 - _n(430), _n(26), _n(860), _n(74))
+		var tr := Rect2(vp.x * 0.5 - _n(430), _n(26) + (_n(104) if taught else 0.0),
+			_n(860), _n(74))
 		_panel(tr)
 		draw_multiline_string(f, Vector2(tr.position.x + _n(20), tr.position.y + _n(30)),
 			_toast, HORIZONTAL_ALIGNMENT_LEFT, tr.size.x - _n(40), _fs(17), 2, INK)
@@ -405,6 +471,7 @@ func _draw() -> void:
 		Mode.RIDE: _draw_ride(f, vp)
 		Mode.CHOICE: _draw_choice(f, vp)
 		Mode.OVER: _draw_over(f, vp)
+		Mode.TITLE: _draw_title(f, vp)
 
 
 func _draw_lock(f: Font, vp: Vector2) -> void:
@@ -457,6 +524,60 @@ func _draw_cut(f: Font, vp: Vector2) -> void:
 		draw_string(f, Vector2(r.position.x + _n(38), r.end.y - _n(64)), _lock_msg,
 			HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(76), _fs(17), INK)
 	_foot(f, r, "1-3 in order    backspace    [E] cut    [I] step back")
+
+
+# The card the game opens on. Nothing to read but the name and what you are:
+# one key gets you onto the floor.
+func _draw_title(f: Font, vp: Vector2) -> void:
+	draw_rect(Rect2(Vector2.ZERO, vp), Color(0.02, 0.02, 0.03))
+	var t: float = clampf(_title_t / 0.7, 0.0, 1.0)
+	var mid := vp.x * 0.5
+	var name := str(ProjectSettings.get_setting("application/config/name",
+		"RECOVERY")).to_upper()
+	var nw: float = f.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(46)).x
+	draw_string(f, Vector2(mid - nw * 0.5, vp.y * 0.36), name,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(46), Color(ACCENT, t))
+	draw_line(Vector2(mid - _n(200), vp.y * 0.36 + _n(22)),
+		Vector2(mid + _n(200), vp.y * 0.36 + _n(22)), Color(EDGE, t), 2.0)
+	var sub := "A recovery job, forty minutes out of town."
+	var sw: float = f.get_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(20)).x
+	draw_string(f, Vector2(mid - sw * 0.5, vp.y * 0.36 + _n(64)), sub,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(20), Color(DIM, t))
+	if _title_t > 0.9:
+		var go := "press any key"
+		var gw: float = f.get_string_size(go, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(18)).x
+		var pulse: float = 0.45 + 0.3 * sin(_title_t * 2.6)
+		draw_string(f, Vector2(mid - gw * 0.5, vp.y * 0.66), go,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(18), Color(INK, pulse))
+
+
+# One step at a time along the top of the screen, each waiting on the thing
+# it asked for. It stops being drawn the moment the last one lands.
+func _draw_teaching(f: Font, vp: Vector2) -> void:
+	var step: Dictionary = STEPS[_step]
+	var w := _n(620)
+	var r := Rect2(vp.x * 0.5 - w * 0.5, _n(26), w, _n(98))
+	_panel(r)
+	draw_string(f, Vector2(r.position.x + _n(24), r.position.y + _n(36)),
+		step["say"], HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(22), INK)
+	var keys: String = step["keys"]
+	var kw: float = f.get_string_size(keys, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(18)).x
+	var cap := Rect2(r.end.x - _n(24) - kw - _n(20), r.position.y + _n(16),
+		kw + _n(20), _n(30))
+	draw_rect(cap, Color(1, 1, 1, 0.07))
+	draw_rect(cap, EDGE, false, 2.0)
+	draw_string(f, Vector2(cap.position.x + _n(10), cap.end.y - _n(9)), keys,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(18), ACCENT)
+	draw_multiline_string(f, Vector2(r.position.x + _n(24), r.position.y + _n(60)),
+		step["how"], HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(48), _fs(16), 1, DIM)
+	# how far along, and the way out of being taught
+	for i in STEPS.size():
+		var dot := Vector2(r.position.x + _n(24) + i * _n(16), r.end.y - _n(12))
+		draw_circle(dot, 3.5, ACCENT if i <= _step else Color(EDGE, 0.8))
+	var skip := "[Esc] skip"
+	var sw2: float = f.get_string_size(skip, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(14)).x
+	draw_string(f, Vector2(r.end.x - _n(24) - sw2, r.end.y - _n(9)), skip,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(14), DIM)
 
 
 # The shift is over: what came back, what it paid, and what the handler made

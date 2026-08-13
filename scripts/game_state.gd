@@ -13,6 +13,7 @@ signal open_cut
 signal ride(outbound: bool)
 signal open_choice(data: Dictionary)
 signal level_over
+signal acted
 signal lock_opened
 
 var inventory: Array[String] = []

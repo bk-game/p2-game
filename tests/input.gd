@@ -9,6 +9,9 @@ func _ready() -> void:
 	var hud = get_tree().get_first_node_in_group("hud")
 	var fails := 0
 
+	fails += _expect("the game opens on the title card", hud.mode == 10)
+	await _press(KEY_SPACE)
+	fails += _expect("and a key gets you onto the floor", hud.mode == 0)
 	fails += _expect("there is light to see by", fog.enabled == true)
 
 	await _press(KEY_I)
