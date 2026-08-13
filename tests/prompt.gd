@@ -54,7 +54,7 @@ func _ready() -> void:
 			kind = "limb"
 			if n.strong:
 				fill = for_strong
-		elif n.has_method("reach_point") and not (n is StaticBody2D):
+		elif n.get("radius") != null:
 			kind = "fume"
 			fill = for_fumes
 		_check(n, fill, kind)

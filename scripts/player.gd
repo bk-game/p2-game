@@ -12,21 +12,30 @@ const C_EDGE   := Color("2b2b30")
 const REACH := 34.0
 const ARC   := PI * 0.4   # half-angle of the cone you have to be turned into
 const TOUCH := 16.0       # closer than this, whatever you are stood on counts
+const TURN_TIE := 7.0     # px per radian off-centre, to settle ties
 
 var facing := -PI / 2.0
 var _target: Node2D = null
 
 @onready var _hud: Control = get_tree().get_first_node_in_group("hud")
 
+var _marker: Marker = null
+
 
 func _ready() -> void:
 	add_to_group("player")
+	_marker = Marker.new()
+	_marker.z_index = 90          # over the limbs, which draw at 60
+	add_child(_marker)
 
 
 func _physics_process(delta: float) -> void:
 	if _hud != null and _hud.blocking():
 		velocity = Vector2.ZERO
 		return
+	# close enough to be standing under it
+	if global_position.distance_to(Content.TREE_POS) < 210.0:
+		Game.think("tree")
 	var dir := Input.get_vector("left", "right", "up", "down")
 	velocity = dir * speed
 	move_and_slide()
@@ -46,7 +55,9 @@ func _saw(delta: float) -> void:
 	for n in get_tree().get_nodes_in_group("act"):
 		if not is_instance_valid(n) or not n.has_method("cuttable"):
 			continue
-		if n == _target and holding and n.cuttable():
+		# what the holding is for is the limb's business: cutting through it,
+		# or working a blade bound in the grain back out of it
+		if n == _target and holding:
 			progress = n.saw(delta)
 		else:
 			n.relax(delta)
@@ -74,14 +85,43 @@ func _scan() -> void:
 			continue
 		# You have to be turned towards a thing to work on it. Anything you
 		# are all but standing on is exempt: which way you last walked says
-		# nothing about an item under your feet.
-		if d > TOUCH and absf(angle_difference(facing, (at - global_position).angle())) > ARC:
+		# nothing about an item under your feet. Furniture is the exception:
+		# you reach it at its nearest edge, so it is underfoot the moment you
+		# are against it, and brushing past one is not a reason to open it.
+		var off: float = absf(angle_difference(facing,
+			(at - global_position).angle())) if d > 0.01 else 0.0
+		var underfoot: bool = d <= TOUCH \
+			and not (n.has_method("must_face") and n.must_face())
+		if not underfoot and off > ARC:
 			continue
-		var score: float = d - (n.bias() if n.has_method("bias") else 0.0)
+		# Two limbs crossing each other both report no distance at all, so the
+		# one you are most directly turned towards breaks the tie.
+		var score: float = d - (n.bias() if n.has_method("bias") else 0.0) \
+			+ off * TURN_TIE
 		if score < best_score:
 			best = n
 			best_score = score
 	_target = best
+	# ring whatever E would work on, so what you are about to do is a thing
+	# you can see rather than a line of text you have to trust
+	if _marker != null:
+		_marker.on = best != null
+		if best != null:
+			# a thing can say what shape it is, so the ring goes round the
+			# cupboard or the length of the limb rather than round the spot
+			# on the floor you happen to be working from
+			var box: Dictionary = best.highlight() if best.has_method("highlight") \
+				else {}
+			if box.is_empty():
+				var at: Vector2 = best.reach_point(global_position) \
+					if best.has_method("reach_point") else best.global_position
+				_marker.at = at - global_position
+				_marker.box = Vector2.ZERO
+			else:
+				_marker.at = (box["pos"] as Vector2) - global_position
+				_marker.box = box["size"]
+				_marker.rot = box["rot"]
+		_marker.queue_redraw()
 	if _hud != null:
 		_hud.set_prompt(best.prompt() if best != null else "")
 
@@ -93,6 +133,7 @@ func _unhandled_key_input(e: InputEvent) -> void:
 			and (e as InputEventKey).keycode == KEY_E:
 		if is_instance_valid(_target):
 			_target.act()
+			Game.acted.emit()
 			_scan()
 		get_viewport().set_input_as_handled()
 
@@ -126,3 +167,34 @@ func _arc_cap(c: Vector2, r: float, a0: float, a1: float, col: Color) -> void:
 		var a: float = lerp(a0, a1, i / 16.0)
 		pts.append(c + Vector2(cos(a), sin(a)) * r)
 	draw_colored_polygon(pts, col)
+
+
+# The ring around what E is pointing at. Its own node so it draws over the
+# limbs rather than under them.
+class Marker extends Node2D:
+	var at := Vector2.ZERO
+	var box := Vector2.ZERO      # zero for a point, a size for a thing
+	var rot := 0.0
+	var on := false
+	var _t := 0.0
+
+	func _process(delta: float) -> void:
+		if on:
+			_t += delta
+			queue_redraw()
+
+	func _draw() -> void:
+		if not on:
+			return
+		var pulse: float = 0.42 + 0.12 * sin(_t * 3.4)
+		var col := Color(1, 0.95, 0.72, pulse)
+		if box == Vector2.ZERO:
+			draw_arc(at, 25.0, 0, TAU, 30, col, 2.5)
+			draw_arc(at, 19.0, 0, TAU, 24, Color(col, pulse * 0.4), 2.0)
+			return
+		draw_set_transform(at, rot, Vector2.ONE)
+		var r := Rect2(-box * 0.5, box).grow(7.0)
+		var edge := Mat.rr(r, minf(14.0, minf(r.size.x, r.size.y) * 0.45))
+		edge.append(edge[0])
+		draw_polyline(edge, col, 2.5)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

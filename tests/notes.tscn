@@ -1,0 +1,4 @@
+[gd_scene format=3 uid="uid://bnts000000t1"]
+[ext_resource type="Script" path="res://tests/notes.gd" id="1_n"]
+[node name="NotesTest" type="Node2D"]
+script = ExtResource("1_n")

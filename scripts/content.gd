@@ -6,6 +6,70 @@ extends RefCounted
 
 const FORMULA := {"norust": 2.0, "bleach": 1.0, "exfluid": 2.5, "water": 0.0}
 
+# ── How you got here ─────────────────────────────────────────────────────
+# One line at a time before the office, so the debt and the job are known
+# before anything is asked of you.
+const OPENING := [
+	"After years of gambling, your debts have finally caught up to you.",
+	"You are a new member of Investigation Station.",
+	"Their morals may be questionable, but they pay well.",
+	"You are tasked with learning about the recently deceased.",
+	"The more you learn the higher your pay.",
+	"Get enough money, pay off your debt.",
+]
+
+# ── What you say to yourself ─────────────────────────────────────────────
+# Half-thoughts as things happen. "needs" and "not" are flags, "has" and
+# "hasnt" are things in your pockets; a line with none of them always fits.
+const TREE_POS := Vector2(555, 812)
+const THOUGHTS := {
+	"arrive": [
+		{"say": "It smells like a forest here. Did Joe leave his windows open?"},
+	],
+	"tree": [
+		{"say": "This must be one of New Tree Co.'s creations."},
+		{"say": "What has the world come to? The trees are even fighting back now."},
+	],
+	"gas": [
+		{"say": "This smells weird."},
+		{"say": "I have a bad feeling about this."},
+	],
+	"gas_out": [
+		{"say": "I feel light headed now"},
+	],
+	"clue": [
+		{"say": "Interesting"},
+		{"say": "This will help"},
+	],
+	"bleach": [
+		{"say": "He must've been loaded. I haven't seen someone have this in "
+			+ "years."},
+		{"say": "How did this become so expensive?"},
+	],
+	"norust": [
+		{"say": "Like a wise man once said, \"I'm more of a No Rust Buildup guy "
+			+ "myself.\""},
+		{"say": "How old is this? It smells terrible. Can cleaners expire?"},
+		{"say": "This is a relic! Even when it was being sold it cost a fortune."},
+	],
+	"exfluid": [
+		{"say": "I'm not really sure what this'll do. But it might help.",
+			"not": "knows_formula"},
+		{"say": "Great! I needed this.", "needs": "knows_formula"},
+	],
+	"body": [
+		{"say": "Poor guy, died too soon."},
+		{"say": "Ewwww, is that a tree growing out of him?"},
+		{"say": "This has got to be enough evidence to finally shut New Tree Co. "
+			+ "down."},
+	],
+	"bunny": [
+		{"say": "Who is Eleanor?", "hasnt": "death_certs"},
+		{"say": "Poor Joe, he's experienced his fair share of loss.",
+			"has": "death_certs"},
+	],
+}
+
 const ITEMS := {
 	# ── Joe's logbook, torn into pieces ──────────────────────────────────
 	"log_1_2": {
@@ -39,8 +103,8 @@ const ITEMS := {
 			+ "TWO CUPS of the no rust. The other two measures are further down the "
 			+ "page, and the last one I gave up on paper and put somewhere I could not "
 			+ "lose it.\n\n"
-			+ "It wants a basin and a tap running, so not in here. I am not doing "
-			+ "this on the kitchen table again.\n\n"
+			+ "You need a basin and a running tap for it, so not in here. I am "
+			+ "not doing this on the kitchen table again.\n\n"
 			+ "  [ the rest of this page has been torn away ]",
 		"note": "The mix is no-rust, bleach and extinguisher fluid. Two cups of "
 			+ "no-rust. Joe made it up somewhere with a basin and a tap, not the "
@@ -53,9 +117,9 @@ const ITEMS := {
 		"body": "The bottom half of the torn page, folded twice.\n\n"
 			+ "...and ONE CUP of the BLEACH. No more than that — at two it goes cloudy "
 			+ "and does nothing at all.\n\n"
-			+ "The third measure is the one I kept getting wrong, so it is not on "
-			+ "paper any more. I put it through the wall of the room where I first "
-			+ "tried this, and I am not going over it again.",
+			+ "The third measure I kept getting wrong, so I cut it into the wall "
+			+ "of the room where I first tried this. I am not writing it out "
+			+ "again.",
 		"note": "One cup of bleach in the mix, no more. The third measure Joe cut "
 			+ "into a wall somewhere, in the room where he first tried mixing.",
 		"grants": "knows_dose_bleach",
@@ -64,13 +128,13 @@ const ITEMS := {
 		"name": "Logbook (page 5)", "kind": "doc", "glyph": "paper",
 		"tint": "c8b78d", "pos": Vector2(700, 186), "story": true,
 		"body": "17/9 — The one growing through the doorframe will not come apart "
-			+ "like the others even softened. There are three hearts in it and they "
-			+ "let go in an order. Take them wrong and the last cut binds, the blade "
-			+ "sticks, and it closes over by morning.\n\n"
-			+ "The knot first. Then the split. The pale ring last, and only last — "
-			+ "that is the one holding the weight.",
-		"note": "A limb grown into a doorframe has three hearts. Cut the knot, then "
-			+ "the split, then the pale ring last.",
+			+ "like the others even softened. There are four hearts in it and they "
+			+ "let go in an order. Take them wrong and the cut binds, the blade "
+			+ "sticks fast, and you spend ten minutes working it back out.\n\n"
+			+ "The knot first. Then the split. Then the sap seam. The pale ring "
+			+ "last, and only last — that is the one holding the weight.",
+		"note": "A limb grown into a doorframe has four hearts. Cut the knot, then "
+			+ "the split, then the sap seam, and the pale ring last.",
 		"grants": "knows_cut_order",
 	},
 	"log_water": {
@@ -114,14 +178,40 @@ const ITEMS := {
 	"letter_doctor": {
 		"name": "Letter from the ER", "kind": "doc", "glyph": "letter",
 		"tint": "eae4d6", "pos": Vector2(812, 902), "story": true,
-		 "body": "I am Dr. Neal, the Emergency Care Physician tasked with treating "
-		+ "\nyour husband, Mr. Christopher Wood, and your daughter, Ms. Eleanor Wood at "
-		+ "\nthe North Cayus Emergency Room. I am sorry to inform you that even though "
-		+ "\nwe used all our resources, they both weren’t able to make it, their injuries "
-		+ "\nwere too severe. I have written to express my sorrow at the suddenness of "
-		+ "\ntheir deaths."
-		+ "\nSincerely,"
-		+ "\nDr. Neal"
+		"body": "NORTH CAYUS EMERGENCY ROOM\n"
+			+ "0001 Emergency Lane, North Cayus\n"
+			+ "\n"
+			+ "27 September 2071\n"
+			+ "\n"
+			+ "Mr J. Wood\n"
+			+ "1053 Meadow Lane\n"
+			+ "North Cayus\n"
+			+ "\n"
+			+ "Dear Mr Wood,\n"
+			+ "\n"
+			+ "RE\tC. Wood (b. 10/15/2042) and E. Wood (b. 5/3/2061)\n"
+			+ "\n"
+			+ "I was the physician on duty when your husband and your daughter "
+			+ "were brought in on the evening of 25 September, and I am writing "
+			+ "to you as the next of kin on both records.\n"
+			+ "\n"
+			+ "Both had been struck by a vehicle on Meadow Lane. Your daughter "
+			+ "was taken into theatre at 21:14 and your husband at 21:40. Neither "
+			+ "regained consciousness at any point in our care. I am sorry to "
+			+ "have to tell you in a letter that we were not able to save either "
+			+ "of them, and that nothing further could reasonably have been done.\n"
+			+ "\n"
+			+ "The certificates have been filed with the registrar and copies "
+			+ "will follow under separate cover. Our bereavement office can be "
+			+ "reached on the number at the foot of this page.\n"
+			+ "\n"
+			+ "I am sorry for your loss.\n"
+			+ "\n"
+			+ "Yours sincerely,\n"
+			+ "A. Neal MD\n"
+			+ "Emergency Care Physician",
+		"note": "Dr Neal wrote to Joe as next of kin. Both were hit on Meadow "
+			+ "Lane on 25 September; neither woke up.",
 	},
 	"death_certs": {
 		"name": "Death certificates", "kind": "doc", "glyph": "paper",
@@ -132,24 +222,24 @@ const ITEMS := {
 			+ "STATE OF NORTH CAYUS — CERTIFICATE OF DEATH        No. 4471-C\n"
 			+ "\n"
 			+ "NAME\tChristopher Wood\n"
-			+ "BORN\t15 October 2042, South Cayus\n"
-			+ "DIED\t25 September 2071, North Cayus Emergency Room\n"
+			+ "BORN\t10/15/2042, South Cayus\n"
+			+ "DIED\t9/25/2071, North Cayus Emergency Room\n"
 			+ "CAUSE\tCollapsed lungs and severed arteries, sustained as a "
 			+ "pedestrian in a motor vehicle collision\n"
-			+ "CERTIFIED\tA. Neal MD, 26 September 2071\n"
+			+ "CERTIFIED\tA. Neal MD, 9/26/2071\n"
 			+ "\n"
 			+ "STATE OF NORTH CAYUS — CERTIFICATE OF DEATH        No. 4472-C\n"
 			+ "\n"
 			+ "NAME\tEleanor Wood\n"
-			+ "BORN\t3 May 2061, North Cayus\n"
-			+ "DIED\t25 September 2071, North Cayus Emergency Room\n"
+			+ "BORN\t5/3/2061, North Cayus\n"
+			+ "DIED\t9/25/2071, North Cayus Emergency Room\n"
 			+ "CAUSE\tSevered arteries and a severe concussion, sustained as a "
 			+ "passenger in a motor vehicle collision\n"
-			+ "CERTIFIED\tA. Neal MD, 26 September 2071\n"
+			+ "CERTIFIED\tA. Neal MD, 9/26/2071\n"
 			+ "\n"
 			+ "Both filed the day after. Both signed by the same hand.",
 		"note": "He kept their death certificates down here, filed and flattened. "
-			+ "Christopher born 15 October 2042, Eleanor 3 May 2061.",
+			+ "Christopher born 10/15/2042, Eleanor 5/3/2061.",
 	},
 	"marriage_photo": {
 		"name": "Marriage photo", "kind": "doc", "glyph": "photo",
@@ -161,9 +251,9 @@ const ITEMS := {
 	},
 	"card_christopher": {
 		"name": "Birthday card, unsent", "kind": "doc", "glyph": "letter",
-		"tint": "d8cfc0", "pos": Vector2(1540, 700), "story": true,
+		"tint": "d8cfc0", "pos": Vector2(610, 186), "story": true,
 		"body": "A card with a boat on the front, written in and never sent.\n\n"
-			+ "\"Chris — 15/10 again. Twenty-nine years of me getting you the wrong "
+			+ "\"Chris — 10/15 again. Twenty-nine years of me getting you the wrong "
 			+ "thing. I have kept the date on everything in this house because it is "
 			+ "the only four numbers I will never lose.\n\nAll my love, always. J.\"",
 		"note": "Christopher's birthday is 15/10. Joe used the date on things around "
@@ -175,9 +265,9 @@ const ITEMS := {
 		"tint": "e8c9d4", "pos": Vector2(1306, 306), "story": true,
 		"body": "Card stock folded by a child, a cake drawn on it in wax crayon with "
 			+ "ten candles counted out carefully.\n\n"
-			+ "\"TO ELEANOR. 3/5. LOVE DAD AND DAD.\"\n\n"
+			+ "\"TO ELEANOR. 5/3. LOVE DAD AND DAD.\"\n\n"
 			+ "Inside, in an adult hand: \"Ten. How.\"",
-		"note": "Eleanor's birthday is 3/5. She turned ten.",
+		"note": "Eleanor's birthday is 5/3. She turned ten.",
 		"grants": "knows_eleanor_birthday",
 	},
 	"bunny": {
@@ -189,7 +279,7 @@ const ITEMS := {
 	},
 
 	# ── Tools ───────────────────────────────────────────────────────────
-	"axe": {
+	"joes_axe": {
 		"name": "Joe's axe", "kind": "tool", "glyph": "axe",
 		"tint": "8a6440", "pos": Vector2(150, 516),
 		"body": "A felling axe, the handle worn smooth. The bit is chipped all along "
@@ -208,50 +298,49 @@ const ITEMS := {
 	},
 
 	# ── The kit you take out with you ───────────────────────────────────
-	"lamp": {
-		"name": "Hand lamp", "kind": "tool", "glyph": "extinguisher",
-		"tint": "d8c98a", "pos": Vector2(-720, 450),
-		"body": "A square hand lamp off the shelf in the store, heavy, with a "
-			+ "strap. It throws about as far as you would want to walk before "
-			+ "looking behind you.",
+	"axe": {
+		"name": "Axe", "kind": "tool", "glyph": "axe",
+		"tint": "8a6440", "pos": Vector2(-720, 450),
+		"body": "A felling axe off the rack in the store, sharpened by somebody "
+			+ "who meant it. Company property, signed out with everything else.",
 		"note": "",
-		"use": "It is what you are seeing by. [C] puts it out.",
+		"use": "For the pale limbs. Stand at one and hold [E].",
 	},
 	"docket": {
 		"name": "Job docket", "kind": "doc", "glyph": "paper",
-		"tint": "e6e2d2", "pos": Vector2(-500, 364),
-		"body": "The docket the board printed when you took the job.\n\n"
+		"tint": "e6e2d2", "pos": Vector2(-380, 196),
+		"body": "The docket off the board, torn along its perforation.\n\n"
 			+ "REF\t4471-C\n"
 			+ "SUBJECT\tWood, Joseph\n"
 			+ "VAN\tbay 2\n"
 			+ "SIGNED OUT\tyou\n\n"
-			+ "No van goes out without one of these on the seat.",
+			+ "The van will not go out without this on the seat.",
 		"note": "The docket puts you in the van in bay 2.",
-		"use": "Proof the job is yours. It rides on the seat.",
+		"use": "Proof the job is yours. It stays on the van seat.",
 	},
 	"key_yellow": {
-		"name": "Key, yellow tag", "kind": "tool", "glyph": "key",
+		"name": "Yellow key", "kind": "tool", "glyph": "key",
 		"tint": "c9a227", "pos": Vector2(-300, 360),
-		"body": "A worn key on a yellow plastic tag. Nothing else on it.",
-		"note": "", "use": "One of the four off the press. Something on the door takes it.",
+		"body": "A worn key with a yellow tag on it. No number, no label.",
+		"note": "", "use": "One of the four van keys. One of the locks on the fire door takes it.",
 	},
 	"key_green": {
-		"name": "Key, green tag", "kind": "tool", "glyph": "key",
+		"name": "Green key", "kind": "tool", "glyph": "key",
 		"tint": "4c7a3a", "pos": Vector2(-300, 360),
-		"body": "A worn key on a green plastic tag. Nothing else on it.",
-		"note": "", "use": "One of the four off the press. Something on the door takes it.",
+		"body": "A worn key with a green tag on it. No number, no label.",
+		"note": "", "use": "One of the four van keys. One of the locks on the fire door takes it.",
 	},
 	"key_blue": {
-		"name": "Key, blue tag", "kind": "tool", "glyph": "key",
+		"name": "Blue key", "kind": "tool", "glyph": "key",
 		"tint": "3a5f8a", "pos": Vector2(-300, 360),
-		"body": "A worn key on a blue plastic tag. Nothing else on it.",
-		"note": "", "use": "One of the four off the press. Something on the door takes it.",
+		"body": "A worn key with a blue tag on it. No number, no label.",
+		"note": "", "use": "One of the four van keys. One of the locks on the fire door takes it.",
 	},
 	"key_red": {
-		"name": "Key, red tag", "kind": "tool", "glyph": "key",
+		"name": "Red key", "kind": "tool", "glyph": "key",
 		"tint": "b13a2c", "pos": Vector2(-300, 360),
-		"body": "A worn key on a red plastic tag. Nothing else on it.",
-		"note": "", "use": "One of the four off the press. Something on the door takes it.",
+		"body": "A worn key with a red tag on it. No number, no label.",
+		"note": "", "use": "One of the four van keys. One of the locks on the fire door takes it.",
 	},
 
 	# ── Chemicals ───────────────────────────────────────────────────────
@@ -269,7 +358,7 @@ const ITEMS := {
 	},
 	"exfluid": {
 		"name": "Extinguisher fluid", "kind": "chem", "glyph": "bottle",
-		"tint": "9fc7a8", "pos": Vector2(1486, 692),
+		"tint": "9fc7a8", "pos": Vector2(1451, 692),
 		"body": "A decanted bottle of extinguisher agent. Joe must have emptied a "
 			+ "spare cylinder into it.",
 		"note": "",
@@ -295,19 +384,19 @@ const SWITCHES := [
 ]
 
 # ── The limb across the door under the tree ──────────────────────────────
-# It has grown into the frame and has three hearts in it. Softening it is not
+# It has grown into the frame and has four hearts in it. Softening it is not
 # enough: the cuts have to be taken in the order the grain will give, or the
 # last one binds the blade and the whole thing closes up again. The marks are
 # what you see on it; Joe worked the order out and wrote it down.
-const CUT_MARKS := ["the pale ring", "the black knot", "the split"]
-const CUT_ORDER := "231"
+const CUT_MARKS := ["the pale ring", "the sap seam", "the black knot", "the split"]
+const CUT_ORDER := "3421"
 
 # ── The lock on the bedroom ──────────────────────────────────────────────
 # Their room, and the way through to the bathroom beyond it. Joe put the date
 # on everything in the house because it was four numbers he could not lose:
-# Christopher's birthday, 15/10. The card in the living room carries it, and
+# Christopher's birthday, 10/15. The card in the living room carries it, and
 # so do the death certificates, once you can get to them.
-const LOCK_CODE := "1510"
+const LOCK_CODE := "1015"
 const LOCK_POS := Vector2(1307, 596)
 const LOCK_DOOR := Rect2(1272, 578, 70, 37)
 
@@ -318,45 +407,44 @@ const LOCK_DOOR := Rect2(1272, 578, 70, 37)
 # left on a piece of furniture.
 const FIXED_NOTES := [
 	{
-		"pos": Vector2(-544, 386), "surface": "panel",
-		"prompt": "Read the card on the key press",
-		"title": "Card on the key press",
-		"body": "A card screwed to the press under the hooks, soft at the corners "
-			+ "from being handled.\n\n"
+		"pos": Vector2(-420, 174), "surface": "panel",
+		"prompt": "Read the card pinned by the board",
+		"title": "Bay card",
+		"body": "A card from the key box, pinned up by the board years ago and "
+			+ "gone soft at the corners.\n\n"
 			+ "BAY 1\tyellow\n"
 			+ "BAY 2\tblue\n"
 			+ "BAY 3\tgreen\n"
 			+ "BAY 4\tred\n\n"
 			+ "Along the bottom, in marker: THESE DO NOT CHANGE, STOP ASKING.",
-		"note": "The key press: bay 1 yellow, bay 2 blue, bay 3 green, bay 4 red.",
+		"note": "Which key opens which bay: 1 yellow, 2 blue, 3 green, 4 red.",
 	},
 	{
 		"pos": Vector2(-316, 544), "surface": "panel",
 		"prompt": "Read the sign screwed to the door",
 		"title": "Sign on the fire door",
 		"body": "A steel plate screwed on beside the handle, painted over twice "
-			+ "and read anyway.\n\n"
-			+ "LATCH AND DEADBOLT SEIZED.\n"
-			+ "PADLOCK ONLY.\n\n"
+			+ "and still readable.\n\n"
+			+ "THE LATCH AND THE DEADBOLT ARE SEIZED.\n"
+			+ "USE THE PADLOCK.\n\n"
 			+ "Under it, in marker: \"since 68\".",
-		"note": "The latch and deadbolt on the fire door are seized. The padlock "
-			+ "on the push bar is the one that turns.",
+		"note": "Only the padlock on the fire door works. The latch and the "
+			+ "deadbolt are seized.",
 	},
 	{
 		"pos": Vector2(-340, 178), "surface": "board",
 		"prompt": "Read the job on the board",
-		"title": "The job",
-		"body": "RECOVERY — WOOD, JOSEPH. Cabin, forty minutes out, no next of kin "
-			+ "on file.\n\n"
-			+ "Bring back the man and bring back the paper: who he was, who he "
-			+ "belonged to, what he lost. The office builds the rest from that. "
-			+ "Anything you carry out that says something about him is paid on.\n\n"
-			+ "NOTHING LEAVES THIS FLOOR WITHOUT:\n"
-			+ "\tthe docket, off this board\n"
-			+ "\ta lamp, out of the store\n"
-			+ "\ta van key, off the press by the door",
-		"note": "The job: recover Joe Wood and whatever says who he was. Sign out "
-			+ "with the docket, a lamp from the store, and a van key off the press.",
+		"title": "Latest docket job",
+		"body": "RECOVERY — WOOD, JOSEPH\n"
+			+ "A cabin forty minutes out of town. No family listed.\n\n"
+			+ "Bring back the body, and bring back anything that says who he was: "
+			+ "papers, photos, letters. You are paid for each one.\n\n"
+			+ "TAKE WITH YOU:\n"
+			+ "\tthe docket — on the hook under this board\n"
+			+ "\tan axe — on the rack in the store room\n"
+			+ "\ta van key — from the key box by the door",
+		"note": "The job: bring back Joe Wood and anything that says who he was. "
+			+ "Take the docket, an axe from the store room, and a van key.",
 		"grants": "read_job",
 	},
 	{
@@ -437,12 +525,12 @@ const CONTAINERS := [
 	{"pos": Vector2(376, 186), "items": ["norust"]},
 	{"pos": Vector2(392, 384), "items": ["water"]},
 	{"pos": Vector2(1170, 118), "items": ["bleach"]},
-	{"pos": Vector2(1486, 692), "items": ["exfluid"]},
+	{"pos": Vector2(1451, 692), "items": ["exfluid"]},
 	{"pos": Vector2(806, 504), "items": ["log_water"]},
 	{"pos": Vector2(1218, 528), "items": ["police_report"]},
-	{"pos": Vector2(150, 516), "items": ["axe"]},
+	{"pos": Vector2(150, 516), "items": ["joes_axe"]},
 	{"pos": Vector2(500, 186), "items": []},
-	{"pos": Vector2(610, 186), "items": []},
+	{"pos": Vector2(610, 186), "items": ["card_christopher"]},
 	{"pos": Vector2(700, 186), "items": ["log_cut"]},
 	{"pos": Vector2(408, 462), "items": []},
 	{"pos": Vector2(1120, 506), "items": []},
@@ -451,7 +539,7 @@ const CONTAINERS := [
 	{"pos": Vector2(992, 822), "items": []},
 	{"pos": Vector2(262, 894), "items": []},
 	{"pos": Vector2(170, 852), "items": []},
-	{"pos": Vector2(1540, 700), "items": ["card_christopher"]},
+	{"pos": Vector2(1523, 700), "items": []},
 	{"pos": Vector2(214, 306), "items": []},
 ]
 
@@ -480,8 +568,7 @@ const STAFF := [
 				+ "and nights aren't paid.\"",
 			"\"They docked me for the van again. Check what they're taking off "
 				+ "you before you sign anything.\"",
-			"\"Bay two, that'll be the blue tag. It has been the blue tag since "
-				+ "before either of us.\"",
+			"\"Bay two is the blue key. Always has been.\"",
 			"\"Better you than me. I did two cabins last year and I'm still not "
 				+ "right about it.\"",
 		],
@@ -492,12 +579,12 @@ const STAFF := [
 			"\"Morning. You look like you slept in the stairwell.\"",
 			"\"Whatever's growing out there, don't bring it back in your coat. "
 				+ "Someone did that. He's not here any more.\"",
-			"\"It's the padlock on that door, on the bar. The latch and the "
-				+ "deadbolt have not turned since before I started.\"",
+			"\"Use the padlock on that door. The other two locks have not worked "
+				+ "in years.\"",
 			"\"Take the certificates if there are any. Paper with a name on it "
 				+ "pays double.\"",
-			"\"Come back through the same door you went out of. They only mark "
-				+ "you returned if you use the door.\"",
+			"\"Come back the way you went out. It is the only way they count you "
+				+ "as back.\"",
 		],
 	},
 ]
@@ -507,7 +594,7 @@ const STAFF := [
 # to; the door out of the office puts you on the cabin's doorstep and the
 # cabin's front door brings you back here.
 const OFFICE_START := Vector2(-440, 360)   # on the floor by the desk
-const CABIN_DOOR := Vector2(1462, 952)      # the front door, from inside
+const CABIN_DOOR := Vector2(1462, 974)      # the front door, from inside
 
 # The two lifts are the only way off this floor. The top one goes up to the
 # boss and will not take you until the job on the board is done; the bottom
@@ -520,14 +607,13 @@ const LIFTS := [
 # The fire door at the bottom of the office. Everything you need to sign out
 # with has to be on you before it opens.
 const OFFICE_EXIT := Vector2(-376, 540)
-const KIT := ["docket", "lamp"]
+const KIT := ["docket", "axe"]
 
-# ── The key press ────────────────────────────────────────────────────────
-# Four keys on hooks, tagged by colour, one signed out at a time. Which one
-# opens the van in your bay is worked out from three things on this floor:
-# the bay off the docket and the card on the press. Which of the three things
-# on the door it turns in is on the sign screwed to it.
-const KEY_PRESS := Vector2(-544, 350)
+# ── The key box ──────────────────────────────────────────────────────────
+# Four keys on hooks, one taken at a time. Which one opens your van comes
+# from the docket (it names the bay) and the card by the board (it says which
+# key goes with which bay). Which lock it turns is on the sign on the door.
+const KEY_BOX := Vector2(-544, 350)
 const KEYS := [
 	{"id": "key_yellow", "tag": "yellow"},
 	{"id": "key_green",  "tag": "green"},
@@ -536,8 +622,8 @@ const KEYS := [
 ]
 const VAN_KEY := "key_blue"     # bay 2, once the card and Renn are put together
 const LOCKS := [
-	"the latch in the handle",
-	"the deadbolt above it",
-	"the padlock on the push bar",
+	"the handle lock",
+	"the deadbolt",
+	"the padlock",
 ]
 const VAN_LOCK := 2             # the padlock; the other two seized years ago

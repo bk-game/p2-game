@@ -122,7 +122,6 @@ const SOLIDS: Array[Rect2] = [
 	Rect2(-306, 420, 46, 46),   # chair
 	Rect2(-300, 172, 34, 50),   # filing cabinets
 	Rect2(-540, 176, 32, 36),   # water cooler
-	Rect2(-543, 300, 62, 46),   # printer on its stand
 	Rect2(-296, 490, 36, 36),   # the plant nobody waters
 	Rect2(-777, 386, 36, 150),  # store: shelving down the wall
 	Rect2(-700, 500, 60, 40),   # store: crates
@@ -507,12 +506,6 @@ func _office() -> void:
 	_fill(Rect2(-536, 180, 24, 20), Mat.GLASS, 3.0)
 	draw_circle(Vector2(-524, 206), 3.0, Mat.STEEL_DK)
 
-	# printer on its stand, with a tray of paper out
-	_obj(Rect2(-543, 300, 62, 46), Mat.IRON, 3.0)
-	_fill(Rect2(-537, 306, 50, 20), Mat.IRON_LT, 2.0)
-	_fill(Rect2(-533, 326, 42, 14), Mat.LINEN, 1.0)
-	draw_circle(Vector2(-490, 310), 2.5, Mat.EMBER)
-
 	# the plant nobody waters
 	_oval(Vector2(-278, 508), 18, 18, Mat.OAK_DK)
 	for i in 7:
@@ -583,7 +576,7 @@ func _office() -> void:
 	_fill(Rect2(-402, 528, 52, 14), Color("1f6b2f"), 2.0)                 # EXIT sign
 	draw_line(Vector2(-394, 535), Vector2(-360, 535), Color("d9f2dd"), 3.0)
 
-	# the key press on the lobby wall
+	# the key box on the lobby wall
 	_fill(Rect2(-549, 330, 8, 40), Mat.OAK_DK, 1.0)
 
 

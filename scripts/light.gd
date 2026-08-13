@@ -4,13 +4,15 @@ extends Node2D
 # you, stopping at the walls of the room you are in rather than shining
 # through them. Two rooms are on the house wiring and are dark until their
 # switch is found: in those you see only as far as your own light reaches,
-# and once they are lit their light gets out through the doorway. [C] toggles
-# the whole thing.
+# and once they are lit their light gets out through the doorway.
 
 const SEGMENTS := 256
 const RADIUS   := 330.0                 # how far the lantern carries
 const FAR      := 3000.0
-const PAD      := 26.0                  # bleed past the room so walls read
+# One pixel short of the wall thickness: the walls the beam stops at are lit
+# all the way through rather than swallowed by the dark, and it still cannot
+# reach past them into the next room.
+const PAD      := 36.0
 const STRANDED := 70.0                  # all the light you get somewhere unmapped
 const GLOW     := 78.0                  # what you can see by yourself, unlit
 
@@ -71,12 +73,6 @@ func _mouths(room: int) -> Array[Rect2]:
 	return out
 
 
-func toggle() -> void:
-	enabled = not enabled
-	queue_redraw()
-	Game.toast.emit("Lantern %s." % ("on" if enabled else "off"))
-
-
 func _process(_d: float) -> void:
 	if _player == null or not is_instance_valid(_player):
 		_player = get_tree().get_first_node_in_group("player")
@@ -109,6 +105,9 @@ func _lit_rects(origin: Vector2) -> Array[Rect2]:
 	var lit: Array[Rect2] = []
 	for rect in ROOMS[_room]:
 		lit.append((rect as Rect2).grow(PAD))
+	# every doorway of the room you are in, so a way out is lit from inside
+	# and reads as a gap rather than as more wall
+	lit.append_array(_mouths(_room))
 	if _room_exact(origin) != -1:
 		return lit                     # standing in a room proper
 	# In a doorway: the opening itself carries the light across the gap, so

@@ -21,7 +21,7 @@ const RULE   := Color("b19c74")
 const FOG    := Color(0.62, 0.82, 0.18)   # the green closing over your eyes
 const FOG_DK := Color(0.16, 0.26, 0.06)
 
-enum Mode {PLAY, READ, BAG, NOTES, REPORT, LOCK, CUT, RIDE, CHOICE}
+enum Mode {PLAY, READ, BAG, NOTES, REPORT, LOCK, CUT, RIDE, CHOICE, OVER, TITLE}
 
 var mode: int = Mode.PLAY
 var _title := ""
@@ -42,6 +42,34 @@ var _read_t := 0.0
 var _ride_t := 0.0
 var _ride_out := true
 var _choice := {}
+var _over_t := 0.0
+
+# ── Getting started ──────────────────────────────────────────────────────
+# The first minute teaches itself: each step names one thing and waits until
+# you have done it, rather than a wall of text before the game starts.
+const STEPS := [
+	{"say": "Walk", "keys": "W A S D  or the arrow keys",
+		"how": "Learn how to walk around."},
+	{"say": "Use what you are near", "keys": "E",
+		"how": "Anything you can use wears a ring. You have to be facing it."},
+	{"say": "Take something", "keys": "E",
+		"how": "Some of what you find comes with you."},
+	{"say": "See what you are carrying", "keys": "I",
+		"how": "The same key puts it away."},
+	{"say": "Read what you have worked out", "keys": "N",
+		"how": "Anything worth remembering writes itself down."},
+]
+
+var _step := -1          # -1 before the title card is dismissed
+var _step_t := 0.0
+var _walked := 0.0
+var _was_at := Vector2.ZERO
+var _acted := false
+var _title_t := 0.0
+var _notes_y := 0.0
+var _open_line := 0
+var _thought := ""
+var _thought_t := 0.0
 
 
 func _ready() -> void:
@@ -54,6 +82,10 @@ func _ready() -> void:
 	Game.open_cut.connect(_open_cut)
 	Game.ride.connect(_on_ride)
 	Game.open_choice.connect(_open_choice)
+	Game.level_over.connect(_on_level_over)
+	Game.acted.connect(func(): _acted = true)
+	Game.thought.connect(_on_thought)
+	mode = Mode.TITLE
 
 
 func blocking() -> bool:
@@ -82,6 +114,13 @@ func _on_notice(title: String, body: String) -> void:
 	_body = body
 	mode = Mode.READ
 	_read_t = 0.0
+	queue_redraw()
+
+
+# Half a thought, in your own voice, under everything else.
+func _on_thought(line: String) -> void:
+	_thought = line
+	_thought_t = 4.5
 	queue_redraw()
 
 
@@ -116,6 +155,14 @@ func _open_cut() -> void:
 
 # Pick one of a short list: which key off the press, which lock to turn it
 # in. The same panel does both, since both are one press of a number.
+# The end of the shift. Nothing to press: it is the last thing on screen.
+func _on_level_over() -> void:
+	mode = Mode.OVER
+	_over_t = 0.0
+	_queued.clear()
+	queue_redraw()
+
+
 func _open_choice(data: Dictionary) -> void:
 	_choice = data
 	mode = Mode.CHOICE
@@ -132,11 +179,26 @@ func _on_ride(outbound: bool) -> void:
 
 
 func _process(delta: float) -> void:
+	if mode == Mode.TITLE:
+		_title_t += delta
+		queue_redraw()
+	if _thought_t > 0.0:
+		_thought_t -= delta
+		if _thought_t <= 0.0:
+			_thought = ""
+		queue_redraw()
+	if _step >= 0 and _step < STEPS.size():
+		_teaching(delta)
+	if mode == Mode.OVER:
+		_over_t += delta
+		queue_redraw()
 	if mode == Mode.RIDE:
 		_ride_t += delta
 		if _ride_t >= RIDE_T:
 			mode = Mode.PLAY
-			if not _ride_out:
+			if _ride_out:
+				Game.think("arrive")
+			else:
 				Game.finish_level()
 		queue_redraw()
 	if _toast_t > 0.0:
@@ -151,6 +213,30 @@ func _process(delta: float) -> void:
 	if not is_equal_approx(Game.fog_ratio(), _fog):
 		_fog = Game.fog_ratio()
 		queue_redraw()
+
+
+# Watch for the thing the current step asked for, and move on when it lands.
+func _teaching(delta: float) -> void:
+	_step_t += delta
+	var p := get_tree().get_first_node_in_group("player")
+	if p == null:
+		return
+	if _was_at != Vector2.ZERO:
+		_walked += p.global_position.distance_to(_was_at)
+	_was_at = p.global_position
+	var got := false
+	match _step:
+		0: got = _walked > 150.0
+		1: got = _acted
+		2: got = Game.inventory.size() > 0
+		3: got = mode == Mode.BAG
+		4: got = mode == Mode.NOTES
+	if got and _step_t > 0.4:
+		_step += 1
+		_step_t = 0.0
+		if _step < STEPS.size():
+			Sfx.play("pickup", -16.0, 1.5)
+	queue_redraw()
 
 
 # ── sizing helpers ───────────────────────────────────────────────────────
@@ -177,7 +263,9 @@ func _unhandled_key_input(e: InputEvent) -> void:
 					_title = nxt[0]
 					_body = nxt[1]
 					_read_t = 0.0
-		Mode.NOTES, Mode.REPORT:
+		Mode.NOTES:
+			_notes_key(k)
+		Mode.REPORT:
 			if k in [KEY_N, KEY_R, KEY_ESCAPE, KEY_E, KEY_I]:
 				mode = Mode.PLAY
 		Mode.BAG:
@@ -186,22 +274,30 @@ func _unhandled_key_input(e: InputEvent) -> void:
 			_lock_key(k)
 		Mode.CUT:
 			_cut_key(k)
+		Mode.TITLE:
+			# the opening reads itself out a line at a time; any key takes the
+			# next one, and the last one puts you on the floor
+			_open_line += 1
+			_title_t = 0.0
+			if _open_line > Content.OPENING.size():
+				mode = Mode.PLAY
+				_step = 0
+				_was_at = Vector2.ZERO
 		Mode.RIDE:
 			if k in [KEY_E, KEY_ESCAPE, KEY_ENTER, KEY_SPACE]:
 				_ride_t = RIDE_T          # skip to the end of the drive
 		Mode.CHOICE:
 			_choice_key(k)
 		Mode.PLAY:
-			if k == KEY_I:
+			if k == KEY_ESCAPE and _step >= 0 and _step < STEPS.size():
+				_step = STEPS.size()      # done with being told
+			elif k == KEY_I:
 				mode = Mode.BAG
 				_at_sink = false
 				_sel = 0
-			elif k == KEY_C:
-				var lamp := get_tree().get_first_node_in_group("light")
-				if lamp != null:
-					lamp.toggle()
 			elif k == KEY_N:
 				mode = Mode.NOTES
+				_notes_y = 0.0
 			elif k == KEY_R:
 				_title = "Field report"
 				_body = Game.report()
@@ -232,7 +328,22 @@ func _choice_key(k: int) -> void:
 		Game.begin_ride(Content.ENTRANCE, true)
 
 
-# Which of the three marks to take, and in what order. Same entry as the
+# The notebook fills up over a playthrough and used to run off the bottom of
+# its own page. Up and down move through it.
+func _notes_key(k: int) -> void:
+	if k in [KEY_N, KEY_ESCAPE, KEY_E, KEY_I]:
+		mode = Mode.PLAY
+		return
+	match k:
+		KEY_UP: _notes_y -= _n(46)
+		KEY_DOWN: _notes_y += _n(46)
+		KEY_PAGEUP: _notes_y -= _n(300)
+		KEY_PAGEDOWN: _notes_y += _n(300)
+		KEY_HOME: _notes_y = 0.0
+		KEY_END: _notes_y = 1e9      # clamped against the content when drawn
+
+
+# Which of the four marks to take, and in what order. Same entry as the
 # dial, but three slots and each mark only once.
 func _cut_key(k: int) -> void:
 	if k in [KEY_ESCAPE, KEY_Q, KEY_I]:
@@ -243,21 +354,22 @@ func _cut_key(k: int) -> void:
 		_lock_msg = ""
 		return
 	if k in [KEY_ENTER, KEY_KP_ENTER, KEY_E]:
-		if _code.length() < 3:
-			_lock_msg = "All three, in order."
+		if _code.length() < Content.CUT_MARKS.size():
+			_lock_msg = "All four, in order."
 			return
-		if Game.try_cut(_code):
-			mode = Mode.PLAY
-		else:
-			_lock_msg = "The blade binds and the cut closes over. Not that way."
-			_code = ""
+		# Right or wrong, the panel closes: a bound blade has to be worked out
+		# of the limb before there is anything to take an order in.
+		mode = Mode.PLAY
+		Game.try_cut(_code)
+		_code = ""
 		return
 	var mark := -1
-	if k >= KEY_1 and k <= KEY_3:
+	if k >= KEY_1 and k <= KEY_4:
 		mark = k - KEY_0
-	elif k >= KEY_KP_1 and k <= KEY_KP_3:
+	elif k >= KEY_KP_1 and k <= KEY_KP_4:
 		mark = k - KEY_KP_0
-	if mark > 0 and _code.length() < 3 and not _code.contains(str(mark)):
+	if mark > 0 and _code.length() < Content.CUT_MARKS.size() \
+			and not _code.contains(str(mark)):
 		_code += str(mark)
 		_lock_msg = ""
 
@@ -298,14 +410,12 @@ func _lock_key(k: int) -> void:
 func _bag_order() -> Array:
 	if not _at_sink:
 		return Array(Game.inventory)
+	# At the basin the rest of what you are carrying is not the question.
 	var mixable := []
-	var rest := []
 	for id in Game.inventory:
 		if _cups.has(id):
 			mixable.append(id)
-		else:
-			rest.append(id)
-	return mixable + rest
+	return mixable
 
 
 func _bag_key(k: int) -> void:
@@ -359,12 +469,16 @@ func _draw() -> void:
 		HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(18), INK)
 
 	# ── key hints ───────────────────────────────────────────────────────
-	var hint := "[E] interact   [I] inventory   [N] notebook   [C] lantern   [R] report"
+	var hint := "[E] interact   [I] inventory   [N] notebook   [R] report"
 	var hw: float = f.get_string_size(hint, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(22)).x
 	var hr := Rect2(vp.x - hw - _n(60), vp.y - _n(70), hw + _n(40), _n(46))
 	_panel(hr)
 	draw_string(f, Vector2(hr.position.x + _n(20), hr.position.y + _n(31)), hint,
 		HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(22), INK)
+
+	# ── what you are saying to yourself ─────────────────────────────────
+	if _thought != "" and mode == Mode.PLAY:
+		_draw_thought(f, vp)
 
 	# ── interaction prompt ──────────────────────────────────────────────
 	if _prompt != "" and mode == Mode.PLAY:
@@ -382,9 +496,15 @@ func _draw() -> void:
 				track.size.y)), ACCENT)
 			draw_rect(track, EDGE, false, 2.0)
 
+	# ── the tutorial, while there is any of it left ─────────────────────
+	var taught: bool = _step >= 0 and _step < STEPS.size()
+	if taught and mode == Mode.PLAY:
+		_draw_teaching(f, vp)
+
 	# ── toast ───────────────────────────────────────────────────────────
 	if _toast != "":
-		var tr := Rect2(vp.x * 0.5 - _n(430), _n(26), _n(860), _n(74))
+		var tr := Rect2(vp.x * 0.5 - _n(430), _n(26) + (_n(104) if taught else 0.0),
+			_n(860), _n(74))
 		_panel(tr)
 		draw_multiline_string(f, Vector2(tr.position.x + _n(20), tr.position.y + _n(30)),
 			_toast, HORIZONTAL_ALIGNMENT_LEFT, tr.size.x - _n(40), _fs(17), 2, INK)
@@ -397,6 +517,8 @@ func _draw() -> void:
 		Mode.CUT: _draw_cut(f, vp)
 		Mode.RIDE: _draw_ride(f, vp)
 		Mode.CHOICE: _draw_choice(f, vp)
+		Mode.OVER: _draw_over(f, vp)
+		Mode.TITLE: _draw_title(f, vp)
 
 
 func _draw_lock(f: Font, vp: Vector2) -> void:
@@ -405,8 +527,8 @@ func _draw_lock(f: Font, vp: Vector2) -> void:
 	_panel(r)
 	_head(f, r, "LOCKED", "four digits")
 	draw_string(f, Vector2(r.position.x + _n(38), r.position.y + _n(126)),
-		"A dial set into the bedroom door. Somebody chose these four numbers "
-		+ "because they could not lose them.", HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(76),
+		"A dial set into the bedroom door. Four digits, and somebody chose a "
+		+ "date they could not lose.", HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(76),
 		_fs(17), DIM)
 	# the four slots, filled left to right as you type
 	var slot: float = _n(56)
@@ -428,18 +550,19 @@ func _draw_cut(f: Font, vp: Vector2) -> void:
 	draw_rect(Rect2(Vector2.ZERO, vp), Color(0, 0, 0, 0.55))
 	var r := _centre(vp, 640, 380)
 	_panel(r)
-	_head(f, r, "THE GRAIN", "three hearts in it")
+	_head(f, r, "THE GRAIN", "four hearts in it")
 	draw_string(f, Vector2(r.position.x + _n(38), r.position.y + _n(124)),
-		"Take them in the order the grain will give, or the last cut binds.",
+		"Take them in the order the grain will give. Take them wrong and the "
+		+ "blade sticks fast.",
 		HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(76), _fs(17), DIM)
 	for i in Content.CUT_MARKS.size():
 		draw_string(f, Vector2(r.position.x + _n(38), r.position.y + _n(160) + i * _n(28)),
 			"%d   %s" % [i + 1, Content.CUT_MARKS[i]],
 			HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(19), INK)
-	var slot: float = _n(56)
-	var x0: float = r.get_center().x + _n(40)
-	for i in 3:
-		var box := Rect2(x0 + i * (slot + _n(12)), r.position.y + _n(168), slot, _n(66))
+	var slot: float = _n(50)
+	var x0: float = r.get_center().x + _n(24)
+	for i in Content.CUT_MARKS.size():
+		var box := Rect2(x0 + i * (slot + _n(10)), r.position.y + _n(168), slot, _n(66))
 		draw_rect(box, Color(0, 0, 0, 0.45))
 		draw_rect(box, EDGE, false, 2.0)
 		if i < _code.length():
@@ -448,7 +571,137 @@ func _draw_cut(f: Font, vp: Vector2) -> void:
 	if _lock_msg != "":
 		draw_string(f, Vector2(r.position.x + _n(38), r.end.y - _n(64)), _lock_msg,
 			HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(76), _fs(17), INK)
-	_foot(f, r, "1-3 in order    backspace    [E] cut    [I] step back")
+	_foot(f, r, "1-4 in order    backspace    [E] cut    [I] step back")
+
+
+# The card the game opens on. Nothing to read but the name and what you are:
+# one key gets you onto the floor.
+func _draw_title(f: Font, vp: Vector2) -> void:
+	draw_rect(Rect2(Vector2.ZERO, vp), Color(0.02, 0.02, 0.03))
+	var mid := vp.x * 0.5
+	var t: float = clampf(_title_t / 0.8, 0.0, 1.0)
+
+	# the last card is the name of the place you work
+	if _open_line >= Content.OPENING.size():
+		var name := "INVESTIGATION STATION"
+		var nw: float = f.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1,
+			_fs(42)).x
+		draw_string(f, Vector2(mid - nw * 0.5, vp.y * 0.44), name,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(42), Color(ACCENT, t))
+		draw_line(Vector2(mid - _n(230), vp.y * 0.44 + _n(22)),
+			Vector2(mid + _n(230), vp.y * 0.44 + _n(22)), Color(EDGE, t), 2.0)
+	else:
+		var line: String = Content.OPENING[_open_line]
+		var w := _n(760)
+		draw_multiline_string(f, Vector2(mid - w * 0.5, vp.y * 0.44), line,
+			HORIZONTAL_ALIGNMENT_CENTER, w, _fs(26), -1, Color(INK, t))
+
+	if _title_t > 0.8:
+		var go := "press any key"
+		var gw: float = f.get_string_size(go, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(16)).x
+		var pulse: float = 0.3 + 0.22 * sin(_title_t * 2.4)
+		draw_string(f, Vector2(mid - gw * 0.5, vp.y - _n(90)), go,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(16), Color(DIM, pulse))
+	# how far through the opening you are
+	for i in Content.OPENING.size() + 1:
+		var dot := Vector2(mid - Content.OPENING.size() * _n(9) + i * _n(18),
+			vp.y - _n(54))
+		draw_circle(dot, 3.0, ACCENT if i <= _open_line else Color(EDGE, 0.7))
+
+
+# What you say to yourself, sitting under the game rather than over it.
+func _draw_thought(f: Font, vp: Vector2) -> void:
+	var fade: float = clampf(_thought_t, 0.0, 1.0) * clampf((4.5 - _thought_t) / 0.4,
+		0.0, 1.0)
+	var said := "\"%s\"" % _thought
+	var w: float = f.get_string_size(said, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(19)).x
+	var at := Vector2(vp.x * 0.5 - w * 0.5, vp.y - _n(196))
+	draw_rect(Rect2(at.x - _n(18), at.y - _n(26), w + _n(36), _n(38)),
+		Color(0, 0, 0, 0.45 * fade))
+	draw_string(f, at, said, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(19),
+		Color(0.86, 0.83, 0.72, fade))
+
+
+# One step at a time along the top of the screen, each waiting on the thing
+# it asked for. It stops being drawn the moment the last one lands.
+func _draw_teaching(f: Font, vp: Vector2) -> void:
+	var step: Dictionary = STEPS[_step]
+	var w := _n(620)
+	var r := Rect2(vp.x * 0.5 - w * 0.5, _n(26), w, _n(98))
+	_panel(r)
+	draw_string(f, Vector2(r.position.x + _n(24), r.position.y + _n(36)),
+		step["say"], HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(22), INK)
+	var keys: String = step["keys"]
+	var kw: float = f.get_string_size(keys, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(18)).x
+	var cap := Rect2(r.end.x - _n(24) - kw - _n(20), r.position.y + _n(16),
+		kw + _n(20), _n(30))
+	draw_rect(cap, Color(1, 1, 1, 0.07))
+	draw_rect(cap, EDGE, false, 2.0)
+	draw_string(f, Vector2(cap.position.x + _n(10), cap.end.y - _n(9)), keys,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(18), ACCENT)
+	draw_multiline_string(f, Vector2(r.position.x + _n(24), r.position.y + _n(60)),
+		step["how"], HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(48), _fs(16), 1, DIM)
+	# how far along, and the way out of being taught
+	for i in STEPS.size():
+		var dot := Vector2(r.position.x + _n(24) + i * _n(16), r.end.y - _n(12))
+		draw_circle(dot, 3.5, ACCENT if i <= _step else Color(EDGE, 0.8))
+	var skip := "[Esc] skip"
+	var sw2: float = f.get_string_size(skip, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(14)).x
+	draw_string(f, Vector2(r.end.x - _n(24) - sw2, r.end.y - _n(9)), skip,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(14), DIM)
+
+
+# The shift is over: what came back, what it paid, and what the handler made
+# of it, on black, with nothing else on screen.
+func _draw_over(f: Font, vp: Vector2) -> void:
+	var t: float = clampf(_over_t / 0.9, 0.0, 1.0)
+	draw_rect(Rect2(Vector2.ZERO, vp), Color(0.02, 0.02, 0.03, t))
+	if t < 0.55:
+		return
+	var a: float = (t - 0.55) / 0.45
+	var found := Game.story_found()
+	var total := Game.story_total()
+	var mid := vp.x * 0.5
+	var y: float = vp.y * 0.24
+
+	var title := "END OF SHIFT"
+	var tw: float = f.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(40)).x
+	draw_string(f, Vector2(mid - tw * 0.5, y), title, HORIZONTAL_ALIGNMENT_LEFT,
+		-1, _fs(40), Color(ACCENT, a))
+	y += _n(24)
+	draw_line(Vector2(mid - _n(220), y), Vector2(mid + _n(220), y),
+		Color(EDGE, a), 2.0)
+	y += _n(58)
+
+	var rows := [
+		["SUBJECT", "Wood, Joseph"],
+		["BODY", "recovered" if Game.flag("found_body") else "not recovered"],
+		["RECOVERED", "%d of %d significant items" % [found, total]],
+		["PAID", "$%d" % (found * 250)],
+	]
+	for row in rows:
+		draw_string(f, Vector2(mid - _n(220), y), row[0], HORIZONTAL_ALIGNMENT_LEFT,
+			-1, _fs(20), Color(DIM, a))
+		draw_string(f, Vector2(mid - _n(20), y), row[1], HORIZONTAL_ALIGNMENT_LEFT,
+			-1, _fs(20), Color(INK, a))
+		y += _n(38)
+
+	y += _n(26)
+	var said := "Handler: \"This is barely a person. Half of him is missing and we "
+	said += "cannot invent the rest.\""
+	if found >= total:
+		said = "Handler: \"Complete. We can build him properly. Whatever you did "
+		said += "in there, do it again next time.\""
+	elif found >= total * 0.6:
+		said = "Handler: \"Enough to work with. Gaps in the middle of his life, "
+		said += "though. He will come out a little thin.\""
+	draw_multiline_string(f, Vector2(mid - _n(220), y), said,
+		HORIZONTAL_ALIGNMENT_LEFT, _n(440), _fs(18), -1, Color(DIM, a))
+
+	var end := "There is another one in the morning."
+	var ew: float = f.get_string_size(end, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(17)).x
+	draw_string(f, Vector2(mid - ew * 0.5, vp.y - _n(90)), end,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(17), Color(DIM, a * 0.8))
 
 
 func _draw_choice(f: Font, vp: Vector2) -> void:
@@ -681,45 +934,95 @@ func _reader_flow(f: Font, r: Rect2, fs: int, draw_it: bool) -> float:
 	return y - top
 
 
+# How tall the writing is, and how much of it fits — the two numbers the
+# scrolling is clamped against, exposed so a test can hold them to it.
+func notes_span() -> float:
+	var r := _centre(size, 900, 600)
+	return (r.end.y - _n(52)) - (r.position.y + _n(126))
+
+
+func notes_height() -> float:
+	var f := ThemeDB.fallback_font
+	var r := _centre(size, 900, 600)
+	var wide: float = r.size.x - _n(120)
+	var total := 0.0
+	for n in Game.notes:
+		total += f.get_multiline_string_size(n, HORIZONTAL_ALIGNMENT_LEFT, wide,
+			_fs(18)).y + _n(16)
+	return maxf(total - _n(16), 0.0)
+
+
 func _draw_notes(f: Font, vp: Vector2) -> void:
 	draw_rect(Rect2(Vector2.ZERO, vp), Color(0, 0, 0, 0.55))
 	var r := _centre(vp, 900, 600)
 	_panel(r)
-	_head(f, r, "NOTEBOOK", "%d of %d significant items recovered"
-		% [Game.story_found(), Game.story_total()])
-	var y: float = r.position.y + _n(146)
+
+	# the band the writing lives in, between the heading and the footer
+	var top: float = r.position.y + _n(126)
+	var bot: float = r.end.y - _n(52)
+	var wide: float = r.size.x - _n(120)
+	var gap := _n(16)
+
+	var total := 0.0
+	for n in Game.notes:
+		total += f.get_multiline_string_size(n, HORIZONTAL_ALIGNMENT_LEFT, wide,
+			_fs(18)).y + gap
+	total = maxf(total - gap, 0.0)
+	_notes_y = clampf(_notes_y, 0.0, maxf(total - (bot - top), 0.0))
+
 	if Game.notes.is_empty():
-		draw_string(f, Vector2(r.position.x + _n(38), y), "Nothing written down yet.",
-			HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(19), DIM)
+		draw_string(f, Vector2(r.position.x + _n(38), top + _n(20)),
+			"Nothing written down yet.", HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(19), DIM)
+	var y: float = top - _notes_y
 	for n in Game.notes:
 		var h: float = f.get_multiline_string_size(n, HORIZONTAL_ALIGNMENT_LEFT,
-			r.size.x - _n(104), _fs(18)).y
-		draw_string(f, Vector2(r.position.x + _n(38), y), "-",
-			HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(18), ACCENT)
-		draw_multiline_string(f, Vector2(r.position.x + _n(62), y), n,
-			HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(104), _fs(18), -1, INK)
-		y += h + _n(16)
-	_foot(f, r, "[N] close")
+			wide, _fs(18)).y
+		if y + h > top - _n(30) and y < bot + _n(30):
+			draw_string(f, Vector2(r.position.x + _n(38), y), "-",
+				HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(18), ACCENT)
+			draw_multiline_string(f, Vector2(r.position.x + _n(62), y), n,
+				HORIZONTAL_ALIGNMENT_LEFT, wide, _fs(18), -1, INK)
+		y += h + gap
+
+	# mask whatever ran past the band, then put the furniture back over it.
+	# The panel itself is not quite opaque, so one coat leaves the line you
+	# scrolled past ghosting through the heading.
+	var over := Rect2(r.position.x + 2.0, r.position.y + 2.0, r.size.x - 4.0,
+		top - r.position.y - _n(14))
+	var under := Rect2(r.position.x + 2.0, bot + _n(6), r.size.x - 4.0,
+		r.end.y - bot - _n(6) - 2.0)
+	for coat in 3:
+		draw_rect(over, PANEL)
+		draw_rect(under, PANEL)
+	draw_rect(r, EDGE, false, 2.0)
+	_head(f, r, "NOTEBOOK", "%d of %d significant items recovered"
+		% [Game.story_found(), Game.story_total()])
+
+	# how far down it you are
+	if total > bot - top:
+		var track := Rect2(r.end.x - _n(30), top, _n(4), bot - top)
+		draw_rect(track, Color(EDGE, 0.5))
+		var frac: float = (bot - top) / total
+		var thumb: float = maxf(track.size.y * frac, _n(24))
+		var at: float = track.position.y + (track.size.y - thumb) \
+			* (_notes_y / maxf(total - (bot - top), 1.0))
+		draw_rect(Rect2(track.position.x, at, track.size.x, thumb), ACCENT)
+		_foot(f, r, "up/down to read through it    [N] close")
+	else:
+		_foot(f, r, "[N] close")
 
 
 func _draw_inventory(f: Font, vp: Vector2) -> void:
 	draw_rect(Rect2(Vector2.ZERO, vp), Color(0, 0, 0, 0.55))
 	var r := _centre(vp, 980, 700)
 	_panel(r)
-	_head(f, r, "INVENTORY", "carrying %d%s" % [Game.inventory.size(),
-		"    at the sink" if _at_sink else ""])
+	_head(f, r, "AT THE SINK" if _at_sink else "INVENTORY",
+		"" if _at_sink else "carrying %d" % Game.inventory.size())
 
 	var bag := _bag_order()
 	var y: float = r.position.y + _n(118)
 	if _at_sink:
-		# only here is there anything to measure out, so only here is the
-		# list worth splitting up
-		var mixable := 0
-		for id in bag:
-			if _cups.has(id):
-				mixable += 1
-		y = _bag_section(f, r, y, "GOES IN THE MIX", bag.slice(0, mixable), 0, false)
-		y = _bag_section(f, r, y, "EVERYTHING ELSE", bag.slice(mixable), mixable, true)
+		y = _bag_section(f, r, y, "WHAT GOES IN THE MIX", bag, 0, false)
 	else:
 		y = _bag_section(f, r, y, "", bag, 0, true)
 

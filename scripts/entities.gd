@@ -11,6 +11,8 @@ const WEAK_LT   := Color("c69a63")
 const BRITTLE   := Color("8d8267")
 # Sickly yellow-green, nothing like the blue-green of the tree, and hazy at
 # the edge rather than made of solid lobes.
+const FP := preload("res://scripts/floorplan.gd")
+
 const FUME      := Color(0.80, 0.87, 0.20, 0.20)
 const FUME_CORE := Color(0.86, 0.90, 0.32, 0.26)
 const FUME_EDGE := Color(0.72, 0.78, 0.12, 0.55)
@@ -73,8 +75,8 @@ func _ready() -> void:
 		lift.position = l["pos"]
 		lift.z_index = 40
 		add_child(lift)
-	var press := KeyPress.new()
-	press.position = Content.KEY_PRESS
+	var press := KeyBox.new()
+	press.position = Content.KEY_BOX
 	press.z_index = 26
 	add_child(press)
 	var out_door := ExitDoor.new()
@@ -186,7 +188,16 @@ class Pickup extends Node2D:
 
 # ══ Branch ═══════════════════════════════════════════════════════════════
 class Branch extends StaticBody2D:
+	# A limb is metres long, so standing anywhere along one reports a distance
+	# of nothing and it wins every contest on proximity alone. It is scenery
+	# you may want to cut, so it takes a penalty and only comes up when there
+	# is nothing else in reach.
+	const SCENERY := -28.0
+
 	const CUT_TIME := 2.0
+	const FREE_TIME := 3.0   # working a bound blade back out of the grain
+	const FREE_MORE := 1.8   # and longer again each time it goes back in
+	const FREE_MAX := 10.0
 	const CHOP_GAP := 0.55
 
 	const STEPS := 20       # samples along the run, for the outline and grain
@@ -196,12 +207,13 @@ class Branch extends StaticBody2D:
 	var length := 180.0
 	var thick := 30.0
 	var cut := 0.0          # seconds of sawing done so far
+	var freeing := 0.0      # seconds spent pulling a stuck blade out
 	var seed_v := 0.0       # fixed per root, so its shape never shifts
 	var gate := false       # grown into a doorframe: softening is not enough
 	var _chop := 0.0
 
 	func bias() -> float:
-		return 0.0
+		return SCENERY
 
 	func setup(d: Dictionary) -> void:
 		position = d["pos"]
@@ -219,6 +231,11 @@ class Branch extends StaticBody2D:
 		sh.size = Vector2(length, thick)
 		cs.shape = sh
 		add_child(cs)
+
+	# The ring goes round the whole run of it, not round the nearest inch.
+	func highlight() -> Dictionary:
+		return {"pos": global_position, "size": Vector2(length, thick),
+			"rot": rotation}
 
 	# Closest point on the limb itself, so you can prompt anywhere along it
 	# rather than only near its midpoint.
@@ -238,7 +255,21 @@ class Branch extends StaticBody2D:
 	func _bound() -> bool:
 		return gate and brittle and not Game.flag("gate_cut")
 
+	# A wrong order left the blade in the limb: nothing else happens here
+	# until it is out again.
+	func _stuck() -> bool:
+		return _bound() and Game.cut_bound
+
+	# Each time it binds, the blade sits deeper and takes longer to work out.
+	func free_time() -> float:
+		return minf(FREE_TIME + FREE_MORE * maxi(Game.cut_binds - 1, 0), FREE_MAX)
+
 	func prompt() -> String:
+		if _stuck():
+			if freeing > 0.0:
+				return "Working the blade free... %d%%" \
+					% int(freeing / free_time() * 100.0)
+			return "The blade is stuck fast in it. Hold E to work it free"
 		if _bound():
 			return "Softened, but the grain in it will bind the blade"
 		if cuttable():
@@ -249,31 +280,51 @@ class Branch extends StaticBody2D:
 			return "Pour solution on the limb (%d left)" % Game.solution_charges
 		return "This limb is too dense to cut"
 
-	# Held-E progress. Returns how far through the cut we are, 0..1.
+	# Held-E progress. Returns how far through the work we are, 0..1 —
+	# either cutting through the limb, or pulling a bound blade back out.
 	func saw(delta: float) -> float:
+		if _stuck():
+			freeing += delta
+			_chop -= delta
+			if _chop <= 0.0:
+				_chop = CHOP_GAP * 1.6
+				Sfx.play("chop", -22.0, 0.6)
+			if freeing >= free_time():
+				freeing = 0.0
+				Game.cut_bound = false
+				Sfx.play("crack", -14.0)
+				Game.toast.emit("The blade comes out of the grain. The cuts have "
+					+ "closed over.")
+			return freeing / free_time()
 		if not cuttable():
 			return 0.0
 		cut += delta
 		_chop -= delta
 		if _chop <= 0.0:
 			_chop = CHOP_GAP
-			Sfx.play("chop", -8.0, 1.0 + cut / CUT_TIME * 0.25)
+			Sfx.play("chop", -19.0, 1.0 + cut / CUT_TIME * 0.25)
 		queue_redraw()
 		if cut >= CUT_TIME:
-			Sfx.play("crack", -4.0)
-			Sfx.play("fall", -8.0)
+			Sfx.play("crack", -15.0)
+			Sfx.play("fall", -17.0)
 			Game.toast.emit("The limb splits and falls away.")
 			queue_free()
 			return 1.0
 		return cut / CUT_TIME
 
-	# Let go and the cut closes up again, slower than it opened.
+	# Let go and the cut closes up again, slower than it opened. A blade half
+	# worked out settles back in just as surely.
 	func relax(delta: float) -> void:
 		if cut > 0.0:
 			cut = maxf(cut - delta * 0.6, 0.0)
 			queue_redraw()
+		if freeing > 0.0:
+			freeing = maxf(freeing - delta * 0.6, 0.0)
 
 	func act() -> void:
+		if _stuck():
+			Game.toast.emit("Not while the blade is in it.")
+			return
 		if _bound():
 			Game.open_cut.emit()
 			return
@@ -286,7 +337,7 @@ class Branch extends StaticBody2D:
 			Game.toast.emit("The bark blisters and goes grey. It will break now.")
 			queue_redraw()
 		else:
-			Sfx.play("chop", -14.0, 0.7)
+			Sfx.play("chop", -22.0, 0.7)
 			Game.add_note("Dark hardened limbs will not cut. Joe had something he "
 				+ "mixed up that softened them.")
 			Game.toast.emit("Hardened heartwood — the blade bounces off it. Joe was "
@@ -360,18 +411,24 @@ class Branch extends StaticBody2D:
 		if cut > 0.0:
 			_draw_cracks(cut / CUT_TIME)
 
-	# The three hearts you have to cut, drawn so the page has something to
-	# name: a pale ring, a black knot, a split.
+	# The four hearts you have to cut, drawn so the page has something to
+	# name: a pale ring, a black knot, a bead of sap, a split.
 	func _marks() -> void:
-		var ring := _mid(0.24)
-		var h := _half(0.24)
+		var ring := _mid(0.2)
+		var h := _half(0.2)
 		draw_line(ring + Vector2(0, -h), ring + Vector2(0, h),
 			Color(0.90, 0.86, 0.72, 0.9), 5.0)
-		var knot := _mid(0.5)
-		draw_circle(knot, _half(0.5) * 0.55, Color(0.12, 0.09, 0.06, 0.95))
-		draw_circle(knot, _half(0.5) * 0.3, Color(0.30, 0.22, 0.14, 0.95))
-		var split := _mid(0.78)
-		var sh := _half(0.78)
+		var knot := _mid(0.42)
+		draw_circle(knot, _half(0.42) * 0.55, Color(0.12, 0.09, 0.06, 0.95))
+		draw_circle(knot, _half(0.42) * 0.3, Color(0.30, 0.22, 0.14, 0.95))
+		var seam := _mid(0.62)
+		var mh := _half(0.62)
+		draw_line(seam + Vector2(-5, -mh + 3), seam + Vector2(4, mh - 3),
+			Color(0.62, 0.40, 0.10, 0.85), 3.0)
+		draw_circle(seam, 3.4, Color(0.88, 0.63, 0.20, 0.95))
+		draw_circle(seam + Vector2(3, mh * 0.45), 2.0, Color(0.88, 0.63, 0.20, 0.8))
+		var split := _mid(0.82)
+		var sh := _half(0.82)
 		for i in 3:
 			var f: float = -1.0 + i
 			draw_line(split + Vector2(f * 2.0, -sh + 2.0),
@@ -436,8 +493,10 @@ class Fume extends Node2D:
 	func _ready() -> void:
 		add_to_group("act")
 
+	# Same as a limb: it is a big soft thing you are standing at the edge of,
+	# so it gives way to anything you might have come for.
 	func bias() -> float:
-		return 8.0
+		return -18.0
 
 	# The cloud pushes you out at 0.72r, which for the big one is further than
 	# the player can reach. Prompt from the edge of the cloud, not its centre.
@@ -471,8 +530,11 @@ class Fume extends Node2D:
 			return
 		# Standing in it only starts the clock; Game counts it down and puts
 		# you on the doorstep if you are still in here when it runs out.
-		if p.global_position.distance_to(global_position) < radius * 0.72:
+		var d: float = p.global_position.distance_to(global_position)
+		if d < radius * 0.72:
 			Game.fog_touch()
+		elif d < radius * 1.15:
+			Game.think("gas")      # close enough to smell it, not yet in it
 
 	func _draw() -> void:
 		# drifting puffs, thickest in the middle and thinning outwards, so it
@@ -586,8 +648,8 @@ class Lift extends Node2D:
 			Color(1, 0.95, 0.7, 0.5 if ready_now else 0.25))
 
 
-# ══ The key press: four hooks, one key off it at a time ══════════════════
-class KeyPress extends Node2D:
+# ══ The key box: four hooks, one key taken at a time ═════════════════════
+class KeyBox extends Node2D:
 	func _ready() -> void:
 		add_to_group("act")
 
@@ -600,17 +662,16 @@ class KeyPress extends Node2D:
 	func prompt() -> String:
 		var held := Game.held_key()
 		if held == "":
-			return "Take a key off the press"
-		return "Swap the key (%s)" % Content.ITEMS[held]["name"].to_lower()
+			return "Take a key"
+		return "Swap the %s for another" % Content.ITEMS[held]["name"].to_lower()
 
 	func act() -> void:
 		var opts := []
 		for k in Content.KEYS:
 			opts.append("%s tag" % k["tag"])
 		Game.open_choice.emit({
-			"title": "Key press", "kind": "key",
-			"blurb": "Four hooks, four tags. One goes out at a time and the "
-				+ "board wants it back on the tag.",
+			"title": "Key box", "kind": "key",
+			"blurb": "Four hooks, four tags. Take one key at a time.",
 			"options": opts,
 		})
 
@@ -661,23 +722,21 @@ class ExitDoor extends Node2D:
 
 	func act() -> void:
 		if not Game.flag("read_job"):
-			Game.toast.emit("Nothing to go out for. The board by the door has "
-				+ "what is open.")
+			Game.toast.emit("Nowhere to go yet. The board by the door has the job.")
 			return
 		var short := _short()
 		if not short.is_empty():
-			Game.toast.emit("Not without the %s." % " or the ".join(short))
+			Game.toast.emit("Not without the %s." % " and the ".join(short))
 			return
 		if Game.held_key() == "":
-			Game.toast.emit("No key on you. They are on the press by the door.")
+			Game.toast.emit("You need a van key. They are in the box by the door.")
 			return
 		if Game.flag("signed_out"):
 			Game.begin_ride(Content.ENTRANCE, true)
 			return
 		Game.open_choice.emit({
 			"title": "Fire door", "kind": "lock",
-			"blurb": "A latch in the handle, a deadbolt over it, and a padlock "
-				+ "through the push bar. You have the %s."
+			"blurb": "Three locks on this door. You are holding the %s."
 				% Content.ITEMS[Game.held_key()]["name"].to_lower(),
 			"options": Content.LOCKS,
 		})
@@ -700,6 +759,7 @@ class Doorway extends Node2D:
 	var to := Vector2.ZERO
 	var label := ""
 	var needs_done := false      # the way home, which only opens once you are
+	var _gone := false
 
 	func _ready() -> void:
 		add_to_group("act")
@@ -722,6 +782,16 @@ class Doorway extends Node2D:
 			return
 		Game.begin_ride(to, false)
 
+	# Once the job is done you do not press anything: walking into the doorway
+	# you came in by is leaving.
+	func _process(_delta: float) -> void:
+		if _shut() or _gone:
+			return
+		var p := get_tree().get_first_node_in_group("player")
+		if p != null and p.global_position.distance_to(global_position) < 30.0:
+			_gone = true
+			Game.begin_ride(to, false)
+
 	func _draw() -> void:
 		var pulse: float = 0.16 if _shut() else 0.34
 		draw_arc(Vector2.ZERO, 26.0, 0, TAU, 28, Color(1, 0.95, 0.7, pulse), 2.0)
@@ -730,9 +800,14 @@ class Doorway extends Node2D:
 # ══ Light switch: the two rooms on the house wiring ══════════════════════
 class Switch extends Node2D:
 	var room := 0
+	var _t := 0.0
 
 	func _ready() -> void:
 		add_to_group("act")
+
+	func _process(delta: float) -> void:
+		_t += delta
+		queue_redraw()
 
 	func bias() -> float:
 		return 30.0
@@ -757,6 +832,11 @@ class Switch extends Node2D:
 			Mat.shade(Mat.PORC_SH, 0.65), 1.5)
 		if on:
 			draw_circle(Vector2(-1, -1), 15.0, Color(1, 0.95, 0.75, 0.10))
+		# the same ring the papers and the doors wear, so a switch reads as
+		# something you can work rather than as fittings
+		var pulse: float = 0.34 if not on else 0.18
+		draw_arc(Vector2(-1, -1), 22.0, 0, TAU, 26,
+			Color(1, 0.95, 0.7, pulse + 0.08 * sin(_t * 2.2)), 2.0)
 
 
 # ══ Combination lock: the bedroom door ═══════════════════════════════════
@@ -828,6 +908,7 @@ class FixedNote extends Node2D:
 	func act() -> void:
 		read = true
 		Game.notice.emit(data["title"], data["body"])
+		Game.think("clue")
 		if data.get("note", "") != "":
 			Game.add_note(data["note"])
 		if data.get("grants", "") != "":
@@ -927,12 +1008,21 @@ class Station extends Node2D:
 		return 45.0
 
 	func prompt() -> String:
-		return "Examine the body" if not examined else "Take the bunny from his hands"
+		if not examined:
+			return "Examine the body"
+		if Game.has_item("bunny"):
+			return "Joe Wood"
+		return "Take the bunny from his hands"
 
 	func act() -> void:
+		if examined and Game.has_item("bunny"):
+			Game.notice.emit("Joe Wood", "He is as you found him, with the tree "
+				+ "through him and his hands empty now.")
+			return
 		if not examined:
 			examined = true
 			Game.set_flag("found_body")
+			Game.think("body")
 			Game.add_note("Joe Wood died here. A tree is growing out through his chest.")
 			Game.notice.emit("Joe Wood", "A big man in a red-and-yellow flannel shirt, "
 				+ "blue jeans, brown boots gone green with mould. He is sitting against "
@@ -942,6 +1032,7 @@ class Station extends Node2D:
 				+ "folded around something soft.")
 			queue_redraw()
 		else:
+			Game.think("bunny")
 			Game.add_item("bunny")
 			queue_redraw()
 
@@ -984,7 +1075,7 @@ class Station extends Node2D:
 		for s in [-1.0, 1.0]:
 			draw_line(Vector2(24.0 * s, -6), Vector2(11.0 * s, 20), FLANNEL, 13.0)
 			draw_circle(Vector2(9.0 * s, 23), 7.0, SKIN)
-		if not examined:
+		if not Game.has_item("bunny"):
 			_oval(Vector2(0, 24), 9, 7, Color("d9b9c4"))  # the bunny, just showing
 
 		# head, tipped back against the wall
@@ -1020,20 +1111,90 @@ class Container2D extends Node2D:
 	# Drawers and cupboards are a piece of furniture rather than a point, so
 	# they open from further off than you can cut a limb from.
 	const OPEN_REACH := 62.0
+	const DOOR := 72.0         # how wide one door of a long run is
 
 	var label := ""
 	var items: Array = []
 	var opened := false
+	var _door := Rect2()      # the one door of it that lights up
+	var _work := Rect2()      # that door and the floor you use it from
 
+	# An emptied cupboard steps out of the way of whatever came out of it.
 	func bias() -> float:
-		return 18.0
+		return -6.0 if opened else 18.0
+
+	# You work on the cupboard, not on the floor tile in front of it. Measuring
+	# from its nearest edge means walking right up to it gets you closer rather
+	# than putting the spot you were aiming at behind your back.
+	func reach_point(from: Vector2) -> Vector2:
+		return Vector2(clampf(from.x, _work.position.x, _work.end.x),
+			clampf(from.y, _work.position.y, _work.end.y))
+
+	func highlight() -> Dictionary:
+		return {"pos": _door.get_center(), "size": _door.size, "rot": 0.0}
 
 	func reach() -> float:
 		return OPEN_REACH
 
+	# Measured from its nearest edge, a unit is underfoot the moment you are
+	# against it, so brushing past one on your way to the next is no reason to
+	# open it: which way you are turned decides, however close you are.
+	func must_face() -> bool:
+		return true
+
 	func setup(d: Dictionary) -> void:
 		position = d["pos"]
 		items = d["items"]
+		var run := _unit(position)
+		# A run of kitchen units is one rectangle with several cupboards in it,
+		# and each of those is its own place something could be. A small piece
+		# of furniture is a door in its own right and is taken whole.
+		if run.size == Vector2.ZERO:
+			_door = Rect2(position - Vector2(26, 26), Vector2(52, 52))
+		elif run.size.x > DOOR * 1.4 and run.size.x >= run.size.y:
+			var h := _share(run, true)
+			_door = Rect2(h.x, run.position.y, h.y - h.x, run.size.y)
+		elif run.size.y > DOOR * 1.4:
+			var v := _share(run, false)
+			_door = Rect2(run.position.x, v.x, run.size.x, v.y - v.x)
+		else:
+			_door = run
+		# You work a unit from its face or from the floor in front of it, and
+		# from every step in between: measuring to the nearer of the two means
+		# walking right up to one cannot put it behind your back.
+		_work = _door.expand(position)
+
+	# Which piece of furniture this is the front of.
+	func _unit(p: Vector2) -> Rect2:
+		var out := Rect2()
+		var best := 48.0
+		for r in FP.SOLIDS:
+			var near := Vector2(clampf(p.x, r.position.x, r.end.x),
+				clampf(p.y, r.position.y, r.end.y))
+			var gap := p.distance_to(near)
+			if gap < best:
+				best = gap
+				out = r
+		return out
+
+	# A run is shared out between the cupboards along it: one door each,
+	# meeting its neighbours halfway, and never wider than a door.
+	func _share(run: Rect2, across: bool) -> Vector2:
+		var mine: float = position.x if across else position.y
+		var lo: float = run.position.x if across else run.position.y
+		var hi: float = run.end.x if across else run.end.y
+		for c in Content.CONTAINERS:
+			var p: Vector2 = c["pos"]
+			if p == position or _unit(p) != run:
+				continue
+			var theirs: float = p.x if across else p.y
+			if theirs < mine:
+				lo = maxf(lo, (mine + theirs) * 0.5)
+			else:
+				hi = minf(hi, (mine + theirs) * 0.5)
+		lo = maxf(lo, mine - DOOR * 0.5)
+		hi = minf(hi, mine + DOOR * 0.5)
+		return Vector2(lo, maxf(hi, lo + 24.0))
 
 	func _ready() -> void:
 		add_to_group("act")
