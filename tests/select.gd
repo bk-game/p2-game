@@ -24,12 +24,36 @@ func _ready() -> void:
 			var lost := -1
 			for d in range(4, 70, 2):
 				pl.global_position = n.global_position + dir * d
-				pl.facing = (-dir).angle()
+				# turned towards the thing itself: for a unit that is its
+				# nearest edge, not the patch of floor it stands on
+				var at: Vector2 = n.reach_point(pl.global_position) \
+					if n.has_method("reach_point") else n.global_position
+				var look: Vector2 = at - pl.global_position
+				pl.facing = look.angle() if look.length() > 0.01 else (-dir).angle()
 				pl._scan()
 				if pl._target == n:
 					had = true
 				elif had and lost < 0:
-					lost = d
+					# Units stand close enough together to share a doorstep, so
+					# one handing over to a nearer unit is not losing it. Losing
+					# it to something further off is the bug this suite is for.
+					var t = pl._target
+					var handoff: bool = t != null and n.has_method("must_face") \
+						and t.has_method("must_face") \
+						and pl.global_position.distance_to(
+							t.reach_point(pl.global_position)) \
+							< pl.global_position.distance_to(at)
+					if not handoff:
+						lost = d
+			if had and lost > 0 and lost < 30 and OS.get_environment("DUMP") != "":
+				pl.global_position = n.global_position + dir * lost
+				var at2: Vector2 = n.reach_point(pl.global_position) \
+					if n.has_method("reach_point") else n.global_position
+				pl.facing = (at2 - pl.global_position).angle()
+				pl._scan()
+				print("  at %s -> %s at %s" % [pl.global_position,
+					pl._target.prompt() if pl._target != null else "nothing",
+					pl._target.global_position if pl._target != null else Vector2.ZERO])
 			if had and lost > 0 and lost < 30:
 				print("FAIL  %s at %s stops being the target %dpx away, walking in "
 					% [n.prompt(), n.global_position, lost]

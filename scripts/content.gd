@@ -358,7 +358,7 @@ const ITEMS := {
 	},
 	"exfluid": {
 		"name": "Extinguisher fluid", "kind": "chem", "glyph": "bottle",
-		"tint": "9fc7a8", "pos": Vector2(1486, 692),
+		"tint": "9fc7a8", "pos": Vector2(1451, 692),
 		"body": "A decanted bottle of extinguisher agent. Joe must have emptied a "
 			+ "spare cylinder into it.",
 		"note": "",
@@ -525,7 +525,7 @@ const CONTAINERS := [
 	{"pos": Vector2(376, 186), "items": ["norust"]},
 	{"pos": Vector2(392, 384), "items": ["water"]},
 	{"pos": Vector2(1170, 118), "items": ["bleach"]},
-	{"pos": Vector2(1486, 692), "items": ["exfluid"]},
+	{"pos": Vector2(1451, 692), "items": ["exfluid"]},
 	{"pos": Vector2(806, 504), "items": ["log_water"]},
 	{"pos": Vector2(1218, 528), "items": ["police_report"]},
 	{"pos": Vector2(150, 516), "items": ["joes_axe"]},
@@ -539,7 +539,7 @@ const CONTAINERS := [
 	{"pos": Vector2(992, 822), "items": []},
 	{"pos": Vector2(262, 894), "items": []},
 	{"pos": Vector2(170, 852), "items": []},
-	{"pos": Vector2(1540, 700), "items": []},
+	{"pos": Vector2(1523, 700), "items": []},
 	{"pos": Vector2(214, 306), "items": []},
 ]
 

@@ -83,10 +83,14 @@ func _scan() -> void:
 			continue
 		# You have to be turned towards a thing to work on it. Anything you
 		# are all but standing on is exempt: which way you last walked says
-		# nothing about an item under your feet.
+		# nothing about an item under your feet. Furniture is the exception:
+		# you reach it at its nearest edge, so it is underfoot the moment you
+		# are against it, and brushing past one is not a reason to open it.
 		var off: float = absf(angle_difference(facing,
 			(at - global_position).angle())) if d > 0.01 else 0.0
-		if d > TOUCH and off > ARC:
+		var underfoot: bool = d <= TOUCH \
+			and not (n.has_method("must_face") and n.must_face())
+		if not underfoot and off > ARC:
 			continue
 		# Two limbs crossing each other both report no distance at all, so the
 		# one you are most directly turned towards breaks the tie.

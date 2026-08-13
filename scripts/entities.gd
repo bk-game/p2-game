@@ -1067,38 +1067,90 @@ class Container2D extends Node2D:
 	# Drawers and cupboards are a piece of furniture rather than a point, so
 	# they open from further off than you can cut a limb from.
 	const OPEN_REACH := 62.0
+	const DOOR := 72.0         # how wide one door of a long run is
 
 	var label := ""
 	var items: Array = []
 	var opened := false
-	var _furniture := Rect2()
+	var _door := Rect2()      # the one door of it that lights up
+	var _work := Rect2()      # that door and the floor you use it from
 
+	# An emptied cupboard steps out of the way of whatever came out of it.
 	func bias() -> float:
-		return 18.0
+		return -6.0 if opened else 18.0
 
-	# A container is a point on the floor in front of a cupboard. The ring
-	# belongs on the cupboard, so find whichever piece of furniture it is
-	# standing at and use that.
+	# You work on the cupboard, not on the floor tile in front of it. Measuring
+	# from its nearest edge means walking right up to it gets you closer rather
+	# than putting the spot you were aiming at behind your back.
+	func reach_point(from: Vector2) -> Vector2:
+		return Vector2(clampf(from.x, _work.position.x, _work.end.x),
+			clampf(from.y, _work.position.y, _work.end.y))
+
 	func highlight() -> Dictionary:
-		if _furniture.size == Vector2.ZERO:
-			return {}
-		return {"pos": _furniture.get_center(), "size": _furniture.size, "rot": 0.0}
+		return {"pos": _door.get_center(), "size": _door.size, "rot": 0.0}
 
 	func reach() -> float:
 		return OPEN_REACH
 
+	# Measured from its nearest edge, a unit is underfoot the moment you are
+	# against it, so brushing past one on your way to the next is no reason to
+	# open it: which way you are turned decides, however close you are.
+	func must_face() -> bool:
+		return true
+
 	func setup(d: Dictionary) -> void:
 		position = d["pos"]
 		items = d["items"]
-		var best := 1e9
+		var run := _unit(position)
+		# A run of kitchen units is one rectangle with several cupboards in it,
+		# and each of those is its own place something could be. A small piece
+		# of furniture is a door in its own right and is taken whole.
+		if run.size == Vector2.ZERO:
+			_door = Rect2(position - Vector2(26, 26), Vector2(52, 52))
+		elif run.size.x > DOOR * 1.4 and run.size.x >= run.size.y:
+			var h := _share(run, true)
+			_door = Rect2(h.x, run.position.y, h.y - h.x, run.size.y)
+		elif run.size.y > DOOR * 1.4:
+			var v := _share(run, false)
+			_door = Rect2(run.position.x, v.x, run.size.x, v.y - v.x)
+		else:
+			_door = run
+		# You work a unit from its face or from the floor in front of it, and
+		# from every step in between: measuring to the nearer of the two means
+		# walking right up to one cannot put it behind your back.
+		_work = _door.expand(position)
+
+	# Which piece of furniture this is the front of.
+	func _unit(p: Vector2) -> Rect2:
+		var out := Rect2()
+		var best := 48.0
 		for r in FP.SOLIDS:
-			var near: Vector2 = (r as Rect2).get_center()
-			near.x = clampf(position.x, r.position.x, r.end.x)
-			near.y = clampf(position.y, r.position.y, r.end.y)
-			var d2 := position.distance_to(near)
-			if d2 < best and d2 < 48.0:
-				best = d2
-				_furniture = r
+			var near := Vector2(clampf(p.x, r.position.x, r.end.x),
+				clampf(p.y, r.position.y, r.end.y))
+			var gap := p.distance_to(near)
+			if gap < best:
+				best = gap
+				out = r
+		return out
+
+	# A run is shared out between the cupboards along it: one door each,
+	# meeting its neighbours halfway, and never wider than a door.
+	func _share(run: Rect2, across: bool) -> Vector2:
+		var mine: float = position.x if across else position.y
+		var lo: float = run.position.x if across else run.position.y
+		var hi: float = run.end.x if across else run.end.y
+		for c in Content.CONTAINERS:
+			var p: Vector2 = c["pos"]
+			if p == position or _unit(p) != run:
+				continue
+			var theirs: float = p.x if across else p.y
+			if theirs < mine:
+				lo = maxf(lo, (mine + theirs) * 0.5)
+			else:
+				hi = minf(hi, (mine + theirs) * 0.5)
+		lo = maxf(lo, mine - DOOR * 0.5)
+		hi = minf(hi, mine + DOOR * 0.5)
+		return Vector2(lo, maxf(hi, lo + 24.0))
 
 	func _ready() -> void:
 		add_to_group("act")
