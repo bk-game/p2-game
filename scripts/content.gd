@@ -189,7 +189,7 @@ const ITEMS := {
 	},
 
 	# ── Tools ───────────────────────────────────────────────────────────
-	"axe": {
+	"joes_axe": {
 		"name": "Joe's axe", "kind": "tool", "glyph": "axe",
 		"tint": "8a6440", "pos": Vector2(150, 516),
 		"body": "A felling axe, the handle worn smooth. The bit is chipped all along "
@@ -208,14 +208,13 @@ const ITEMS := {
 	},
 
 	# ── The kit you take out with you ───────────────────────────────────
-	"lamp": {
-		"name": "Hand lamp", "kind": "tool", "glyph": "extinguisher",
-		"tint": "d8c98a", "pos": Vector2(-720, 450),
-		"body": "A square hand lamp off the shelf in the store, heavy, with a "
-			+ "strap. It throws about as far as you would want to walk before "
-			+ "looking behind you.",
+	"axe": {
+		"name": "Axe", "kind": "tool", "glyph": "axe",
+		"tint": "8a6440", "pos": Vector2(-720, 450),
+		"body": "A felling axe off the rack in the store, sharpened by somebody "
+			+ "who meant it. Company property, signed out with everything else.",
 		"note": "",
-		"use": "It is what you are seeing by. [C] puts it out.",
+		"use": "For the pale limbs. Stand at one and hold [E].",
 	},
 	"docket": {
 		"name": "Job docket", "kind": "doc", "glyph": "paper",
@@ -353,10 +352,10 @@ const FIXED_NOTES := [
 			+ "Anything you carry out that says something about him is paid on.\n\n"
 			+ "NOTHING LEAVES THIS FLOOR WITHOUT:\n"
 			+ "\tthe docket, off this board\n"
-			+ "\ta lamp, out of the store\n"
+			+ "\tan axe, off the rack in the store\n"
 			+ "\ta van key, off the press by the door",
 		"note": "The job: recover Joe Wood and whatever says who he was. Sign out "
-			+ "with the docket, a lamp from the store, and a van key off the press.",
+			+ "with the docket, an axe from the store, and a van key off the press.",
 		"grants": "read_job",
 	},
 	{
@@ -440,7 +439,7 @@ const CONTAINERS := [
 	{"pos": Vector2(1486, 692), "items": ["exfluid"]},
 	{"pos": Vector2(806, 504), "items": ["log_water"]},
 	{"pos": Vector2(1218, 528), "items": ["police_report"]},
-	{"pos": Vector2(150, 516), "items": ["axe"]},
+	{"pos": Vector2(150, 516), "items": ["joes_axe"]},
 	{"pos": Vector2(500, 186), "items": []},
 	{"pos": Vector2(610, 186), "items": []},
 	{"pos": Vector2(700, 186), "items": ["log_cut"]},
@@ -520,7 +519,7 @@ const LIFTS := [
 # The fire door at the bottom of the office. Everything you need to sign out
 # with has to be on you before it opens.
 const OFFICE_EXIT := Vector2(-376, 540)
-const KIT := ["docket", "lamp"]
+const KIT := ["docket", "axe"]
 
 # ── The key press ────────────────────────────────────────────────────────
 # Four keys on hooks, tagged by colour, one signed out at a time. Which one

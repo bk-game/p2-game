@@ -57,10 +57,10 @@ func _ready() -> void:
 	fails += _expect("and says what is missing first",
 		door.prompt().contains("docket"))
 
-	# the docket off the board and the lamp out of the store
+	# the docket off the board and the axe out of the store
 	Game.add_item("docket")
 	_dismiss(hud)
-	Game.add_item("lamp")
+	Game.add_item("axe")
 	_dismiss(hud)
 	fails += _expect("the door is ready for a key", door.prompt() == "Out to the yard")
 
@@ -102,7 +102,7 @@ func _ready() -> void:
 	fails += _expect("the padlock does", Game.try_lock(Content.VAN_LOCK))
 
 	door.act()
-	fails += _expect("the lift down starts the drive out", hud.mode == 7)
+	fails += _expect("the fire door starts the drive out", hud.mode == 7)
 	fails += _expect("and the world has already moved under it",
 		pl.global_position.distance_to(Content.ENTRANCE) < 1.0)
 	hud._unhandled_key_input(_key(KEY_E))          # skip the drive

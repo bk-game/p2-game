@@ -4,8 +4,7 @@ extends Node2D
 # you, stopping at the walls of the room you are in rather than shining
 # through them. Two rooms are on the house wiring and are dark until their
 # switch is found: in those you see only as far as your own light reaches,
-# and once they are lit their light gets out through the doorway. [C] toggles
-# the whole thing.
+# and once they are lit their light gets out through the doorway.
 
 const SEGMENTS := 256
 const RADIUS   := 330.0                 # how far the lantern carries
@@ -69,12 +68,6 @@ func _mouths(room: int) -> Array[Rect2]:
 			if (rect as Rect2).grow(2.0).intersects(d):
 				out.append(d)
 	return out
-
-
-func toggle() -> void:
-	enabled = not enabled
-	queue_redraw()
-	Game.toast.emit("Lantern %s." % ("on" if enabled else "off"))
 
 
 func _process(_d: float) -> void:

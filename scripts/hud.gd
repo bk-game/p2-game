@@ -196,10 +196,6 @@ func _unhandled_key_input(e: InputEvent) -> void:
 				mode = Mode.BAG
 				_at_sink = false
 				_sel = 0
-			elif k == KEY_C:
-				var lamp := get_tree().get_first_node_in_group("light")
-				if lamp != null:
-					lamp.toggle()
 			elif k == KEY_N:
 				mode = Mode.NOTES
 			elif k == KEY_R:
@@ -359,7 +355,7 @@ func _draw() -> void:
 		HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(18), INK)
 
 	# ── key hints ───────────────────────────────────────────────────────
-	var hint := "[E] interact   [I] inventory   [N] notebook   [C] lantern   [R] report"
+	var hint := "[E] interact   [I] inventory   [N] notebook   [R] report"
 	var hw: float = f.get_string_size(hint, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(22)).x
 	var hr := Rect2(vp.x - hw - _n(60), vp.y - _n(70), hw + _n(40), _n(46))
 	_panel(hr)

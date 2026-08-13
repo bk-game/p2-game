@@ -257,11 +257,11 @@ class Branch extends StaticBody2D:
 		_chop -= delta
 		if _chop <= 0.0:
 			_chop = CHOP_GAP
-			Sfx.play("chop", -8.0, 1.0 + cut / CUT_TIME * 0.25)
+			Sfx.play("chop", -19.0, 1.0 + cut / CUT_TIME * 0.25)
 		queue_redraw()
 		if cut >= CUT_TIME:
-			Sfx.play("crack", -4.0)
-			Sfx.play("fall", -8.0)
+			Sfx.play("crack", -15.0)
+			Sfx.play("fall", -17.0)
 			Game.toast.emit("The limb splits and falls away.")
 			queue_free()
 			return 1.0
@@ -286,7 +286,7 @@ class Branch extends StaticBody2D:
 			Game.toast.emit("The bark blisters and goes grey. It will break now.")
 			queue_redraw()
 		else:
-			Sfx.play("chop", -14.0, 0.7)
+			Sfx.play("chop", -22.0, 0.7)
 			Game.add_note("Dark hardened limbs will not cut. Joe had something he "
 				+ "mixed up that softened them.")
 			Game.toast.emit("Hardened heartwood — the blade bounces off it. Joe was "

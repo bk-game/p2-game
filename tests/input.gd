@@ -9,11 +9,7 @@ func _ready() -> void:
 	var hud = get_tree().get_first_node_in_group("hud")
 	var fails := 0
 
-	fails += _expect("light starts on", fog.enabled == true)
-	await _press(KEY_C)
-	fails += _expect("C turns the light off", fog.enabled == false)
-	await _press(KEY_C)
-	fails += _expect("C turns the light back on", fog.enabled == true)
+	fails += _expect("there is light to see by", fog.enabled == true)
 
 	await _press(KEY_I)
 	fails += _expect("I opens the bag", hud.mode == 2)
