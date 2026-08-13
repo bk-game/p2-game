@@ -343,7 +343,7 @@ func _notes_key(k: int) -> void:
 		KEY_END: _notes_y = 1e9      # clamped against the content when drawn
 
 
-# Which of the three marks to take, and in what order. Same entry as the
+# Which of the four marks to take, and in what order. Same entry as the
 # dial, but three slots and each mark only once.
 func _cut_key(k: int) -> void:
 	if k in [KEY_ESCAPE, KEY_Q, KEY_I]:
@@ -354,21 +354,22 @@ func _cut_key(k: int) -> void:
 		_lock_msg = ""
 		return
 	if k in [KEY_ENTER, KEY_KP_ENTER, KEY_E]:
-		if _code.length() < 3:
-			_lock_msg = "All three, in order."
+		if _code.length() < Content.CUT_MARKS.size():
+			_lock_msg = "All four, in order."
 			return
-		if Game.try_cut(_code):
-			mode = Mode.PLAY
-		else:
-			_lock_msg = "The blade binds and the cut closes over. Not that way."
-			_code = ""
+		# Right or wrong, the panel closes: a bound blade has to be worked out
+		# of the limb before there is anything to take an order in.
+		mode = Mode.PLAY
+		Game.try_cut(_code)
+		_code = ""
 		return
 	var mark := -1
-	if k >= KEY_1 and k <= KEY_3:
+	if k >= KEY_1 and k <= KEY_4:
 		mark = k - KEY_0
-	elif k >= KEY_KP_1 and k <= KEY_KP_3:
+	elif k >= KEY_KP_1 and k <= KEY_KP_4:
 		mark = k - KEY_KP_0
-	if mark > 0 and _code.length() < 3 and not _code.contains(str(mark)):
+	if mark > 0 and _code.length() < Content.CUT_MARKS.size() \
+			and not _code.contains(str(mark)):
 		_code += str(mark)
 		_lock_msg = ""
 
@@ -549,18 +550,19 @@ func _draw_cut(f: Font, vp: Vector2) -> void:
 	draw_rect(Rect2(Vector2.ZERO, vp), Color(0, 0, 0, 0.55))
 	var r := _centre(vp, 640, 380)
 	_panel(r)
-	_head(f, r, "THE GRAIN", "three hearts in it")
+	_head(f, r, "THE GRAIN", "four hearts in it")
 	draw_string(f, Vector2(r.position.x + _n(38), r.position.y + _n(124)),
-		"Take them in the order the grain will give, or the last cut binds.",
+		"Take them in the order the grain will give. Take them wrong and the "
+		+ "blade sticks fast.",
 		HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(76), _fs(17), DIM)
 	for i in Content.CUT_MARKS.size():
 		draw_string(f, Vector2(r.position.x + _n(38), r.position.y + _n(160) + i * _n(28)),
 			"%d   %s" % [i + 1, Content.CUT_MARKS[i]],
 			HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(19), INK)
-	var slot: float = _n(56)
-	var x0: float = r.get_center().x + _n(40)
-	for i in 3:
-		var box := Rect2(x0 + i * (slot + _n(12)), r.position.y + _n(168), slot, _n(66))
+	var slot: float = _n(50)
+	var x0: float = r.get_center().x + _n(24)
+	for i in Content.CUT_MARKS.size():
+		var box := Rect2(x0 + i * (slot + _n(10)), r.position.y + _n(168), slot, _n(66))
 		draw_rect(box, Color(0, 0, 0, 0.45))
 		draw_rect(box, EDGE, false, 2.0)
 		if i < _code.length():
@@ -569,7 +571,7 @@ func _draw_cut(f: Font, vp: Vector2) -> void:
 	if _lock_msg != "":
 		draw_string(f, Vector2(r.position.x + _n(38), r.end.y - _n(64)), _lock_msg,
 			HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(76), _fs(17), INK)
-	_foot(f, r, "1-3 in order    backspace    [E] cut    [I] step back")
+	_foot(f, r, "1-4 in order    backspace    [E] cut    [I] step back")
 
 
 # The card the game opens on. Nothing to read but the name and what you are:

@@ -128,13 +128,13 @@ const ITEMS := {
 		"name": "Logbook (page 5)", "kind": "doc", "glyph": "paper",
 		"tint": "c8b78d", "pos": Vector2(700, 186), "story": true,
 		"body": "17/9 — The one growing through the doorframe will not come apart "
-			+ "like the others even softened. There are three hearts in it and they "
-			+ "let go in an order. Take them wrong and the last cut binds, the blade "
-			+ "sticks, and it closes over by morning.\n\n"
-			+ "The knot first. Then the split. The pale ring last, and only last — "
-			+ "that is the one holding the weight.",
-		"note": "A limb grown into a doorframe has three hearts. Cut the knot, then "
-			+ "the split, then the pale ring last.",
+			+ "like the others even softened. There are four hearts in it and they "
+			+ "let go in an order. Take them wrong and the cut binds, the blade "
+			+ "sticks fast, and you spend ten minutes working it back out.\n\n"
+			+ "The knot first. Then the split. Then the sap seam. The pale ring "
+			+ "last, and only last — that is the one holding the weight.",
+		"note": "A limb grown into a doorframe has four hearts. Cut the knot, then "
+			+ "the split, then the sap seam, and the pale ring last.",
 		"grants": "knows_cut_order",
 	},
 	"log_water": {
@@ -384,12 +384,12 @@ const SWITCHES := [
 ]
 
 # ── The limb across the door under the tree ──────────────────────────────
-# It has grown into the frame and has three hearts in it. Softening it is not
+# It has grown into the frame and has four hearts in it. Softening it is not
 # enough: the cuts have to be taken in the order the grain will give, or the
 # last one binds the blade and the whole thing closes up again. The marks are
 # what you see on it; Joe worked the order out and wrote it down.
-const CUT_MARKS := ["the pale ring", "the black knot", "the split"]
-const CUT_ORDER := "231"
+const CUT_MARKS := ["the pale ring", "the sap seam", "the black knot", "the split"]
+const CUT_ORDER := "3421"
 
 # ── The lock on the bedroom ──────────────────────────────────────────────
 # Their room, and the way through to the bathroom beyond it. Joe put the date

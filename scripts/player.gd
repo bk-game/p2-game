@@ -55,7 +55,9 @@ func _saw(delta: float) -> void:
 	for n in get_tree().get_nodes_in_group("act"):
 		if not is_instance_valid(n) or not n.has_method("cuttable"):
 			continue
-		if n == _target and holding and n.cuttable():
+		# what the holding is for is the limb's business: cutting through it,
+		# or working a blade bound in the grain back out of it
+		if n == _target and holding:
 			progress = n.saw(delta)
 		else:
 			n.relax(delta)

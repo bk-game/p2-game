@@ -1,8 +1,10 @@
 extends Node2D
 
 # The limb grown into the doorframe takes both things: a dose of the
-# solution to soften it, and the three cuts taken in the order the grain
-# gives. Either on its own leaves it standing.
+# solution to soften it, and the four cuts taken in the order the grain
+# gives. Either on its own leaves it standing. Guessing is not a way through
+# it either: a wrong order leaves the blade stuck in the limb, and it takes
+# real seconds of holding E to get it back out before the next try.
 
 func _ready() -> void:
 	var main = load("res://scenes/main.tscn").instantiate()
@@ -28,16 +30,53 @@ func _ready() -> void:
 
 	gate.act()
 	fails += _expect("E opens the grain instead", hud.mode == 6)
-	for k in [KEY_3, KEY_2, KEY_1]:
+	for k in [KEY_1, KEY_2, KEY_3]:
+		hud._cut_key(k)
+	hud._cut_key(KEY_ENTER)
+	fails += _expect("three of the four is not an answer", hud.mode == 6)
+	for k in [KEY_4]:
 		hud._cut_key(k)
 	hud._cut_key(KEY_ENTER)
 	fails += _expect("a wrong order binds", not Game.flag("gate_cut"))
 	fails += _expect("still standing", not gate.cuttable())
 
-	for k in [KEY_2, KEY_3, KEY_1]:
+	# the cost of a guess: the blade is in the limb and the panel is shut
+	fails += _expect("the panel closes on a wrong order", hud.mode == 0)
+	fails += _expect("the blade is stuck", Game.cut_bound)
+	fails += _expect("and it says so", gate.prompt().contains("stuck"))
+	gate.act()
+	fails += _expect("E will not open the grain again", hud.mode == 0)
+	for i in 10:
+		gate.saw(0.1)
+	fails += _expect("a second of pulling is not enough", Game.cut_bound)
+	gate.relax(1.0)
+	for i in 10:
+		gate.saw(0.1)
+	fails += _expect("letting go loses the ground you made", Game.cut_bound)
+	for i in 25:
+		gate.saw(0.1)
+	fails += _expect("three seconds gets the blade out", not Game.cut_bound)
+	fails += _expect("and it does not fell the limb", is_instance_valid(gate))
+
+	# and it goes in deeper every time, so guessing gets dearer as you go
+	gate.act()
+	for k in [KEY_2, KEY_1, KEY_3, KEY_4]:
 		hud._cut_key(k)
 	hud._cut_key(KEY_ENTER)
-	fails += _expect("knot, split, ring gives", Game.flag("gate_cut"))
+	fails += _expect("a second guess binds it again", Game.cut_bound)
+	for i in 31:
+		gate.saw(0.1)
+	fails += _expect("three seconds no longer gets it out", Game.cut_bound)
+	for i in 20:
+		gate.saw(0.1)
+	fails += _expect("but five does", not Game.cut_bound)
+
+	gate.act()
+	fails += _expect("now the grain opens again", hud.mode == 6)
+	for k in [KEY_3, KEY_4, KEY_2, KEY_1]:
+		hud._cut_key(k)
+	hud._cut_key(KEY_ENTER)
+	fails += _expect("knot, split, seam, ring gives", Game.flag("gate_cut"))
 	fails += _expect("and now it can be cut", gate.cuttable())
 	fails += _expect("back to walking around", hud.mode == 0)
 	for i in 25:

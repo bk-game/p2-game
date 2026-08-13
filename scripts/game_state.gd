@@ -26,6 +26,8 @@ var flags := {}
 var room_lights := {}
 
 var solution_charges := 0
+var cut_bound := false        # the blade, stuck in the doorframe limb
+var cut_binds := 0            # how many times it has been stuck in there
 var extinguisher_charges := 3
 
 # ── Breathing the green ──────────────────────────────────────────────────
@@ -276,14 +278,24 @@ func try_code(code: String) -> bool:
 
 
 # ── Cutting the limb in the doorframe ────────────────────────────────────
-# Three marks, taken in the order the grain gives. Returns whether it held.
+# Four marks, taken in the order the grain gives. Get it wrong and the blade
+# sticks fast, exactly as the logbook says it will: it has to be worked back
+# out of the limb before you get another go, and it goes in deeper every time
+# you bind it, so working your way through the orders costs more the further
+# into them you get. Reading the page is the cheap way through.
 func try_cut(seq: String) -> bool:
 	if seq != Content.CUT_ORDER:
 		Sfx.play("chop", -12.0, 0.7)
+		cut_bound = true
+		cut_binds += 1
+		toast.emit("The cut binds again, and the blade goes in deeper than last "
+			+ "time." if cut_binds > 1
+			else "The cut binds and the blade sticks fast in the grain.")
 		return false
 	set_flag("gate_cut")
 	Sfx.play("crack", -8.0)
-	add_note("The limb in the doorframe gives up its cuts knot, split, pale ring.")
+	add_note("The limb in the doorframe gives up its cuts knot, split, "
+		+ "sap seam, pale ring.")
 	return true
 
 

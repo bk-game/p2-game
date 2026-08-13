@@ -195,6 +195,9 @@ class Branch extends StaticBody2D:
 	const SCENERY := -28.0
 
 	const CUT_TIME := 2.0
+	const FREE_TIME := 3.0   # working a bound blade back out of the grain
+	const FREE_MORE := 1.8   # and longer again each time it goes back in
+	const FREE_MAX := 10.0
 	const CHOP_GAP := 0.55
 
 	const STEPS := 20       # samples along the run, for the outline and grain
@@ -204,6 +207,7 @@ class Branch extends StaticBody2D:
 	var length := 180.0
 	var thick := 30.0
 	var cut := 0.0          # seconds of sawing done so far
+	var freeing := 0.0      # seconds spent pulling a stuck blade out
 	var seed_v := 0.0       # fixed per root, so its shape never shifts
 	var gate := false       # grown into a doorframe: softening is not enough
 	var _chop := 0.0
@@ -251,7 +255,21 @@ class Branch extends StaticBody2D:
 	func _bound() -> bool:
 		return gate and brittle and not Game.flag("gate_cut")
 
+	# A wrong order left the blade in the limb: nothing else happens here
+	# until it is out again.
+	func _stuck() -> bool:
+		return _bound() and Game.cut_bound
+
+	# Each time it binds, the blade sits deeper and takes longer to work out.
+	func free_time() -> float:
+		return minf(FREE_TIME + FREE_MORE * maxi(Game.cut_binds - 1, 0), FREE_MAX)
+
 	func prompt() -> String:
+		if _stuck():
+			if freeing > 0.0:
+				return "Working the blade free... %d%%" \
+					% int(freeing / free_time() * 100.0)
+			return "The blade is stuck fast in it. Hold E to work it free"
 		if _bound():
 			return "Softened, but the grain in it will bind the blade"
 		if cuttable():
@@ -262,8 +280,22 @@ class Branch extends StaticBody2D:
 			return "Pour solution on the limb (%d left)" % Game.solution_charges
 		return "This limb is too dense to cut"
 
-	# Held-E progress. Returns how far through the cut we are, 0..1.
+	# Held-E progress. Returns how far through the work we are, 0..1 —
+	# either cutting through the limb, or pulling a bound blade back out.
 	func saw(delta: float) -> float:
+		if _stuck():
+			freeing += delta
+			_chop -= delta
+			if _chop <= 0.0:
+				_chop = CHOP_GAP * 1.6
+				Sfx.play("chop", -22.0, 0.6)
+			if freeing >= free_time():
+				freeing = 0.0
+				Game.cut_bound = false
+				Sfx.play("crack", -14.0)
+				Game.toast.emit("The blade comes out of the grain. The cuts have "
+					+ "closed over.")
+			return freeing / free_time()
 		if not cuttable():
 			return 0.0
 		cut += delta
@@ -280,13 +312,19 @@ class Branch extends StaticBody2D:
 			return 1.0
 		return cut / CUT_TIME
 
-	# Let go and the cut closes up again, slower than it opened.
+	# Let go and the cut closes up again, slower than it opened. A blade half
+	# worked out settles back in just as surely.
 	func relax(delta: float) -> void:
 		if cut > 0.0:
 			cut = maxf(cut - delta * 0.6, 0.0)
 			queue_redraw()
+		if freeing > 0.0:
+			freeing = maxf(freeing - delta * 0.6, 0.0)
 
 	func act() -> void:
+		if _stuck():
+			Game.toast.emit("Not while the blade is in it.")
+			return
 		if _bound():
 			Game.open_cut.emit()
 			return
@@ -373,18 +411,24 @@ class Branch extends StaticBody2D:
 		if cut > 0.0:
 			_draw_cracks(cut / CUT_TIME)
 
-	# The three hearts you have to cut, drawn so the page has something to
-	# name: a pale ring, a black knot, a split.
+	# The four hearts you have to cut, drawn so the page has something to
+	# name: a pale ring, a black knot, a bead of sap, a split.
 	func _marks() -> void:
-		var ring := _mid(0.24)
-		var h := _half(0.24)
+		var ring := _mid(0.2)
+		var h := _half(0.2)
 		draw_line(ring + Vector2(0, -h), ring + Vector2(0, h),
 			Color(0.90, 0.86, 0.72, 0.9), 5.0)
-		var knot := _mid(0.5)
-		draw_circle(knot, _half(0.5) * 0.55, Color(0.12, 0.09, 0.06, 0.95))
-		draw_circle(knot, _half(0.5) * 0.3, Color(0.30, 0.22, 0.14, 0.95))
-		var split := _mid(0.78)
-		var sh := _half(0.78)
+		var knot := _mid(0.42)
+		draw_circle(knot, _half(0.42) * 0.55, Color(0.12, 0.09, 0.06, 0.95))
+		draw_circle(knot, _half(0.42) * 0.3, Color(0.30, 0.22, 0.14, 0.95))
+		var seam := _mid(0.62)
+		var mh := _half(0.62)
+		draw_line(seam + Vector2(-5, -mh + 3), seam + Vector2(4, mh - 3),
+			Color(0.62, 0.40, 0.10, 0.85), 3.0)
+		draw_circle(seam, 3.4, Color(0.88, 0.63, 0.20, 0.95))
+		draw_circle(seam + Vector2(3, mh * 0.45), 2.0, Color(0.88, 0.63, 0.20, 0.8))
+		var split := _mid(0.82)
+		var sh := _half(0.82)
 		for i in 3:
 			var f: float = -1.0 + i
 			draw_line(split + Vector2(f * 2.0, -sh + 2.0),
