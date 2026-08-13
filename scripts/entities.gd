@@ -11,6 +11,8 @@ const WEAK_LT   := Color("c69a63")
 const BRITTLE   := Color("8d8267")
 # Sickly yellow-green, nothing like the blue-green of the tree, and hazy at
 # the edge rather than made of solid lobes.
+const FP := preload("res://scripts/floorplan.gd")
+
 const FUME      := Color(0.80, 0.87, 0.20, 0.20)
 const FUME_CORE := Color(0.86, 0.90, 0.32, 0.26)
 const FUME_EDGE := Color(0.72, 0.78, 0.12, 0.55)
@@ -225,6 +227,11 @@ class Branch extends StaticBody2D:
 		sh.size = Vector2(length, thick)
 		cs.shape = sh
 		add_child(cs)
+
+	# The ring goes round the whole run of it, not round the nearest inch.
+	func highlight() -> Dictionary:
+		return {"pos": global_position, "size": Vector2(length, thick),
+			"rot": rotation}
 
 	# Closest point on the limb itself, so you can prompt anywhere along it
 	# rather than only near its midpoint.
@@ -1061,9 +1068,18 @@ class Container2D extends Node2D:
 	var label := ""
 	var items: Array = []
 	var opened := false
+	var _furniture := Rect2()
 
 	func bias() -> float:
 		return 18.0
+
+	# A container is a point on the floor in front of a cupboard. The ring
+	# belongs on the cupboard, so find whichever piece of furniture it is
+	# standing at and use that.
+	func highlight() -> Dictionary:
+		if _furniture.size == Vector2.ZERO:
+			return {}
+		return {"pos": _furniture.get_center(), "size": _furniture.size, "rot": 0.0}
 
 	func reach() -> float:
 		return OPEN_REACH
@@ -1071,6 +1087,15 @@ class Container2D extends Node2D:
 	func setup(d: Dictionary) -> void:
 		position = d["pos"]
 		items = d["items"]
+		var best := 1e9
+		for r in FP.SOLIDS:
+			var near: Vector2 = (r as Rect2).get_center()
+			near.x = clampf(position.x, r.position.x, r.end.x)
+			near.y = clampf(position.y, r.position.y, r.end.y)
+			var d2 := position.distance_to(near)
+			if d2 < best and d2 < 48.0:
+				best = d2
+				_furniture = r
 
 	func _ready() -> void:
 		add_to_group("act")

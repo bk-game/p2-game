@@ -66,6 +66,7 @@ var _walked := 0.0
 var _was_at := Vector2.ZERO
 var _acted := false
 var _title_t := 0.0
+var _notes_y := 0.0
 
 
 func _ready() -> void:
@@ -244,7 +245,9 @@ func _unhandled_key_input(e: InputEvent) -> void:
 					_title = nxt[0]
 					_body = nxt[1]
 					_read_t = 0.0
-		Mode.NOTES, Mode.REPORT:
+		Mode.NOTES:
+			_notes_key(k)
+		Mode.REPORT:
 			if k in [KEY_N, KEY_R, KEY_ESCAPE, KEY_E, KEY_I]:
 				mode = Mode.PLAY
 		Mode.BAG:
@@ -271,6 +274,7 @@ func _unhandled_key_input(e: InputEvent) -> void:
 				_sel = 0
 			elif k == KEY_N:
 				mode = Mode.NOTES
+				_notes_y = 0.0
 			elif k == KEY_R:
 				_title = "Field report"
 				_body = Game.report()
@@ -299,6 +303,21 @@ func _choice_key(k: int) -> void:
 	elif Game.try_lock(pick):
 		mode = Mode.PLAY
 		Game.begin_ride(Content.ENTRANCE, true)
+
+
+# The notebook fills up over a playthrough and used to run off the bottom of
+# its own page. Up and down move through it.
+func _notes_key(k: int) -> void:
+	if k in [KEY_N, KEY_ESCAPE, KEY_E, KEY_I]:
+		mode = Mode.PLAY
+		return
+	match k:
+		KEY_UP: _notes_y -= _n(46)
+		KEY_DOWN: _notes_y += _n(46)
+		KEY_PAGEUP: _notes_y -= _n(300)
+		KEY_PAGEDOWN: _notes_y += _n(300)
+		KEY_HOME: _notes_y = 0.0
+		KEY_END: _notes_y = 1e9      # clamped against the content when drawn
 
 
 # Which of the three marks to take, and in what order. Same entry as the
@@ -863,25 +882,82 @@ func _reader_flow(f: Font, r: Rect2, fs: int, draw_it: bool) -> float:
 	return y - top
 
 
+# How tall the writing is, and how much of it fits — the two numbers the
+# scrolling is clamped against, exposed so a test can hold them to it.
+func notes_span() -> float:
+	var r := _centre(size, 900, 600)
+	return (r.end.y - _n(52)) - (r.position.y + _n(126))
+
+
+func notes_height() -> float:
+	var f := ThemeDB.fallback_font
+	var r := _centre(size, 900, 600)
+	var wide: float = r.size.x - _n(120)
+	var total := 0.0
+	for n in Game.notes:
+		total += f.get_multiline_string_size(n, HORIZONTAL_ALIGNMENT_LEFT, wide,
+			_fs(18)).y + _n(16)
+	return maxf(total - _n(16), 0.0)
+
+
 func _draw_notes(f: Font, vp: Vector2) -> void:
 	draw_rect(Rect2(Vector2.ZERO, vp), Color(0, 0, 0, 0.55))
 	var r := _centre(vp, 900, 600)
 	_panel(r)
-	_head(f, r, "NOTEBOOK", "%d of %d significant items recovered"
-		% [Game.story_found(), Game.story_total()])
-	var y: float = r.position.y + _n(146)
+
+	# the band the writing lives in, between the heading and the footer
+	var top: float = r.position.y + _n(126)
+	var bot: float = r.end.y - _n(52)
+	var wide: float = r.size.x - _n(120)
+	var gap := _n(16)
+
+	var total := 0.0
+	for n in Game.notes:
+		total += f.get_multiline_string_size(n, HORIZONTAL_ALIGNMENT_LEFT, wide,
+			_fs(18)).y + gap
+	total = maxf(total - gap, 0.0)
+	_notes_y = clampf(_notes_y, 0.0, maxf(total - (bot - top), 0.0))
+
 	if Game.notes.is_empty():
-		draw_string(f, Vector2(r.position.x + _n(38), y), "Nothing written down yet.",
-			HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(19), DIM)
+		draw_string(f, Vector2(r.position.x + _n(38), top + _n(20)),
+			"Nothing written down yet.", HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(19), DIM)
+	var y: float = top - _notes_y
 	for n in Game.notes:
 		var h: float = f.get_multiline_string_size(n, HORIZONTAL_ALIGNMENT_LEFT,
-			r.size.x - _n(104), _fs(18)).y
-		draw_string(f, Vector2(r.position.x + _n(38), y), "-",
-			HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(18), ACCENT)
-		draw_multiline_string(f, Vector2(r.position.x + _n(62), y), n,
-			HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(104), _fs(18), -1, INK)
-		y += h + _n(16)
-	_foot(f, r, "[N] close")
+			wide, _fs(18)).y
+		if y + h > top - _n(30) and y < bot + _n(30):
+			draw_string(f, Vector2(r.position.x + _n(38), y), "-",
+				HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(18), ACCENT)
+			draw_multiline_string(f, Vector2(r.position.x + _n(62), y), n,
+				HORIZONTAL_ALIGNMENT_LEFT, wide, _fs(18), -1, INK)
+		y += h + gap
+
+	# mask whatever ran past the band, then put the furniture back over it.
+	# The panel itself is not quite opaque, so one coat leaves the line you
+	# scrolled past ghosting through the heading.
+	var over := Rect2(r.position.x + 2.0, r.position.y + 2.0, r.size.x - 4.0,
+		top - r.position.y - _n(14))
+	var under := Rect2(r.position.x + 2.0, bot + _n(6), r.size.x - 4.0,
+		r.end.y - bot - _n(6) - 2.0)
+	for coat in 3:
+		draw_rect(over, PANEL)
+		draw_rect(under, PANEL)
+	draw_rect(r, EDGE, false, 2.0)
+	_head(f, r, "NOTEBOOK", "%d of %d significant items recovered"
+		% [Game.story_found(), Game.story_total()])
+
+	# how far down it you are
+	if total > bot - top:
+		var track := Rect2(r.end.x - _n(30), top, _n(4), bot - top)
+		draw_rect(track, Color(EDGE, 0.5))
+		var frac: float = (bot - top) / total
+		var thumb: float = maxf(track.size.y * frac, _n(24))
+		var at: float = track.position.y + (track.size.y - thumb) \
+			* (_notes_y / maxf(total - (bot - top), 1.0))
+		draw_rect(Rect2(track.position.x, at, track.size.x, thumb), ACCENT)
+		_foot(f, r, "up/down to read through it    [N] close")
+	else:
+		_foot(f, r, "[N] close")
 
 
 func _draw_inventory(f: Font, vp: Vector2) -> void:

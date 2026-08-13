@@ -98,9 +98,20 @@ func _scan() -> void:
 	if _marker != null:
 		_marker.on = best != null
 		if best != null:
-			var at: Vector2 = best.reach_point(global_position) \
-				if best.has_method("reach_point") else best.global_position
-			_marker.at = at - global_position
+			# a thing can say what shape it is, so the ring goes round the
+			# cupboard or the length of the limb rather than round the spot
+			# on the floor you happen to be working from
+			var box: Dictionary = best.highlight() if best.has_method("highlight") \
+				else {}
+			if box.is_empty():
+				var at: Vector2 = best.reach_point(global_position) \
+					if best.has_method("reach_point") else best.global_position
+				_marker.at = at - global_position
+				_marker.box = Vector2.ZERO
+			else:
+				_marker.at = (box["pos"] as Vector2) - global_position
+				_marker.box = box["size"]
+				_marker.rot = box["rot"]
 		_marker.queue_redraw()
 	if _hud != null:
 		_hud.set_prompt(best.prompt() if best != null else "")
@@ -153,6 +164,8 @@ func _arc_cap(c: Vector2, r: float, a0: float, a1: float, col: Color) -> void:
 # limbs rather than under them.
 class Marker extends Node2D:
 	var at := Vector2.ZERO
+	var box := Vector2.ZERO      # zero for a point, a size for a thing
+	var rot := 0.0
 	var on := false
 	var _t := 0.0
 
@@ -165,5 +178,14 @@ class Marker extends Node2D:
 		if not on:
 			return
 		var pulse: float = 0.42 + 0.12 * sin(_t * 3.4)
-		draw_arc(at, 25.0, 0, TAU, 30, Color(1, 0.95, 0.72, pulse), 2.5)
-		draw_arc(at, 19.0, 0, TAU, 24, Color(1, 0.95, 0.72, pulse * 0.4), 2.0)
+		var col := Color(1, 0.95, 0.72, pulse)
+		if box == Vector2.ZERO:
+			draw_arc(at, 25.0, 0, TAU, 30, col, 2.5)
+			draw_arc(at, 19.0, 0, TAU, 24, Color(col, pulse * 0.4), 2.0)
+			return
+		draw_set_transform(at, rot, Vector2.ONE)
+		var r := Rect2(-box * 0.5, box).grow(7.0)
+		var edge := Mat.rr(r, minf(14.0, minf(r.size.x, r.size.y) * 0.45))
+		edge.append(edge[0])
+		draw_polyline(edge, col, 2.5)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

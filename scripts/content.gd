@@ -187,7 +187,7 @@ const ITEMS := {
 	},
 	"card_christopher": {
 		"name": "Birthday card, unsent", "kind": "doc", "glyph": "letter",
-		"tint": "d8cfc0", "pos": Vector2(1540, 700), "story": true,
+		"tint": "d8cfc0", "pos": Vector2(610, 186), "story": true,
 		"body": "A card with a boat on the front, written in and never sent.\n\n"
 			+ "\"Chris — 10/15 again. Twenty-nine years of me getting you the wrong "
 			+ "thing. I have kept the date on everything in this house because it is "
@@ -244,8 +244,8 @@ const ITEMS := {
 	},
 	"docket": {
 		"name": "Job docket", "kind": "doc", "glyph": "paper",
-		"tint": "e6e2d2", "pos": Vector2(-500, 364),
-		"body": "The docket the board printed when you took the job.\n\n"
+		"tint": "e6e2d2", "pos": Vector2(-380, 196),
+		"body": "The docket off the board, torn along its perforation.\n\n"
 			+ "REF\t4471-C\n"
 			+ "SUBJECT\tWood, Joseph\n"
 			+ "VAN\tbay 2\n"
@@ -377,7 +377,7 @@ const FIXED_NOTES := [
 			+ "belonged to, what he lost. The office builds the rest from that. "
 			+ "Anything you carry out that says something about him is paid on.\n\n"
 			+ "NOTHING LEAVES THIS FLOOR WITHOUT:\n"
-			+ "\tthe docket, off this board\n"
+			+ "\tthe docket, off the hook under this board\n"
 			+ "\tan axe, off the rack in the store\n"
 			+ "\ta van key, off the press by the door",
 		"note": "The job: recover Joe Wood and whatever says who he was. Sign out "
@@ -467,7 +467,7 @@ const CONTAINERS := [
 	{"pos": Vector2(1218, 528), "items": ["police_report"]},
 	{"pos": Vector2(150, 516), "items": ["joes_axe"]},
 	{"pos": Vector2(500, 186), "items": []},
-	{"pos": Vector2(610, 186), "items": []},
+	{"pos": Vector2(610, 186), "items": ["card_christopher"]},
 	{"pos": Vector2(700, 186), "items": ["log_cut"]},
 	{"pos": Vector2(408, 462), "items": []},
 	{"pos": Vector2(1120, 506), "items": []},
@@ -476,7 +476,7 @@ const CONTAINERS := [
 	{"pos": Vector2(992, 822), "items": []},
 	{"pos": Vector2(262, 894), "items": []},
 	{"pos": Vector2(170, 852), "items": []},
-	{"pos": Vector2(1540, 700), "items": ["card_christopher"]},
+	{"pos": Vector2(1540, 700), "items": []},
 	{"pos": Vector2(214, 306), "items": []},
 ]
 
