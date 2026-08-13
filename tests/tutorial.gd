@@ -17,8 +17,13 @@ func _ready() -> void:
 	for i in Content.OPENING.size():
 		fails += _expect("line %d is still the opening" % i, hud.mode == 10)
 		hud._unhandled_key_input(_key(KEY_SPACE))
-	fails += _expect("the last card is the place you work",
+	fails += _expect("there is one card after the last line",
 		hud._open_line == Content.OPENING.size())
+	# and the card it ends on is the name of the game, not a string typed
+	# into the drawing code that the project name can drift away from
+	fails += _expect("the last card names the game",
+		hud.title_text() == str(ProjectSettings.get_setting(
+			"application/config/name")).to_upper() and hud.title_text() != "")
 	hud._unhandled_key_input(_key(KEY_SPACE))
 	fails += _expect("and then you are on the floor", hud.mode == 0)
 	fails += _expect("and the first thing it asks for is walking", hud._step == 0)

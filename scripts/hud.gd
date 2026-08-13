@@ -581,15 +581,17 @@ func _draw_title(f: Font, vp: Vector2) -> void:
 	var mid := vp.x * 0.5
 	var t: float = clampf(_title_t / 0.8, 0.0, 1.0)
 
-	# the last card is the name of the place you work
+	# the last card is the name of the game. The crawl has already said who
+	# you work for, and the rule under it is drawn to whatever the name is.
 	if _open_line >= Content.OPENING.size():
-		var name := "INVESTIGATION STATION"
+		var name := title_text()
 		var nw: float = f.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1,
 			_fs(42)).x
 		draw_string(f, Vector2(mid - nw * 0.5, vp.y * 0.44), name,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(42), Color(ACCENT, t))
-		draw_line(Vector2(mid - _n(230), vp.y * 0.44 + _n(22)),
-			Vector2(mid + _n(230), vp.y * 0.44 + _n(22)), Color(EDGE, t), 2.0)
+		var half: float = nw * 0.5 + _n(34)
+		draw_line(Vector2(mid - half, vp.y * 0.44 + _n(22)),
+			Vector2(mid + half, vp.y * 0.44 + _n(22)), Color(EDGE, t), 2.0)
 	else:
 		var line: String = Content.OPENING[_open_line]
 		var w := _n(760)
@@ -607,6 +609,13 @@ func _draw_title(f: Font, vp: Vector2) -> void:
 		var dot := Vector2(mid - Content.OPENING.size() * _n(9) + i * _n(18),
 			vp.y - _n(54))
 		draw_circle(dot, 3.0, ACCENT if i <= _open_line else Color(EDGE, 0.7))
+
+
+# What the game is called, taken from the project itself so the card and the
+# window title cannot drift apart.
+func title_text() -> String:
+	return str(ProjectSettings.get_setting("application/config/name",
+		"Personal Effects")).to_upper()
 
 
 # What you say to yourself, sitting under the game rather than over it.
