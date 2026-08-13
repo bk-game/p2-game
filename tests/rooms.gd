@@ -40,14 +40,16 @@ func _ready() -> void:
 	var beside := Vector2(1150, 300)      # not
 	var up := Vector2(0, -1)
 	var dark: Array[Rect2] = light._spill(light._lit_rects(through))
-	fails += _expect("an unlit room stops the light at its wall",
-		light._wall_limit(through, up, light.RADIUS, dark) < 120.0)
+	# from the bedroom floor at y=300 the bathroom floor edge is 120px up:
+	# reaching it is the wall being lit, passing it is the room being lit
+	fails += _expect("an unlit room stops the light at its floor",
+		light._wall_limit(through, up, light.RADIUS, dark) <= 121.0)
 	Game.room_lights[2] = true
 	var lit: Array[Rect2] = light._spill(light._lit_rects(through))
 	fails += _expect("a lit room shows through its doorway",
 		light._wall_limit(through, up, light.RADIUS, lit) > 150.0)
 	fails += _expect("but not through the wall beside the doorway",
-		light._wall_limit(beside, up, light.RADIUS, lit) < 120.0)
+		light._wall_limit(beside, up, light.RADIUS, lit) <= 121.0)
 	fails += _expect("the room you are in is unaffected",
 		light._carry() == light.RADIUS)
 

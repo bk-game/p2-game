@@ -114,14 +114,40 @@ const ITEMS := {
 	"letter_doctor": {
 		"name": "Letter from the ER", "kind": "doc", "glyph": "letter",
 		"tint": "eae4d6", "pos": Vector2(812, 902), "story": true,
-		 "body": "I am Dr. Neal, the Emergency Care Physician tasked with treating "
-		+ "\nyour husband, Mr. Christopher Wood, and your daughter, Ms. Eleanor Wood at "
-		+ "\nthe North Cayus Emergency Room. I am sorry to inform you that even though "
-		+ "\nwe used all our resources, they both weren’t able to make it, their injuries "
-		+ "\nwere too severe. I have written to express my sorrow at the suddenness of "
-		+ "\ntheir deaths."
-		+ "\nSincerely,"
-		+ "\nDr. Neal"
+		"body": "NORTH CAYUS EMERGENCY ROOM\n"
+			+ "0001 Emergency Lane, North Cayus\n"
+			+ "\n"
+			+ "27 September 2071\n"
+			+ "\n"
+			+ "Mr J. Wood\n"
+			+ "1053 Meadow Lane\n"
+			+ "North Cayus\n"
+			+ "\n"
+			+ "Dear Mr Wood,\n"
+			+ "\n"
+			+ "RE\tC. Wood (b. 10/15/2042) and E. Wood (b. 5/3/2061)\n"
+			+ "\n"
+			+ "I was the physician on duty when your husband and your daughter "
+			+ "were brought in on the evening of 25 September, and I am writing "
+			+ "to you as the next of kin on both records.\n"
+			+ "\n"
+			+ "Both had been struck by a vehicle on Meadow Lane. Your daughter "
+			+ "was taken into theatre at 21:14 and your husband at 21:40. Neither "
+			+ "regained consciousness at any point in our care. I am sorry to "
+			+ "have to tell you in a letter that we were not able to save either "
+			+ "of them, and that nothing further could reasonably have been done.\n"
+			+ "\n"
+			+ "The certificates have been filed with the registrar and copies "
+			+ "will follow under separate cover. Our bereavement office can be "
+			+ "reached on the number at the foot of this page.\n"
+			+ "\n"
+			+ "I am sorry for your loss.\n"
+			+ "\n"
+			+ "Yours sincerely,\n"
+			+ "A. Neal MD\n"
+			+ "Emergency Care Physician",
+		"note": "Dr Neal wrote to Joe as next of kin. Both were hit on Meadow "
+			+ "Lane on 25 September; neither woke up.",
 	},
 	"death_certs": {
 		"name": "Death certificates", "kind": "doc", "glyph": "paper",
@@ -132,24 +158,24 @@ const ITEMS := {
 			+ "STATE OF NORTH CAYUS — CERTIFICATE OF DEATH        No. 4471-C\n"
 			+ "\n"
 			+ "NAME\tChristopher Wood\n"
-			+ "BORN\t15 October 2042, South Cayus\n"
-			+ "DIED\t25 September 2071, North Cayus Emergency Room\n"
+			+ "BORN\t10/15/2042, South Cayus\n"
+			+ "DIED\t9/25/2071, North Cayus Emergency Room\n"
 			+ "CAUSE\tCollapsed lungs and severed arteries, sustained as a "
 			+ "pedestrian in a motor vehicle collision\n"
-			+ "CERTIFIED\tA. Neal MD, 26 September 2071\n"
+			+ "CERTIFIED\tA. Neal MD, 9/26/2071\n"
 			+ "\n"
 			+ "STATE OF NORTH CAYUS — CERTIFICATE OF DEATH        No. 4472-C\n"
 			+ "\n"
 			+ "NAME\tEleanor Wood\n"
-			+ "BORN\t3 May 2061, North Cayus\n"
-			+ "DIED\t25 September 2071, North Cayus Emergency Room\n"
+			+ "BORN\t5/3/2061, North Cayus\n"
+			+ "DIED\t9/25/2071, North Cayus Emergency Room\n"
 			+ "CAUSE\tSevered arteries and a severe concussion, sustained as a "
 			+ "passenger in a motor vehicle collision\n"
-			+ "CERTIFIED\tA. Neal MD, 26 September 2071\n"
+			+ "CERTIFIED\tA. Neal MD, 9/26/2071\n"
 			+ "\n"
 			+ "Both filed the day after. Both signed by the same hand.",
 		"note": "He kept their death certificates down here, filed and flattened. "
-			+ "Christopher born 15 October 2042, Eleanor 3 May 2061.",
+			+ "Christopher born 10/15/2042, Eleanor 5/3/2061.",
 	},
 	"marriage_photo": {
 		"name": "Marriage photo", "kind": "doc", "glyph": "photo",
@@ -163,7 +189,7 @@ const ITEMS := {
 		"name": "Birthday card, unsent", "kind": "doc", "glyph": "letter",
 		"tint": "d8cfc0", "pos": Vector2(1540, 700), "story": true,
 		"body": "A card with a boat on the front, written in and never sent.\n\n"
-			+ "\"Chris — 15/10 again. Twenty-nine years of me getting you the wrong "
+			+ "\"Chris — 10/15 again. Twenty-nine years of me getting you the wrong "
 			+ "thing. I have kept the date on everything in this house because it is "
 			+ "the only four numbers I will never lose.\n\nAll my love, always. J.\"",
 		"note": "Christopher's birthday is 15/10. Joe used the date on things around "
@@ -175,9 +201,9 @@ const ITEMS := {
 		"tint": "e8c9d4", "pos": Vector2(1306, 306), "story": true,
 		"body": "Card stock folded by a child, a cake drawn on it in wax crayon with "
 			+ "ten candles counted out carefully.\n\n"
-			+ "\"TO ELEANOR. 3/5. LOVE DAD AND DAD.\"\n\n"
+			+ "\"TO ELEANOR. 5/3. LOVE DAD AND DAD.\"\n\n"
 			+ "Inside, in an adult hand: \"Ten. How.\"",
-		"note": "Eleanor's birthday is 3/5. She turned ten.",
+		"note": "Eleanor's birthday is 5/3. She turned ten.",
 		"grants": "knows_eleanor_birthday",
 	},
 	"bunny": {
@@ -304,9 +330,9 @@ const CUT_ORDER := "231"
 # ── The lock on the bedroom ──────────────────────────────────────────────
 # Their room, and the way through to the bathroom beyond it. Joe put the date
 # on everything in the house because it was four numbers he could not lose:
-# Christopher's birthday, 15/10. The card in the living room carries it, and
+# Christopher's birthday, 10/15. The card in the living room carries it, and
 # so do the death certificates, once you can get to them.
-const LOCK_CODE := "1510"
+const LOCK_CODE := "1015"
 const LOCK_POS := Vector2(1307, 596)
 const LOCK_DOOR := Rect2(1272, 578, 70, 37)
 

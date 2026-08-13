@@ -1,6 +1,6 @@
 extends Node2D
 
-# The bathroom door is shut until the dial is given Christopher's birthday,
+# The bedroom door is shut until the dial is given Christopher's birthday,
 # and the door is as solid as the wall until then.
 
 func _ready() -> void:
@@ -29,7 +29,7 @@ func _ready() -> void:
 	fails += _expect("and clears itself to try again", hud._code == "")
 	fails += _expect("the door is still shut", is_instance_valid(bolt))
 
-	for k in [KEY_1, KEY_5, KEY_1, KEY_0]:
+	for k in [KEY_1, KEY_0, KEY_1, KEY_5]:
 		hud._lock_key(k)
 	hud._lock_key(KEY_ENTER)
 	await get_tree().process_frame

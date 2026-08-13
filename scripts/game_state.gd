@@ -12,6 +12,7 @@ signal open_lock
 signal open_cut
 signal ride(outbound: bool)
 signal open_choice(data: Dictionary)
+signal level_over
 signal lock_opened
 
 var inventory: Array[String] = []
@@ -107,16 +108,9 @@ func finish_level() -> void:
 	if flag("level_done"):
 		return
 	set_flag("level_done")
-	var found := story_found()
+	Music.stop()
 	Sfx.play("open", -6.0)
-	notice.emit("Level complete", "You come out of the lift onto your own floor "
-		+ "with the job closed behind you.\n\n"
-		+ "SUBJECT\tWood, Joseph\n"
-		+ "BODY\t%s\n" % ("recovered" if flag("found_body") else "not recovered")
-		+ "RECOVERED\t%d of %d significant items\n" % [found, story_total()]
-		+ "PAID\t$%d\n\n" % (found * 250)
-		+ "Filed. What is left of him is somebody else's afternoon.\n\n"
-		+ "[R] has the whole report.")
+	level_over.emit()
 
 
 # ── The key press ────────────────────────────────────────────────────────

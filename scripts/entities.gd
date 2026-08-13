@@ -749,9 +749,14 @@ class Doorway extends Node2D:
 # ══ Light switch: the two rooms on the house wiring ══════════════════════
 class Switch extends Node2D:
 	var room := 0
+	var _t := 0.0
 
 	func _ready() -> void:
 		add_to_group("act")
+
+	func _process(delta: float) -> void:
+		_t += delta
+		queue_redraw()
 
 	func bias() -> float:
 		return 30.0
@@ -776,6 +781,11 @@ class Switch extends Node2D:
 			Mat.shade(Mat.PORC_SH, 0.65), 1.5)
 		if on:
 			draw_circle(Vector2(-1, -1), 15.0, Color(1, 0.95, 0.75, 0.10))
+		# the same ring the papers and the doors wear, so a switch reads as
+		# something you can work rather than as fittings
+		var pulse: float = 0.34 if not on else 0.18
+		draw_arc(Vector2(-1, -1), 22.0, 0, TAU, 26,
+			Color(1, 0.95, 0.7, pulse + 0.08 * sin(_t * 2.2)), 2.0)
 
 
 # ══ Combination lock: the bedroom door ═══════════════════════════════════
@@ -946,9 +956,17 @@ class Station extends Node2D:
 		return 45.0
 
 	func prompt() -> String:
-		return "Examine the body" if not examined else "Take the bunny from his hands"
+		if not examined:
+			return "Examine the body"
+		if Game.has_item("bunny"):
+			return "Joe Wood"
+		return "Take the bunny from his hands"
 
 	func act() -> void:
+		if examined and Game.has_item("bunny"):
+			Game.notice.emit("Joe Wood", "He is as you found him, with the tree "
+				+ "through him and his hands empty now.")
+			return
 		if not examined:
 			examined = true
 			Game.set_flag("found_body")
@@ -1003,7 +1021,7 @@ class Station extends Node2D:
 		for s in [-1.0, 1.0]:
 			draw_line(Vector2(24.0 * s, -6), Vector2(11.0 * s, 20), FLANNEL, 13.0)
 			draw_circle(Vector2(9.0 * s, 23), 7.0, SKIN)
-		if not examined:
+		if not Game.has_item("bunny"):
 			_oval(Vector2(0, 24), 9, 7, Color("d9b9c4"))  # the bunny, just showing
 
 		# head, tipped back against the wall

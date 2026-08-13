@@ -140,9 +140,8 @@ func _ready() -> void:
 	hud._unhandled_key_input(_key(KEY_E))
 	await _settle(hud)
 	fails += _expect("getting back finishes the level", Game.flag("level_done"))
-	fails += _expect("and says so", hud.mode == 1 and hud._title == "Level complete")
-	fails += _expect("with what you brought in it",
-		hud._body.contains("RECOVERED") and hud._body.contains("PAID"))
+	fails += _expect("and the shift ends on its own screen", hud.mode == 9)
+	fails += _expect("with the music off", not Music._player.playing)
 
 	print("TRAVEL: %s" % ("ALL PASS" if fails == 0 else "%d FAILURES" % fails))
 	get_tree().quit()

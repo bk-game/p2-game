@@ -21,7 +21,7 @@ const RULE   := Color("b19c74")
 const FOG    := Color(0.62, 0.82, 0.18)   # the green closing over your eyes
 const FOG_DK := Color(0.16, 0.26, 0.06)
 
-enum Mode {PLAY, READ, BAG, NOTES, REPORT, LOCK, CUT, RIDE, CHOICE}
+enum Mode {PLAY, READ, BAG, NOTES, REPORT, LOCK, CUT, RIDE, CHOICE, OVER}
 
 var mode: int = Mode.PLAY
 var _title := ""
@@ -42,6 +42,7 @@ var _read_t := 0.0
 var _ride_t := 0.0
 var _ride_out := true
 var _choice := {}
+var _over_t := 0.0
 
 
 func _ready() -> void:
@@ -54,6 +55,7 @@ func _ready() -> void:
 	Game.open_cut.connect(_open_cut)
 	Game.ride.connect(_on_ride)
 	Game.open_choice.connect(_open_choice)
+	Game.level_over.connect(_on_level_over)
 
 
 func blocking() -> bool:
@@ -116,6 +118,14 @@ func _open_cut() -> void:
 
 # Pick one of a short list: which key off the press, which lock to turn it
 # in. The same panel does both, since both are one press of a number.
+# The end of the shift. Nothing to press: it is the last thing on screen.
+func _on_level_over() -> void:
+	mode = Mode.OVER
+	_over_t = 0.0
+	_queued.clear()
+	queue_redraw()
+
+
 func _open_choice(data: Dictionary) -> void:
 	_choice = data
 	mode = Mode.CHOICE
@@ -132,6 +142,9 @@ func _on_ride(outbound: bool) -> void:
 
 
 func _process(delta: float) -> void:
+	if mode == Mode.OVER:
+		_over_t += delta
+		queue_redraw()
 	if mode == Mode.RIDE:
 		_ride_t += delta
 		if _ride_t >= RIDE_T:
@@ -294,14 +307,12 @@ func _lock_key(k: int) -> void:
 func _bag_order() -> Array:
 	if not _at_sink:
 		return Array(Game.inventory)
+	# At the basin the rest of what you are carrying is not the question.
 	var mixable := []
-	var rest := []
 	for id in Game.inventory:
 		if _cups.has(id):
 			mixable.append(id)
-		else:
-			rest.append(id)
-	return mixable + rest
+	return mixable
 
 
 func _bag_key(k: int) -> void:
@@ -393,6 +404,7 @@ func _draw() -> void:
 		Mode.CUT: _draw_cut(f, vp)
 		Mode.RIDE: _draw_ride(f, vp)
 		Mode.CHOICE: _draw_choice(f, vp)
+		Mode.OVER: _draw_over(f, vp)
 
 
 func _draw_lock(f: Font, vp: Vector2) -> void:
@@ -401,8 +413,8 @@ func _draw_lock(f: Font, vp: Vector2) -> void:
 	_panel(r)
 	_head(f, r, "LOCKED", "four digits")
 	draw_string(f, Vector2(r.position.x + _n(38), r.position.y + _n(126)),
-		"A dial set into the bedroom door. Somebody chose these four numbers "
-		+ "because they could not lose them.", HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(76),
+		"A dial set into the bedroom door. Four digits, and somebody chose a "
+		+ "date they could not lose.", HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(76),
 		_fs(17), DIM)
 	# the four slots, filled left to right as you type
 	var slot: float = _n(56)
@@ -445,6 +457,59 @@ func _draw_cut(f: Font, vp: Vector2) -> void:
 		draw_string(f, Vector2(r.position.x + _n(38), r.end.y - _n(64)), _lock_msg,
 			HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(76), _fs(17), INK)
 	_foot(f, r, "1-3 in order    backspace    [E] cut    [I] step back")
+
+
+# The shift is over: what came back, what it paid, and what the handler made
+# of it, on black, with nothing else on screen.
+func _draw_over(f: Font, vp: Vector2) -> void:
+	var t: float = clampf(_over_t / 0.9, 0.0, 1.0)
+	draw_rect(Rect2(Vector2.ZERO, vp), Color(0.02, 0.02, 0.03, t))
+	if t < 0.55:
+		return
+	var a: float = (t - 0.55) / 0.45
+	var found := Game.story_found()
+	var total := Game.story_total()
+	var mid := vp.x * 0.5
+	var y: float = vp.y * 0.24
+
+	var title := "END OF SHIFT"
+	var tw: float = f.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(40)).x
+	draw_string(f, Vector2(mid - tw * 0.5, y), title, HORIZONTAL_ALIGNMENT_LEFT,
+		-1, _fs(40), Color(ACCENT, a))
+	y += _n(24)
+	draw_line(Vector2(mid - _n(220), y), Vector2(mid + _n(220), y),
+		Color(EDGE, a), 2.0)
+	y += _n(58)
+
+	var rows := [
+		["SUBJECT", "Wood, Joseph"],
+		["BODY", "recovered" if Game.flag("found_body") else "not recovered"],
+		["RECOVERED", "%d of %d significant items" % [found, total]],
+		["PAID", "$%d" % (found * 250)],
+	]
+	for row in rows:
+		draw_string(f, Vector2(mid - _n(220), y), row[0], HORIZONTAL_ALIGNMENT_LEFT,
+			-1, _fs(20), Color(DIM, a))
+		draw_string(f, Vector2(mid - _n(20), y), row[1], HORIZONTAL_ALIGNMENT_LEFT,
+			-1, _fs(20), Color(INK, a))
+		y += _n(38)
+
+	y += _n(26)
+	var said := "Handler: \"This is barely a person. Half of him is missing and we "
+	said += "cannot invent the rest.\""
+	if found >= total:
+		said = "Handler: \"Complete. We can build him properly. Whatever you did "
+		said += "in there, do it again next time.\""
+	elif found >= total * 0.6:
+		said = "Handler: \"Enough to work with. Gaps in the middle of his life, "
+		said += "though. He will come out a little thin.\""
+	draw_multiline_string(f, Vector2(mid - _n(220), y), said,
+		HORIZONTAL_ALIGNMENT_LEFT, _n(440), _fs(18), -1, Color(DIM, a))
+
+	var end := "There is another one in the morning."
+	var ew: float = f.get_string_size(end, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(17)).x
+	draw_string(f, Vector2(mid - ew * 0.5, vp.y - _n(90)), end,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(17), Color(DIM, a * 0.8))
 
 
 func _draw_choice(f: Font, vp: Vector2) -> void:
@@ -702,20 +767,13 @@ func _draw_inventory(f: Font, vp: Vector2) -> void:
 	draw_rect(Rect2(Vector2.ZERO, vp), Color(0, 0, 0, 0.55))
 	var r := _centre(vp, 980, 700)
 	_panel(r)
-	_head(f, r, "INVENTORY", "carrying %d%s" % [Game.inventory.size(),
-		"    at the sink" if _at_sink else ""])
+	_head(f, r, "AT THE SINK" if _at_sink else "INVENTORY",
+		"" if _at_sink else "carrying %d" % Game.inventory.size())
 
 	var bag := _bag_order()
 	var y: float = r.position.y + _n(118)
 	if _at_sink:
-		# only here is there anything to measure out, so only here is the
-		# list worth splitting up
-		var mixable := 0
-		for id in bag:
-			if _cups.has(id):
-				mixable += 1
-		y = _bag_section(f, r, y, "GOES IN THE MIX", bag.slice(0, mixable), 0, false)
-		y = _bag_section(f, r, y, "EVERYTHING ELSE", bag.slice(mixable), mixable, true)
+		y = _bag_section(f, r, y, "WHAT GOES IN THE MIX", bag, 0, false)
 	else:
 		y = _bag_section(f, r, y, "", bag, 0, true)
 
