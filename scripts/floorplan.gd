@@ -576,7 +576,7 @@ func _office() -> void:
 	_fill(Rect2(-402, 528, 52, 14), Color("1f6b2f"), 2.0)                 # EXIT sign
 	draw_line(Vector2(-394, 535), Vector2(-360, 535), Color("d9f2dd"), 3.0)
 
-	# the key press on the lobby wall
+	# the key box on the lobby wall
 	_fill(Rect2(-549, 330, 8, 40), Mat.OAK_DK, 1.0)
 
 

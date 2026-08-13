@@ -12,10 +12,15 @@ func _ready() -> void:
 	var pl = get_tree().get_first_node_in_group("player")
 	var fails := 0
 
-	fails += _expect("it opens on the title card", hud.mode == 10)
+	fails += _expect("it opens on the first line of the story", hud.mode == 10)
 	fails += _expect("and nothing moves behind it", hud.blocking())
+	for i in Content.OPENING.size():
+		fails += _expect("line %d is still the opening" % i, hud.mode == 10)
+		hud._unhandled_key_input(_key(KEY_SPACE))
+	fails += _expect("the last card is the place you work",
+		hud._open_line == Content.OPENING.size())
 	hud._unhandled_key_input(_key(KEY_SPACE))
-	fails += _expect("any key gets you onto the floor", hud.mode == 0)
+	fails += _expect("and then you are on the floor", hud.mode == 0)
 	fails += _expect("and the first thing it asks for is walking", hud._step == 0)
 
 	# walking

@@ -75,8 +75,8 @@ func _ready() -> void:
 		lift.position = l["pos"]
 		lift.z_index = 40
 		add_child(lift)
-	var press := KeyPress.new()
-	press.position = Content.KEY_PRESS
+	var press := KeyBox.new()
+	press.position = Content.KEY_BOX
 	press.z_index = 26
 	add_child(press)
 	var out_door := ExitDoor.new()
@@ -601,8 +601,8 @@ class Lift extends Node2D:
 			Color(1, 0.95, 0.7, 0.5 if ready_now else 0.25))
 
 
-# ══ The key press: four hooks, one key off it at a time ══════════════════
-class KeyPress extends Node2D:
+# ══ The key box: four hooks, one key taken at a time ═════════════════════
+class KeyBox extends Node2D:
 	func _ready() -> void:
 		add_to_group("act")
 
@@ -615,17 +615,16 @@ class KeyPress extends Node2D:
 	func prompt() -> String:
 		var held := Game.held_key()
 		if held == "":
-			return "Take a key off the press"
-		return "Swap the key (%s)" % Content.ITEMS[held]["name"].to_lower()
+			return "Take a key"
+		return "Swap the %s for another" % Content.ITEMS[held]["name"].to_lower()
 
 	func act() -> void:
 		var opts := []
 		for k in Content.KEYS:
 			opts.append("%s tag" % k["tag"])
 		Game.open_choice.emit({
-			"title": "Key press", "kind": "key",
-			"blurb": "Four hooks, four tags. One goes out at a time and the "
-				+ "board wants it back on the tag.",
+			"title": "Key box", "kind": "key",
+			"blurb": "Four hooks, four tags. Take one key at a time.",
 			"options": opts,
 		})
 
@@ -676,23 +675,21 @@ class ExitDoor extends Node2D:
 
 	func act() -> void:
 		if not Game.flag("read_job"):
-			Game.toast.emit("Nothing to go out for. The board by the door has "
-				+ "what is open.")
+			Game.toast.emit("Nowhere to go yet. The board by the door has the job.")
 			return
 		var short := _short()
 		if not short.is_empty():
-			Game.toast.emit("Not without the %s." % " or the ".join(short))
+			Game.toast.emit("Not without the %s." % " and the ".join(short))
 			return
 		if Game.held_key() == "":
-			Game.toast.emit("No key on you. They are on the press by the door.")
+			Game.toast.emit("You need a van key. They are in the box by the door.")
 			return
 		if Game.flag("signed_out"):
 			Game.begin_ride(Content.ENTRANCE, true)
 			return
 		Game.open_choice.emit({
 			"title": "Fire door", "kind": "lock",
-			"blurb": "A latch in the handle, a deadbolt over it, and a padlock "
-				+ "through the push bar. You have the %s."
+			"blurb": "Three locks on this door. You are holding the %s."
 				% Content.ITEMS[Game.held_key()]["name"].to_lower(),
 			"options": Content.LOCKS,
 		})
@@ -864,6 +861,7 @@ class FixedNote extends Node2D:
 	func act() -> void:
 		read = true
 		Game.notice.emit(data["title"], data["body"])
+		Game.think("clue")
 		if data.get("note", "") != "":
 			Game.add_note(data["note"])
 		if data.get("grants", "") != "":
@@ -977,6 +975,7 @@ class Station extends Node2D:
 		if not examined:
 			examined = true
 			Game.set_flag("found_body")
+			Game.think("body")
 			Game.add_note("Joe Wood died here. A tree is growing out through his chest.")
 			Game.notice.emit("Joe Wood", "A big man in a red-and-yellow flannel shirt, "
 				+ "blue jeans, brown boots gone green with mould. He is sitting against "
@@ -986,6 +985,7 @@ class Station extends Node2D:
 				+ "folded around something soft.")
 			queue_redraw()
 		else:
+			Game.think("bunny")
 			Game.add_item("bunny")
 			queue_redraw()
 

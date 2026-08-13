@@ -49,7 +49,7 @@ var _over_t := 0.0
 # you have done it, rather than a wall of text before the game starts.
 const STEPS := [
 	{"say": "Walk", "keys": "W A S D  or the arrow keys",
-		"how": "Get the feel of the floor."},
+		"how": "Learn how to walk around."},
 	{"say": "Use what you are near", "keys": "E",
 		"how": "Anything you can use wears a ring. You have to be facing it."},
 	{"say": "Take something", "keys": "E",
@@ -67,6 +67,9 @@ var _was_at := Vector2.ZERO
 var _acted := false
 var _title_t := 0.0
 var _notes_y := 0.0
+var _open_line := 0
+var _thought := ""
+var _thought_t := 0.0
 
 
 func _ready() -> void:
@@ -81,6 +84,7 @@ func _ready() -> void:
 	Game.open_choice.connect(_open_choice)
 	Game.level_over.connect(_on_level_over)
 	Game.acted.connect(func(): _acted = true)
+	Game.thought.connect(_on_thought)
 	mode = Mode.TITLE
 
 
@@ -110,6 +114,13 @@ func _on_notice(title: String, body: String) -> void:
 	_body = body
 	mode = Mode.READ
 	_read_t = 0.0
+	queue_redraw()
+
+
+# Half a thought, in your own voice, under everything else.
+func _on_thought(line: String) -> void:
+	_thought = line
+	_thought_t = 4.5
 	queue_redraw()
 
 
@@ -171,6 +182,11 @@ func _process(delta: float) -> void:
 	if mode == Mode.TITLE:
 		_title_t += delta
 		queue_redraw()
+	if _thought_t > 0.0:
+		_thought_t -= delta
+		if _thought_t <= 0.0:
+			_thought = ""
+		queue_redraw()
 	if _step >= 0 and _step < STEPS.size():
 		_teaching(delta)
 	if mode == Mode.OVER:
@@ -180,7 +196,9 @@ func _process(delta: float) -> void:
 		_ride_t += delta
 		if _ride_t >= RIDE_T:
 			mode = Mode.PLAY
-			if not _ride_out:
+			if _ride_out:
+				Game.think("arrive")
+			else:
 				Game.finish_level()
 		queue_redraw()
 	if _toast_t > 0.0:
@@ -257,9 +275,14 @@ func _unhandled_key_input(e: InputEvent) -> void:
 		Mode.CUT:
 			_cut_key(k)
 		Mode.TITLE:
-			mode = Mode.PLAY
-			_step = 0
-			_was_at = Vector2.ZERO
+			# the opening reads itself out a line at a time; any key takes the
+			# next one, and the last one puts you on the floor
+			_open_line += 1
+			_title_t = 0.0
+			if _open_line > Content.OPENING.size():
+				mode = Mode.PLAY
+				_step = 0
+				_was_at = Vector2.ZERO
 		Mode.RIDE:
 			if k in [KEY_E, KEY_ESCAPE, KEY_ENTER, KEY_SPACE]:
 				_ride_t = RIDE_T          # skip to the end of the drive
@@ -452,6 +475,10 @@ func _draw() -> void:
 	draw_string(f, Vector2(hr.position.x + _n(20), hr.position.y + _n(31)), hint,
 		HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(22), INK)
 
+	# ── what you are saying to yourself ─────────────────────────────────
+	if _thought != "" and mode == Mode.PLAY:
+		_draw_thought(f, vp)
+
 	# ── interaction prompt ──────────────────────────────────────────────
 	if _prompt != "" and mode == Mode.PLAY:
 		var w: float = f.get_string_size(_prompt, HORIZONTAL_ALIGNMENT_LEFT, -1,
@@ -549,25 +576,48 @@ func _draw_cut(f: Font, vp: Vector2) -> void:
 # one key gets you onto the floor.
 func _draw_title(f: Font, vp: Vector2) -> void:
 	draw_rect(Rect2(Vector2.ZERO, vp), Color(0.02, 0.02, 0.03))
-	var t: float = clampf(_title_t / 0.7, 0.0, 1.0)
 	var mid := vp.x * 0.5
-	var name := str(ProjectSettings.get_setting("application/config/name",
-		"RECOVERY")).to_upper()
-	var nw: float = f.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(46)).x
-	draw_string(f, Vector2(mid - nw * 0.5, vp.y * 0.36), name,
-		HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(46), Color(ACCENT, t))
-	draw_line(Vector2(mid - _n(200), vp.y * 0.36 + _n(22)),
-		Vector2(mid + _n(200), vp.y * 0.36 + _n(22)), Color(EDGE, t), 2.0)
-	var sub := "A recovery job, forty minutes out of town."
-	var sw: float = f.get_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(20)).x
-	draw_string(f, Vector2(mid - sw * 0.5, vp.y * 0.36 + _n(64)), sub,
-		HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(20), Color(DIM, t))
-	if _title_t > 0.9:
+	var t: float = clampf(_title_t / 0.8, 0.0, 1.0)
+
+	# the last card is the name of the place you work
+	if _open_line >= Content.OPENING.size():
+		var name := "INVESTIGATION STATION"
+		var nw: float = f.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1,
+			_fs(42)).x
+		draw_string(f, Vector2(mid - nw * 0.5, vp.y * 0.44), name,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(42), Color(ACCENT, t))
+		draw_line(Vector2(mid - _n(230), vp.y * 0.44 + _n(22)),
+			Vector2(mid + _n(230), vp.y * 0.44 + _n(22)), Color(EDGE, t), 2.0)
+	else:
+		var line: String = Content.OPENING[_open_line]
+		var w := _n(760)
+		draw_multiline_string(f, Vector2(mid - w * 0.5, vp.y * 0.44), line,
+			HORIZONTAL_ALIGNMENT_CENTER, w, _fs(26), -1, Color(INK, t))
+
+	if _title_t > 0.8:
 		var go := "press any key"
-		var gw: float = f.get_string_size(go, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(18)).x
-		var pulse: float = 0.45 + 0.3 * sin(_title_t * 2.6)
-		draw_string(f, Vector2(mid - gw * 0.5, vp.y * 0.66), go,
-			HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(18), Color(INK, pulse))
+		var gw: float = f.get_string_size(go, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(16)).x
+		var pulse: float = 0.3 + 0.22 * sin(_title_t * 2.4)
+		draw_string(f, Vector2(mid - gw * 0.5, vp.y - _n(90)), go,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(16), Color(DIM, pulse))
+	# how far through the opening you are
+	for i in Content.OPENING.size() + 1:
+		var dot := Vector2(mid - Content.OPENING.size() * _n(9) + i * _n(18),
+			vp.y - _n(54))
+		draw_circle(dot, 3.0, ACCENT if i <= _open_line else Color(EDGE, 0.7))
+
+
+# What you say to yourself, sitting under the game rather than over it.
+func _draw_thought(f: Font, vp: Vector2) -> void:
+	var fade: float = clampf(_thought_t, 0.0, 1.0) * clampf((4.5 - _thought_t) / 0.4,
+		0.0, 1.0)
+	var said := "\"%s\"" % _thought
+	var w: float = f.get_string_size(said, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(19)).x
+	var at := Vector2(vp.x * 0.5 - w * 0.5, vp.y - _n(196))
+	draw_rect(Rect2(at.x - _n(18), at.y - _n(26), w + _n(36), _n(38)),
+		Color(0, 0, 0, 0.45 * fade))
+	draw_string(f, at, said, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(19),
+		Color(0.86, 0.83, 0.72, fade))
 
 
 # One step at a time along the top of the screen, each waiting on the thing

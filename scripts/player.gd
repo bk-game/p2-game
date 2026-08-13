@@ -33,6 +33,9 @@ func _physics_process(delta: float) -> void:
 	if _hud != null and _hud.blocking():
 		velocity = Vector2.ZERO
 		return
+	# close enough to be standing under it
+	if global_position.distance_to(Content.TREE_POS) < 210.0:
+		Game.think("tree")
 	var dir := Input.get_vector("left", "right", "up", "down")
 	velocity = dir * speed
 	move_and_slide()

@@ -6,6 +6,68 @@ extends RefCounted
 
 const FORMULA := {"norust": 2.0, "bleach": 1.0, "exfluid": 2.5, "water": 0.0}
 
+# ── How you got here ─────────────────────────────────────────────────────
+# One line at a time before the office, so the debt and the job are known
+# before anything is asked of you.
+const OPENING := [
+	"After years of gambling, your debts have finally caught up to you.",
+	"You are a new member of Investigation Station.",
+	"Their morals may be questionable, but they pay well.",
+	"You are tasked with learning about the recently deceased.",
+	"The more you learn, the higher your pay.",
+	"Get enough money, pay off your debt.",
+]
+
+# ── What you say to yourself ─────────────────────────────────────────────
+# Half-thoughts as things happen. "needs" and "not" are flags, "has" and
+# "hasnt" are things in your pockets; a line with none of them always fits.
+const TREE_POS := Vector2(555, 812)
+const THOUGHTS := {
+	"arrive": [
+		{"say": "It smells like a forest in here. Did Joe leave his windows open?"},
+	],
+	"tree": [
+		{"say": "This must be one of New Tree Co.'s creations."},
+		{"say": "What has the world come to? The trees are fighting back now."},
+	],
+	"gas": [
+		{"say": "This smells weird."},
+		{"say": "I have a bad feeling about this."},
+	],
+	"gas_out": [
+		{"say": "I feel light headed now."},
+	],
+	"clue": [
+		{"say": "Interesting."},
+		{"say": "This will help."},
+	],
+	"bleach": [
+		{"say": "He must have been loaded. I have not seen someone have this in "
+			+ "years."},
+		{"say": "How did this become so expensive?"},
+	],
+	"norust": [
+		{"say": "Like a wise man once said: I am more of a No Rust Buildup guy "
+			+ "myself."},
+		{"say": "How old is this? It smells terrible. Can cleaners expire?"},
+		{"say": "This is a relic. Even when it was being sold it cost a fortune."},
+	],
+	"exfluid": [
+		{"say": "I am not really sure what this will do. But it might help.",
+			"not": "knows_formula"},
+		{"say": "Great. I needed this.", "needs": "knows_formula"},
+	],
+	"body": [
+		{"say": "Poor guy. Died too soon."},
+		{"say": "Ewww. Is that a tree growing out of him?"},
+		{"say": "This has got to be enough to finally shut New Tree Co. down."},
+	],
+	"bunny": [
+		{"say": "Who is Eleanor?", "hasnt": "death_certs"},
+		{"say": "Poor Joe. He has had his share of loss.", "has": "death_certs"},
+	],
+}
+
 const ITEMS := {
 	# ── Joe's logbook, torn into pieces ──────────────────────────────────
 	"log_1_2": {
@@ -39,8 +101,8 @@ const ITEMS := {
 			+ "TWO CUPS of the no rust. The other two measures are further down the "
 			+ "page, and the last one I gave up on paper and put somewhere I could not "
 			+ "lose it.\n\n"
-			+ "It wants a basin and a tap running, so not in here. I am not doing "
-			+ "this on the kitchen table again.\n\n"
+			+ "You need a basin and a running tap for it, so not in here. I am "
+			+ "not doing this on the kitchen table again.\n\n"
 			+ "  [ the rest of this page has been torn away ]",
 		"note": "The mix is no-rust, bleach and extinguisher fluid. Two cups of "
 			+ "no-rust. Joe made it up somewhere with a basin and a tap, not the "
@@ -53,9 +115,9 @@ const ITEMS := {
 		"body": "The bottom half of the torn page, folded twice.\n\n"
 			+ "...and ONE CUP of the BLEACH. No more than that — at two it goes cloudy "
 			+ "and does nothing at all.\n\n"
-			+ "The third measure is the one I kept getting wrong, so it is not on "
-			+ "paper any more. I put it through the wall of the room where I first "
-			+ "tried this, and I am not going over it again.",
+			+ "The third measure I kept getting wrong, so I cut it into the wall "
+			+ "of the room where I first tried this. I am not writing it out "
+			+ "again.",
 		"note": "One cup of bleach in the mix, no more. The third measure Joe cut "
 			+ "into a wall somewhere, in the room where he first tried mixing.",
 		"grants": "knows_dose_bleach",
@@ -250,33 +312,33 @@ const ITEMS := {
 			+ "SUBJECT\tWood, Joseph\n"
 			+ "VAN\tbay 2\n"
 			+ "SIGNED OUT\tyou\n\n"
-			+ "No van goes out without one of these on the seat.",
+			+ "The van will not go out without this on the seat.",
 		"note": "The docket puts you in the van in bay 2.",
-		"use": "Proof the job is yours. It rides on the seat.",
+		"use": "Proof the job is yours. It stays on the van seat.",
 	},
 	"key_yellow": {
-		"name": "Key, yellow tag", "kind": "tool", "glyph": "key",
+		"name": "Yellow key", "kind": "tool", "glyph": "key",
 		"tint": "c9a227", "pos": Vector2(-300, 360),
-		"body": "A worn key on a yellow plastic tag. Nothing else on it.",
-		"note": "", "use": "One of the four off the press. Something on the door takes it.",
+		"body": "A worn key with a yellow tag on it. No number, no label.",
+		"note": "", "use": "One of the four van keys. One of the locks on the fire door takes it.",
 	},
 	"key_green": {
-		"name": "Key, green tag", "kind": "tool", "glyph": "key",
+		"name": "Green key", "kind": "tool", "glyph": "key",
 		"tint": "4c7a3a", "pos": Vector2(-300, 360),
-		"body": "A worn key on a green plastic tag. Nothing else on it.",
-		"note": "", "use": "One of the four off the press. Something on the door takes it.",
+		"body": "A worn key with a green tag on it. No number, no label.",
+		"note": "", "use": "One of the four van keys. One of the locks on the fire door takes it.",
 	},
 	"key_blue": {
-		"name": "Key, blue tag", "kind": "tool", "glyph": "key",
+		"name": "Blue key", "kind": "tool", "glyph": "key",
 		"tint": "3a5f8a", "pos": Vector2(-300, 360),
-		"body": "A worn key on a blue plastic tag. Nothing else on it.",
-		"note": "", "use": "One of the four off the press. Something on the door takes it.",
+		"body": "A worn key with a blue tag on it. No number, no label.",
+		"note": "", "use": "One of the four van keys. One of the locks on the fire door takes it.",
 	},
 	"key_red": {
-		"name": "Key, red tag", "kind": "tool", "glyph": "key",
+		"name": "Red key", "kind": "tool", "glyph": "key",
 		"tint": "b13a2c", "pos": Vector2(-300, 360),
-		"body": "A worn key on a red plastic tag. Nothing else on it.",
-		"note": "", "use": "One of the four off the press. Something on the door takes it.",
+		"body": "A worn key with a red tag on it. No number, no label.",
+		"note": "", "use": "One of the four van keys. One of the locks on the fire door takes it.",
 	},
 
 	# ── Chemicals ───────────────────────────────────────────────────────
@@ -346,42 +408,41 @@ const FIXED_NOTES := [
 		"pos": Vector2(-420, 174), "surface": "panel",
 		"prompt": "Read the card pinned by the board",
 		"title": "Bay card",
-		"body": "A card off the key press, pinned up by the board years ago and "
-			+ "soft at the corners from being handled.\n\n"
+		"body": "A card from the key box, pinned up by the board years ago and "
+			+ "gone soft at the corners.\n\n"
 			+ "BAY 1\tyellow\n"
 			+ "BAY 2\tblue\n"
 			+ "BAY 3\tgreen\n"
 			+ "BAY 4\tred\n\n"
 			+ "Along the bottom, in marker: THESE DO NOT CHANGE, STOP ASKING.",
-		"note": "The bays and their tags: 1 yellow, 2 blue, 3 green, 4 red.",
+		"note": "Which key opens which bay: 1 yellow, 2 blue, 3 green, 4 red.",
 	},
 	{
 		"pos": Vector2(-316, 544), "surface": "panel",
 		"prompt": "Read the sign screwed to the door",
 		"title": "Sign on the fire door",
 		"body": "A steel plate screwed on beside the handle, painted over twice "
-			+ "and read anyway.\n\n"
-			+ "LATCH AND DEADBOLT SEIZED.\n"
-			+ "PADLOCK ONLY.\n\n"
+			+ "and still readable.\n\n"
+			+ "THE LATCH AND THE DEADBOLT ARE SEIZED.\n"
+			+ "USE THE PADLOCK.\n\n"
 			+ "Under it, in marker: \"since 68\".",
-		"note": "The latch and deadbolt on the fire door are seized. The padlock "
-			+ "on the push bar is the one that turns.",
+		"note": "Only the padlock on the fire door works. The latch and the "
+			+ "deadbolt are seized.",
 	},
 	{
 		"pos": Vector2(-340, 178), "surface": "board",
 		"prompt": "Read the job on the board",
-		"title": "The job",
-		"body": "RECOVERY — WOOD, JOSEPH. Cabin, forty minutes out, no next of kin "
-			+ "on file.\n\n"
-			+ "Bring back the man and bring back the paper: who he was, who he "
-			+ "belonged to, what he lost. The office builds the rest from that. "
-			+ "Anything you carry out that says something about him is paid on.\n\n"
-			+ "NOTHING LEAVES THIS FLOOR WITHOUT:\n"
-			+ "\tthe docket, off the hook under this board\n"
-			+ "\tan axe, off the rack in the store\n"
-			+ "\ta van key, off the press by the door",
-		"note": "The job: recover Joe Wood and whatever says who he was. Sign out "
-			+ "with the docket, an axe from the store, and a van key off the press.",
+		"title": "Latest docket job",
+		"body": "RECOVERY — WOOD, JOSEPH\n"
+			+ "A cabin forty minutes out of town. No family listed.\n\n"
+			+ "Bring back the body, and bring back anything that says who he was: "
+			+ "papers, photos, letters. You are paid for each one.\n\n"
+			+ "TAKE WITH YOU:\n"
+			+ "\tthe docket — on the hook under this board\n"
+			+ "\tan axe — on the rack in the store room\n"
+			+ "\ta van key — from the key box by the door",
+		"note": "The job: bring back Joe Wood and anything that says who he was. "
+			+ "Take the docket, an axe from the store room, and a van key.",
 		"grants": "read_job",
 	},
 	{
@@ -505,8 +566,7 @@ const STAFF := [
 				+ "and nights aren't paid.\"",
 			"\"They docked me for the van again. Check what they're taking off "
 				+ "you before you sign anything.\"",
-			"\"Bay two, that'll be the blue tag. It has been the blue tag since "
-				+ "before either of us.\"",
+			"\"Bay two is the blue key. Always has been.\"",
 			"\"Better you than me. I did two cabins last year and I'm still not "
 				+ "right about it.\"",
 		],
@@ -517,12 +577,12 @@ const STAFF := [
 			"\"Morning. You look like you slept in the stairwell.\"",
 			"\"Whatever's growing out there, don't bring it back in your coat. "
 				+ "Someone did that. He's not here any more.\"",
-			"\"It's the padlock on that door, on the bar. The latch and the "
-				+ "deadbolt have not turned since before I started.\"",
+			"\"Use the padlock on that door. The other two locks have not worked "
+				+ "in years.\"",
 			"\"Take the certificates if there are any. Paper with a name on it "
 				+ "pays double.\"",
-			"\"Come back through the same door you went out of. They only mark "
-				+ "you returned if you use the door.\"",
+			"\"Come back the way you went out. It is the only way they count you "
+				+ "as back.\"",
 		],
 	},
 ]
@@ -547,12 +607,11 @@ const LIFTS := [
 const OFFICE_EXIT := Vector2(-376, 540)
 const KIT := ["docket", "axe"]
 
-# ── The key press ────────────────────────────────────────────────────────
-# Four keys on hooks, tagged by colour, one signed out at a time. Which one
-# opens the van in your bay is worked out from three things on this floor:
-# the bay off the docket and the card on the press. Which of the three things
-# on the door it turns in is on the sign screwed to it.
-const KEY_PRESS := Vector2(-544, 350)
+# ── The key box ──────────────────────────────────────────────────────────
+# Four keys on hooks, one taken at a time. Which one opens your van comes
+# from the docket (it names the bay) and the card by the board (it says which
+# key goes with which bay). Which lock it turns is on the sign on the door.
+const KEY_BOX := Vector2(-544, 350)
 const KEYS := [
 	{"id": "key_yellow", "tag": "yellow"},
 	{"id": "key_green",  "tag": "green"},
@@ -561,8 +620,8 @@ const KEYS := [
 ]
 const VAN_KEY := "key_blue"     # bay 2, once the card and Renn are put together
 const LOCKS := [
-	"the latch in the handle",
-	"the deadbolt above it",
-	"the padlock on the push bar",
+	"the handle lock",
+	"the deadbolt",
+	"the padlock",
 ]
 const VAN_LOCK := 2             # the padlock; the other two seized years ago

@@ -14,6 +14,7 @@ signal ride(outbound: bool)
 signal open_choice(data: Dictionary)
 signal level_over
 signal acted
+signal thought(line: String)
 signal lock_opened
 
 var inventory: Array[String] = []
@@ -37,6 +38,7 @@ const FOG_CLEAR := 0.8   # how fast it washes out again, relative to real time
 
 var fog := 0.0
 var _fog_touched := false
+var _breathed := false
 
 
 func fog_touch() -> void:
@@ -51,12 +53,17 @@ func _process(delta: float) -> void:
 	if _fog_touched:
 		if fog <= 0.0:
 			Sfx.play("choke", -14.0, 1.4)
-			toast.emit("Green air. It burns going in — get out of it.")
+			think("gas")
 		fog += delta
 		if fog >= FOG_LIMIT:
 			_choke_out()
 	else:
+		if fog > 0.5:
+			_breathed = true
 		fog = maxf(fog - delta * FOG_CLEAR, 0.0)
+		if fog <= 0.0 and _breathed:
+			_breathed = false
+			think("gas_out")
 	_fog_touched = false
 
 
@@ -114,7 +121,7 @@ func finish_level() -> void:
 	level_over.emit()
 
 
-# ── The key press ────────────────────────────────────────────────────────
+# ── The key box ──────────────────────────────────────────────────────────
 # One key off the hooks at a time: taking another puts the last one back.
 func held_key() -> String:
 	for k in Content.KEYS:
@@ -136,21 +143,49 @@ func take_key(which: int) -> void:
 	Sfx.play("pickup", -8.0)
 	toast.emit("%s off the hook.%s" % [Content.ITEMS[id]["name"],
 		"" if had == "" else " %s back on it." % Content.ITEMS[had]["name"]])
+	
 
 
 # Right key, turned in the right thing, or it does not go.
 func try_lock(which: int) -> bool:
 	if held_key() != Content.VAN_KEY:
 		Sfx.play("empty", -10.0)
-		toast.emit("The key goes in as far as the shoulder and stops. Wrong tag.")
+		toast.emit("The key goes in and stops. This is not the right key.")
 		return false
 	if which != Content.VAN_LOCK:
 		Sfx.play("empty", -10.0)
-		toast.emit("It turns a quarter and stops. That one seized years ago.")
+		toast.emit("It turns a little and stops. This lock is seized.")
 		return false
 	Sfx.play("open", -7.0)
 	set_flag("signed_out")
 	return true
+
+
+# ── Talking to yourself ──────────────────────────────────────────────────
+# Each trigger has a few lines; the ones that fit what you know and what you
+# are carrying are used in turn, and none is used twice.
+var _said := {}
+
+
+func think(what: String) -> void:
+	if not Content.THOUGHTS.has(what):
+		return
+	var fits := []
+	for line in Content.THOUGHTS[what]:
+		if line.get("needs", "") != "" and not flag(line["needs"]):
+			continue
+		if line.get("not", "") != "" and flag(line["not"]):
+			continue
+		if line.get("has", "") != "" and not has_item(line["has"]):
+			continue
+		if line.get("hasnt", "") != "" and has_item(line["hasnt"]):
+			continue
+		if not _said.has(line["say"]):
+			fits.append(line["say"])
+	if fits.is_empty():
+		return
+	_said[fits[0]] = true
+	thought.emit(fits[0])
 
 
 func has_item(id: String) -> bool:
@@ -168,6 +203,9 @@ func add_item(id: String) -> void:
 		add_note(it["note"])
 	inventory_changed.emit()
 	notice.emit(it["name"], it["body"])
+	think(id)
+	if it.get("story", false) and it.get("note", "") != "":
+		think("clue")
 	_check_done()
 
 
