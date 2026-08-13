@@ -79,9 +79,9 @@ func _ready() -> void:
 	fails += _expect("somebody tells you which lock", said.contains("padlock"))
 	var card := ""
 	for n in Content.FIXED_NOTES:
-		if n["title"] == "Card on the key press":
+		if n["title"] == "Bay card":
 			card = n["body"]
-	fails += _expect("and the card on the press has the bays on it",
+	fails += _expect("and the bay card has the bays on it",
 		card.contains("BAY 2") and card.contains("blue"))
 
 	# one key off the press at a time
@@ -114,6 +114,10 @@ func _ready() -> void:
 	fails += _expect("and you cannot go back empty-handed",
 		pl.global_position.distance_to(Content.ENTRANCE) < 1.0)
 	fails += _expect("which the prompt says", home.prompt().contains("Not done"))
+	pl.global_position = Content.CABIN_DOOR
+	home._process(0.1)
+	fails += _expect("standing in the doorway does nothing either",
+		not hud.mode == 7)
 
 	# find him, then take the certificates
 	Game.set_flag("found_body")
@@ -128,8 +132,9 @@ func _ready() -> void:
 	fails += _expect("the popup names the way out",
 		Game.notes[Game.notes.size() - 1].contains("way you came in"))
 
-	home.act()
-	fails += _expect("the front door starts the drive back", hud.mode == 7)
+	pl.global_position = Content.CABIN_DOOR      # no key press: being there is enough
+	home._process(0.1)
+	fails += _expect("the front door starts the drive back on its own", hud.mode == 7)
 	fails += _expect("and puts you back at your desk",
 		pl.global_position.distance_to(Content.OFFICE_START) < 1.0)
 	hud._unhandled_key_input(_key(KEY_E))

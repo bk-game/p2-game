@@ -12,15 +12,21 @@ const C_EDGE   := Color("2b2b30")
 const REACH := 34.0
 const ARC   := PI * 0.4   # half-angle of the cone you have to be turned into
 const TOUCH := 16.0       # closer than this, whatever you are stood on counts
+const TURN_TIE := 7.0     # px per radian off-centre, to settle ties
 
 var facing := -PI / 2.0
 var _target: Node2D = null
 
 @onready var _hud: Control = get_tree().get_first_node_in_group("hud")
 
+var _marker: Marker = null
+
 
 func _ready() -> void:
 	add_to_group("player")
+	_marker = Marker.new()
+	_marker.z_index = 90          # over the limbs, which draw at 60
+	add_child(_marker)
 
 
 func _physics_process(delta: float) -> void:
@@ -75,13 +81,27 @@ func _scan() -> void:
 		# You have to be turned towards a thing to work on it. Anything you
 		# are all but standing on is exempt: which way you last walked says
 		# nothing about an item under your feet.
-		if d > TOUCH and absf(angle_difference(facing, (at - global_position).angle())) > ARC:
+		var off: float = absf(angle_difference(facing,
+			(at - global_position).angle())) if d > 0.01 else 0.0
+		if d > TOUCH and off > ARC:
 			continue
-		var score: float = d - (n.bias() if n.has_method("bias") else 0.0)
+		# Two limbs crossing each other both report no distance at all, so the
+		# one you are most directly turned towards breaks the tie.
+		var score: float = d - (n.bias() if n.has_method("bias") else 0.0) \
+			+ off * TURN_TIE
 		if score < best_score:
 			best = n
 			best_score = score
 	_target = best
+	# ring whatever E would work on, so what you are about to do is a thing
+	# you can see rather than a line of text you have to trust
+	if _marker != null:
+		_marker.on = best != null
+		if best != null:
+			var at: Vector2 = best.reach_point(global_position) \
+				if best.has_method("reach_point") else best.global_position
+			_marker.at = at - global_position
+		_marker.queue_redraw()
 	if _hud != null:
 		_hud.set_prompt(best.prompt() if best != null else "")
 
@@ -126,3 +146,23 @@ func _arc_cap(c: Vector2, r: float, a0: float, a1: float, col: Color) -> void:
 		var a: float = lerp(a0, a1, i / 16.0)
 		pts.append(c + Vector2(cos(a), sin(a)) * r)
 	draw_colored_polygon(pts, col)
+
+
+# The ring around what E is pointing at. Its own node so it draws over the
+# limbs rather than under them.
+class Marker extends Node2D:
+	var at := Vector2.ZERO
+	var on := false
+	var _t := 0.0
+
+	func _process(delta: float) -> void:
+		if on:
+			_t += delta
+			queue_redraw()
+
+	func _draw() -> void:
+		if not on:
+			return
+		var pulse: float = 0.42 + 0.12 * sin(_t * 3.4)
+		draw_arc(at, 25.0, 0, TAU, 30, Color(1, 0.95, 0.72, pulse), 2.5)
+		draw_arc(at, 19.0, 0, TAU, 24, Color(1, 0.95, 0.72, pulse * 0.4), 2.0)

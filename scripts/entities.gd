@@ -186,6 +186,12 @@ class Pickup extends Node2D:
 
 # ══ Branch ═══════════════════════════════════════════════════════════════
 class Branch extends StaticBody2D:
+	# A limb is metres long, so standing anywhere along one reports a distance
+	# of nothing and it wins every contest on proximity alone. It is scenery
+	# you may want to cut, so it takes a penalty and only comes up when there
+	# is nothing else in reach.
+	const SCENERY := -28.0
+
 	const CUT_TIME := 2.0
 	const CHOP_GAP := 0.55
 
@@ -201,7 +207,7 @@ class Branch extends StaticBody2D:
 	var _chop := 0.0
 
 	func bias() -> float:
-		return 0.0
+		return SCENERY
 
 	func setup(d: Dictionary) -> void:
 		position = d["pos"]
@@ -436,8 +442,10 @@ class Fume extends Node2D:
 	func _ready() -> void:
 		add_to_group("act")
 
+	# Same as a limb: it is a big soft thing you are standing at the edge of,
+	# so it gives way to anything you might have come for.
 	func bias() -> float:
-		return 8.0
+		return -18.0
 
 	# The cloud pushes you out at 0.72r, which for the big one is further than
 	# the player can reach. Prompt from the edge of the cloud, not its centre.
@@ -700,6 +708,7 @@ class Doorway extends Node2D:
 	var to := Vector2.ZERO
 	var label := ""
 	var needs_done := false      # the way home, which only opens once you are
+	var _gone := false
 
 	func _ready() -> void:
 		add_to_group("act")
@@ -721,6 +730,16 @@ class Doorway extends Node2D:
 			Game.toast.emit("Not yet. Him, and the paper that says who he was.")
 			return
 		Game.begin_ride(to, false)
+
+	# Once the job is done you do not press anything: walking into the doorway
+	# you came in by is leaving.
+	func _process(_delta: float) -> void:
+		if _shut() or _gone:
+			return
+		var p := get_tree().get_first_node_in_group("player")
+		if p != null and p.global_position.distance_to(global_position) < 30.0:
+			_gone = true
+			Game.begin_ride(to, false)
 
 	func _draw() -> void:
 		var pulse: float = 0.16 if _shut() else 0.34

@@ -317,17 +317,17 @@ const LOCK_DOOR := Rect2(1272, 578, 70, 37)
 # left on a piece of furniture.
 const FIXED_NOTES := [
 	{
-		"pos": Vector2(-544, 386), "surface": "panel",
-		"prompt": "Read the card on the key press",
-		"title": "Card on the key press",
-		"body": "A card screwed to the press under the hooks, soft at the corners "
-			+ "from being handled.\n\n"
+		"pos": Vector2(-420, 174), "surface": "panel",
+		"prompt": "Read the card pinned by the board",
+		"title": "Bay card",
+		"body": "A card off the key press, pinned up by the board years ago and "
+			+ "soft at the corners from being handled.\n\n"
 			+ "BAY 1\tyellow\n"
 			+ "BAY 2\tblue\n"
 			+ "BAY 3\tgreen\n"
 			+ "BAY 4\tred\n\n"
 			+ "Along the bottom, in marker: THESE DO NOT CHANGE, STOP ASKING.",
-		"note": "The key press: bay 1 yellow, bay 2 blue, bay 3 green, bay 4 red.",
+		"note": "The bays and their tags: 1 yellow, 2 blue, 3 green, 4 red.",
 	},
 	{
 		"pos": Vector2(-316, 544), "surface": "panel",
@@ -506,7 +506,7 @@ const STAFF := [
 # to; the door out of the office puts you on the cabin's doorstep and the
 # cabin's front door brings you back here.
 const OFFICE_START := Vector2(-440, 360)   # on the floor by the desk
-const CABIN_DOOR := Vector2(1462, 952)      # the front door, from inside
+const CABIN_DOOR := Vector2(1462, 974)      # the front door, from inside
 
 # The two lifts are the only way off this floor. The top one goes up to the
 # boss and will not take you until the job on the board is done; the bottom
