@@ -106,7 +106,7 @@ const ITEMS := {
 			+ "You need a basin and a running tap for it, so not in here. I am "
 			+ "not doing this on the kitchen table again.\n\n"
 			+ "  [ the rest of this page has been torn away ]",
-		"note": "The mix is no-rust, bleach and extinguisher fluid. Two cups of "
+		"note": "The mix is no-rust, bleach and extinguisher fluid. *Two cups* of "
 			+ "no-rust. Joe made it up somewhere with a basin and a tap, not the "
 			+ "kitchen. The other two measures are written down elsewhere.",
 		"grants": "knows_dose_norust",
@@ -120,7 +120,7 @@ const ITEMS := {
 			+ "The third measure I kept getting wrong, so I cut it into the wall "
 			+ "of the room where I first tried this. I am not writing it out "
 			+ "again.",
-		"note": "One cup of bleach in the mix, no more. The third measure Joe cut "
+		"note": "*One cup* of bleach in the mix, no more. The third measure Joe cut "
 			+ "into a wall somewhere, in the room where he first tried mixing.",
 		"grants": "knows_dose_bleach",
 	},
@@ -468,7 +468,8 @@ const FIXED_NOTES := [
 			+ "than a knife. The letters are gone over twice.\n\n"
 			+ "TWO AND A HALF CUPS OF THE EXTINGUISHER STUFF.\n\n"
 			+ "Under it, smaller: \"STOP GUESSING. FOUR BATCHES WASTED.\"",
-		"note": "Cut into the kitchen wall: two and a half cups of extinguisher fluid.",
+		"note": "Cut into the kitchen wall: *two and a half cups* of extinguisher "
+			+ "fluid.",
 		"grants": "knows_dose_exfluid",
 	},
 ]

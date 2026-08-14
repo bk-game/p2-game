@@ -67,6 +67,7 @@ var _was_at := Vector2.ZERO
 var _acted := false
 var _title_t := 0.0
 var _notes_y := 0.0
+var _bold: Font = null        # the notes font, emboldened for the doses
 var _open_line := 0
 var _thought := ""
 var _thought_t := 0.0
@@ -548,21 +549,22 @@ func _draw_lock(f: Font, vp: Vector2) -> void:
 
 func _draw_cut(f: Font, vp: Vector2) -> void:
 	draw_rect(Rect2(Vector2.ZERO, vp), Color(0, 0, 0, 0.55))
-	var r := _centre(vp, 640, 380)
+	var r := _centre(vp, 640, 410)
 	_panel(r)
 	_head(f, r, "THE GRAIN", "four hearts in it")
-	draw_string(f, Vector2(r.position.x + _n(38), r.position.y + _n(124)),
+	# wrapped, not cut off at the edge of the panel: draw_string truncates
+	draw_multiline_string(f, Vector2(r.position.x + _n(38), r.position.y + _n(120)),
 		"Take them in the order the grain will give. Take them wrong and the "
 		+ "blade sticks fast.",
-		HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(76), _fs(17), DIM)
+		HORIZONTAL_ALIGNMENT_LEFT, r.size.x - _n(76), _fs(17), -1, DIM)
 	for i in Content.CUT_MARKS.size():
-		draw_string(f, Vector2(r.position.x + _n(38), r.position.y + _n(160) + i * _n(28)),
+		draw_string(f, Vector2(r.position.x + _n(38), r.position.y + _n(186) + i * _n(28)),
 			"%d   %s" % [i + 1, Content.CUT_MARKS[i]],
 			HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(19), INK)
 	var slot: float = _n(50)
 	var x0: float = r.get_center().x + _n(24)
 	for i in Content.CUT_MARKS.size():
-		var box := Rect2(x0 + i * (slot + _n(10)), r.position.y + _n(168), slot, _n(66))
+		var box := Rect2(x0 + i * (slot + _n(10)), r.position.y + _n(194), slot, _n(66))
 		draw_rect(box, Color(0, 0, 0, 0.45))
 		draw_rect(box, EDGE, false, 2.0)
 		if i < _code.length():
@@ -956,9 +958,82 @@ func notes_height() -> float:
 	var wide: float = r.size.x - _n(120)
 	var total := 0.0
 	for n in Game.notes:
-		total += f.get_multiline_string_size(n, HORIZONTAL_ALIGNMENT_LEFT, wide,
-			_fs(18)).y + _n(16)
+		total += _note_flow(f, Vector2.ZERO, n, wide, _fs(18), INK, false) + _n(16)
 	return maxf(total - _n(16), 0.0)
+
+
+# The doses are the part of a note you come back to the notebook for, so
+# they are written into the notes between *stars* and come out of them
+# heavier than the sentence around them, and underlined.
+func _heavy(f: Font) -> Font:
+	if _bold == null:
+		var v := FontVariation.new()
+		v.base_font = f
+		v.variation_embolden = 0.65
+		_bold = v
+	return _bold
+
+
+# Words, in reading order, each with whether it is a dose and whether a
+# space came before it. Splitting on the stars flips the one and dropping
+# the spaces out of the text keeps the other.
+func _note_runs(text: String) -> Array:
+	var out: Array = []
+	var strong := false
+	var space := false
+	for part in text.split("*"):
+		var word := ""
+		for ch in part:
+			if ch == " ":
+				if word != "":
+					out.append([word, strong, space])
+					word = ""
+				space = true
+			else:
+				word += ch
+		if word != "":
+			out.append([word, strong, space])
+			space = false
+		strong = not strong
+	return out
+
+
+# One note, wrapped by hand so the doses in it can be picked out. Returns
+# how tall it came out; with draw_it false it only measures, so the height
+# the scrolling is clamped against and the height on the page are the same
+# number arrived at the same way.
+func _note_flow(f: Font, at: Vector2, text: String, wide: float, fs: int,
+		col: Color, draw_it: bool) -> float:
+	var bold := _heavy(f)
+	var step: float = f.get_height(fs)
+	var space: float = f.get_string_size(" ", HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var x := 0.0
+	var y := 0.0
+	var was_strong := false
+	for run in _note_runs(text):
+		var word: String = run[0]
+		var strong: bool = run[1]
+		var use: Font = bold if strong else f
+		var w: float = use.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		var lead: float = space if run[2] else 0.0
+		# only ever break where a space was: a comma after a dose stays with it
+		if run[2] and x > 0.0 and x + lead + w > wide:
+			x = 0.0
+			y += step
+			lead = 0.0
+		x += lead
+		if draw_it:
+			draw_string(use, at + Vector2(x, y), word, HORIZONTAL_ALIGNMENT_LEFT,
+				-1, fs, col)
+			if strong:
+				# carry the rule over the space between two dose words, so a
+				# dose is underlined once rather than word by word
+				var from: float = x - (lead if was_strong else 0.0)
+				draw_line(at + Vector2(from, y + _n(4)), at + Vector2(x + w, y + _n(4)),
+					col, maxf(_n(1.5), 1.0))
+		x += w
+		was_strong = strong
+	return y + step
 
 
 func _draw_notes(f: Font, vp: Vector2) -> void:
@@ -974,8 +1049,7 @@ func _draw_notes(f: Font, vp: Vector2) -> void:
 
 	var total := 0.0
 	for n in Game.notes:
-		total += f.get_multiline_string_size(n, HORIZONTAL_ALIGNMENT_LEFT, wide,
-			_fs(18)).y + gap
+		total += _note_flow(f, Vector2.ZERO, n, wide, _fs(18), INK, false) + gap
 	total = maxf(total - gap, 0.0)
 	_notes_y = clampf(_notes_y, 0.0, maxf(total - (bot - top), 0.0))
 
@@ -984,13 +1058,12 @@ func _draw_notes(f: Font, vp: Vector2) -> void:
 			"Nothing written down yet.", HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(19), DIM)
 	var y: float = top - _notes_y
 	for n in Game.notes:
-		var h: float = f.get_multiline_string_size(n, HORIZONTAL_ALIGNMENT_LEFT,
-			wide, _fs(18)).y
+		var h: float = _note_flow(f, Vector2.ZERO, n, wide, _fs(18), INK, false)
 		if y + h > top - _n(30) and y < bot + _n(30):
 			draw_string(f, Vector2(r.position.x + _n(38), y), "-",
 				HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(18), ACCENT)
-			draw_multiline_string(f, Vector2(r.position.x + _n(62), y), n,
-				HORIZONTAL_ALIGNMENT_LEFT, wide, _fs(18), -1, INK)
+			_note_flow(f, Vector2(r.position.x + _n(62), y), n, wide, _fs(18),
+				INK, true)
 		y += h + gap
 
 	# mask whatever ran past the band, then put the furniture back over it.
